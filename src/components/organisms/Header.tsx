@@ -3,10 +3,10 @@ import NavLink from "@/components/atom/NavLink";
 import Button from "@/components/atom/Button";
 
 const NAV_LINKS = [
-  { href: "#", label: "음악맵" },
-  { href: "#", label: "레슨" },
-  { href: "#", label: "마켓" },
-  { href: "#", label: "커뮤니티" },
+  { href: "/musicmap", label: "음악맵" },
+  { href: "/lesson", label: "레슨" },
+  { href: "/market", label: "마켓" },
+  { href: "/community", label: "커뮤니티" },
 ];
 
 interface HeaderProps {

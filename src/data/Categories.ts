@@ -1,3 +1,5 @@
+// 임의 데이터 - 카테고리 정보
+
 export interface Category {
   id: string;
   label: string;
@@ -34,4 +36,8 @@ export const CATEGORY_TAG_MAP: Record<string, string[]> = {
   record: ["record"],
   instrument: ["instrument"],
   equipment: ["equipment"],
+};
+
+export const CATEGORY_LOCATION: Record<string, string[]> = {
+  all: [],
 };

@@ -1,8 +1,11 @@
+// 더미데이터
+
 export interface SearchResultItem {
   id: number;
   title: string;
   category: string;
-  location: string;
+  location: string; /* 표시용 지역 */
+  locationTags: string[]; /* 검색용 지역 키워드 */
   timeAgo: string;
   price: string;
   imageEmoji: string;
@@ -16,6 +19,7 @@ export const MOCK_RESULTS: SearchResultItem[] = [
     title: "기타 입문자 대상 1:1 레슨 (강남 홍대 가능)",
     category: "레슨",
     location: "마포구",
+    locationTags: ["마포", "마포구", "홍대", "서울"],
     timeAgo: "3분 전",
     price: "월 120,000원",
     imageEmoji: "🎸",
@@ -27,6 +31,7 @@ export const MOCK_RESULTS: SearchResultItem[] = [
     title: "드럼 레슨 합니다 - 10년 경력 프로 드러머",
     category: "레슨",
     location: "서대문구",
+    locationTags: ["서대문", "서대문구", "서울"],
     timeAgo: "1시간 전",
     price: "월 150,000원",
     imageEmoji: "🥁",
@@ -38,6 +43,7 @@ export const MOCK_RESULTS: SearchResultItem[] = [
     title: "보컬 트레이닝 · 발성 교정 전문",
     category: "보컬/노래",
     location: "용산구",
+    locationTags: ["용산", "용산구", "서울"],
     timeAgo: "2시간 전",
     price: "월 100,000원",
     imageEmoji: "🎤",
@@ -49,6 +55,7 @@ export const MOCK_RESULTS: SearchResultItem[] = [
     title: "재즈 피아노 레슨 · 초중급 환영",
     category: "피아노/건반",
     location: "강남구",
+    locationTags: ["강남", "강남구", "서울"],
     timeAgo: "5시간 전",
     price: "월 130,000원",
     imageEmoji: "🎹",
@@ -60,6 +67,7 @@ export const MOCK_RESULTS: SearchResultItem[] = [
     title: "밴드 합주 멤버 구합니다 (기타, 베이스)",
     category: "밴드/합주",
     location: "홍대",
+    locationTags: ["마포", "홍대", "서울"],
     timeAgo: "어제",
     price: "무료",
     imageEmoji: "🎵",
@@ -71,6 +79,7 @@ export const MOCK_RESULTS: SearchResultItem[] = [
     title: "Fender Stratocaster 중고 판매합니다",
     category: "악기거래",
     location: "성동구",
+    locationTags: ["성동", "성동구", "서울"],
     timeAgo: "2일 전",
     price: "850,000원",
     imageEmoji: "🎸",
@@ -82,6 +91,7 @@ export const MOCK_RESULTS: SearchResultItem[] = [
     title: "Roland 전자드럼 TD-17KVX 팝니다",
     category: "악기거래",
     location: "송파구",
+    locationTags: ["송파", "송파구", "서울"],
     timeAgo: "3일 전",
     price: "1,200,000원",
     imageEmoji: "🥁",
@@ -92,7 +102,8 @@ export const MOCK_RESULTS: SearchResultItem[] = [
     id: 8,
     title: "색소폰 레슨 · 왕초보 환영 · 단기완성",
     category: "관악기",
-    location: "중구",
+    location: "인천 서구",
+    locationTags: ["인천", "서구", "인천서구"],
     timeAgo: "4일 전",
     price: "월 90,000원",
     imageEmoji: "🎷",
@@ -101,9 +112,22 @@ export const MOCK_RESULTS: SearchResultItem[] = [
   },
   {
     id: 9,
+    title: "기타 레슨 · 인천 서구 방문 가능",
+    category: "레슨",
+    location: "인천 서구",
+    locationTags: ["인천", "서구", "인천서구"],
+    timeAgo: "5일 전",
+    price: "월 100,000원",
+    imageEmoji: "🎸",
+    tags: ["lesson", "guitar"],
+    keywords: ["기타", "레슨", "방문", "인천"],
+  },
+  {
+    id: 10,
     title: "DJ 장비 Pioneer DDJ-400 판매",
     category: "DJ/전자음악",
     location: "마포구",
+    locationTags: ["마포", "마포구", "서울"],
     timeAgo: "5일 전",
     price: "450,000원",
     imageEmoji: "🎧",
@@ -111,10 +135,11 @@ export const MOCK_RESULTS: SearchResultItem[] = [
     keywords: ["DJ", "파이오니아", "전자음악", "장비"],
   },
   {
-    id: 10,
+    id: 11,
     title: "바이올린 레슨 · 어린이 성인 모두 가능",
     category: "현악기",
     location: "노원구",
+    locationTags: ["노원", "노원구", "서울"],
     timeAgo: "6일 전",
     price: "월 110,000원",
     imageEmoji: "🎻",

@@ -1,10 +1,13 @@
+import Link from "next/link";
+
 interface LogoProps {
   onClick?: () => void;
 }
 
 export default function Logo({ onClick }: LogoProps) {
   return (
-    <div
+    <Link
+      href={"/"}
       className="flex flex-col leading-none cursor-pointer"
       onClick={onClick}
     >
@@ -20,6 +23,6 @@ export default function Logo({ onClick }: LogoProps) {
       >
         refill
       </span>
-    </div>
+    </Link>
   );
 }
