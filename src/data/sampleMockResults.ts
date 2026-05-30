@@ -9,6 +9,7 @@ export interface SearchResultItem {
   timeAgo: string;
   price: string;
   imageEmoji: string;
+  imageUrl?: string;
   tags: string[];
   keywords: string[]; /* 검색어 매칭용 키워드 */
 }

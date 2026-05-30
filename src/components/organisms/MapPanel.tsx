@@ -57,8 +57,16 @@ export default function MapPanel({
         {selectedItem ? (
           /* 단일 아이템 미리보기 */
           <div className="p-5">
-            <div className="w-full h-40 rounded-card bg-surface-card flex items-center justify-center text-6xl mb-4">
-              {selectedItem.imageEmoji}
+            <div className="w-full h-40 rounded-card bg-surface-card flex items-center justify-center text-6xl mb-4 overflow-hidden">
+              {selectedItem.imageUrl ? (
+                <img
+                  src={selectedItem.imageUrl}
+                  alt={selectedItem.title}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                selectedItem.imageEmoji
+              )}
             </div>
             <span className="inline-block mb-2 text-2xs font-semibold text-brand bg-brand-bg px-2 py-0.5 rounded-full">
               {selectedItem.category}

@@ -95,6 +95,7 @@ export default function SearchResultPage({
                   timeAgo={item.timeAgo}
                   price={item.price}
                   imageEmoji={item.imageEmoji}
+                  imageUrl={item.imageUrl}
                 />
               ))}
             </div>

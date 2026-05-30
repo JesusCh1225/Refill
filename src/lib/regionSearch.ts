@@ -9,8 +9,8 @@
  *
  */
 
-const NAVER_CLIENT_ID = "YOUR_NAVER_CLIENT_ID";
-const NAVER_CLIENT_SECRET = "YOUR_NAVER_CLIENT_SECRET";
+const NAVER_CLIENT_ID = process.env.NEXT_PUBLIC_NAVER_CLIENT_ID ?? "";
+const NAVER_CLIENT_SECRET = process.env.NAVER_CLIENT_SECRET ?? "";
 
 const NAVER_GEOCODING_URL =
   "https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode";

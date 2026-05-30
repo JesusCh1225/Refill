@@ -5,6 +5,7 @@ interface ResultItemProps {
   timeAgo: string;
   price: string;
   imageEmoji: string;
+  imageUrl?: string;
 }
 
 export default function ResultItem({
@@ -14,12 +15,21 @@ export default function ResultItem({
   timeAgo,
   price,
   imageEmoji,
+  imageUrl,
 }: ResultItemProps) {
   return (
     <div className="flex gap-4 p-4 rounded-2xl hover:bg-surface-card transition-colors cursor-pointer border border-transparent hover:border-border-card group">
       {/* 썸네일 */}
-      <div className="w-[120px] h-[120px] shrink-0 rounded-xl bg-[#f1f5f9] flex items-center justify-center text-5xl">
-        {imageEmoji}
+      <div className="w-[120px] h-[120px] shrink-0 rounded-xl bg-[#f1f5f9] flex items-center justify-center text-5xl overflow-hidden">
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt={title}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          imageEmoji
+        )}
       </div>
 
       {/* 내용 */}

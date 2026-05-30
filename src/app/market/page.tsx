@@ -1,18 +1,5 @@
-import Header from "@/components/organisms/Header";
+import { redirect } from "next/navigation";
 
 export default function MarketPage() {
-  return (
-    <div className="min-h-screen bg-surface-page">
-      <Header />
-      <main
-        className="flex items-center justify-center"
-        style={{ minHeight: "calc(100vh - 60px)" }}
-      >
-        <p className="text-[22px] font-medium text-text-muted">
-          마켓 페이지 입니다.
-        </p>
-      </main>
-      ㄴ
-    </div>
-  );
+  redirect("/musicmap?filter=instrument");
 }
