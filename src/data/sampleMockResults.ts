@@ -17,6 +17,7 @@ export interface SearchResultItem {
   keywords: string[];
   description?: string;
   author?: string;
+  authorId?: number;
   direction: PostDirection;
   lat?: number;
   lng?: number;

@@ -47,6 +47,7 @@ export default function PostDetailPage({
   const router = useRouter();
   const { data: session } = useSession();
   const { isBookmarked, toggle: toggleBookmark } = useBookmarks();
+  const myUserId = (session?.user as any)?.id as number | undefined;
 
   // ── 게시글 데이터 ──────────────────────────────────────────────────────────
   const [item, setItem] = useState<SearchResultItem | null>(null);
@@ -135,6 +136,21 @@ export default function PostDetailPage({
     }
   };
 
+  // ── 글 삭제 ──────────────────────────────────────────────────────────────
+  const [postDeletePending, setPostDeletePending] = useState(false);
+  const [postDeleting, setPostDeleting] = useState(false);
+
+  const handlePostDelete = async () => {
+    if (postDeleting) return;
+    setPostDeleting(true);
+    try {
+      const res = await fetch(`/api/posts/${id}`, { method: "DELETE" });
+      if (res.ok) router.replace("/");
+    } finally {
+      setPostDeleting(false);
+    }
+  };
+
   // ── 댓글 삭제 ────────────────────────────────────────────────────────────
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
@@ -175,20 +191,48 @@ export default function PostDetailPage({
     );
   }
 
-  const myUserId = (session?.user as any)?.id as number | undefined;
-
   return (
     <div className="min-h-screen bg-surface-page text-text-body">
       <Header />
 
       <div className="mx-auto px-3 sm:px-6 pt-5 sm:pt-8 pb-20" style={{ maxWidth: "var(--max-w-hero)" }}>
-        {/* 뒤로가기 */}
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-1.5 text-xs text-text-muted hover:text-text-body transition-colors cursor-pointer bg-transparent border-none mb-6"
-        >
-          ← 목록으로
-        </button>
+        {/* 뒤로가기 + 글 삭제 */}
+        <div className="flex items-center justify-between mb-6">
+          <button
+            onClick={() => router.back()}
+            className="flex items-center gap-1.5 text-xs text-text-muted hover:text-text-body transition-colors cursor-pointer bg-transparent border-none"
+          >
+            ← 목록으로
+          </button>
+
+          {myUserId !== undefined && item.authorId === myUserId && (
+            postDeletePending ? (
+              <div className="flex items-center gap-2">
+                <span className="text-[12px] text-red-500 font-medium">정말 삭제할까요?</span>
+                <button
+                  onClick={handlePostDelete}
+                  disabled={postDeleting}
+                  className="px-3 h-7 rounded-lg bg-red-500 text-white text-[12px] font-semibold border-none cursor-pointer hover:bg-red-600 disabled:opacity-50"
+                >
+                  {postDeleting ? "삭제중…" : "삭제"}
+                </button>
+                <button
+                  onClick={() => setPostDeletePending(false)}
+                  className="px-3 h-7 rounded-lg border border-border-base text-[12px] text-text-muted bg-white cursor-pointer hover:bg-surface-card"
+                >
+                  취소
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setPostDeletePending(true)}
+                className="text-[12px] text-text-muted hover:text-red-500 transition-colors cursor-pointer bg-transparent border-none"
+              >
+                글 삭제
+              </button>
+            )
+          )}
+        </div>
 
         {/* 게시글 카드 */}
         <div className="bg-white rounded-2xl border border-border-card overflow-hidden">

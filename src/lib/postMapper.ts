@@ -12,6 +12,7 @@ export const POST_SELECT = {
   lng: true,
   direction: true,
   createdAt: true,
+  authorId: true,
   author: { select: { name: true, nickname: true } },
   categories: { select: { category: { select: { slug: true, name: true } } } },
   hashtags: { select: { hashtag: { select: { name: true } } } },
@@ -29,6 +30,7 @@ export type PostRow = {
   lng: number | null;
   direction: string;
   createdAt: Date;
+  authorId: number;
   author: { name: string; nickname: string | null } | null;
   categories: Array<{ category: { slug: string; name: string } }>;
   hashtags: Array<{ hashtag: { name: string } }>;
@@ -63,6 +65,7 @@ export function mapPost(post: PostRow): SearchResultItem {
     keywords: post.hashtags.map((h) => h.hashtag.name),
     description: post.description ?? undefined,
     author: post.author ? (post.author.nickname || post.author.name) : undefined,
+    authorId: post.authorId,
     direction: post.direction.toLowerCase() as PostDirection,
     lat: post.lat ?? undefined,
     lng: post.lng ?? undefined,
