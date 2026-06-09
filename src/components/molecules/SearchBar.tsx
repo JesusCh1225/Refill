@@ -16,6 +16,7 @@ type MicStatus = "idle" | "requesting" | "listening";
 
 export default function SearchBar({ value, onChange, onSearch }: SearchBarProps) {
   const [micStatus, setMicStatus] = useState<MicStatus>("idle");
+  const [permBlocked, setPermBlocked] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const recRef = useRef<any>(null);
   const onChangeRef = useRef(onChange);
@@ -44,7 +45,6 @@ export default function SearchBar({ value, onChange, onSearch }: SearchBarProps)
 
     let accumulated = "";
 
-    // 브라우저가 실제로 마이크 캡처를 시작한 시점 → 빨간 버튼으로 전환
     rec.onstart = () => setMicStatus("listening");
 
     rec.onresult = (e: any) => {
@@ -64,7 +64,7 @@ export default function SearchBar({ value, onChange, onSearch }: SearchBarProps)
       setMicStatus("idle");
       if (recRef.current === rec) recRef.current = null;
       if (e.error === "not-allowed" || e.error === "service-not-allowed") {
-        showError("마이크 권한이 차단되어 있어요. 주소창 왼쪽 🔒 → 마이크 → 허용");
+        setPermBlocked(true);
       } else if (e.error === "no-speech") {
         showError("음성이 감지되지 않았어요. 마이크에 대고 말씀해 주세요.");
       } else if (e.error !== "aborted") {
@@ -83,8 +83,8 @@ export default function SearchBar({ value, onChange, onSearch }: SearchBarProps)
 
     recRef.current = rec;
     try {
-      setMicStatus("requesting"); // 즉시 노란 스피너 표시
-      rec.start();                 // 브라우저 권한 다이얼로그 발생
+      setMicStatus("requesting");
+      rec.start();
     } catch (err: any) {
       console.error("[Mic] rec.start() threw:", err);
       setMicStatus("idle");
@@ -99,7 +99,7 @@ export default function SearchBar({ value, onChange, onSearch }: SearchBarProps)
   };
 
   return (
-    <div className="flex flex-col gap-1.5" style={{ maxWidth: "var(--max-w-search)", width: "100%" }}>
+    <div className="flex flex-col gap-2" style={{ maxWidth: "var(--max-w-search)", width: "100%" }}>
       <div className="w-full mx-auto h-14 sm:h-16 px-4 sm:px-5 bg-white border border-border-base rounded-full shadow-search flex items-center gap-2 sm:gap-3">
         <div className="hidden sm:flex shrink-0 pr-4 border-r border-border-divider text-base font-bold text-brand">
           ✦ AI 검색
@@ -144,9 +144,40 @@ export default function SearchBar({ value, onChange, onSearch }: SearchBarProps)
         </RpButton>
       </div>
 
+      {/* 일반 오류 */}
       {errorMsg && (
         <div className="mx-4 px-4 py-2.5 bg-red-50 border border-red-200 rounded-2xl text-[12px] text-red-700 leading-relaxed">
           ⚠️ {errorMsg}
+        </div>
+      )}
+
+      {/* 마이크 권한 차단 안내 */}
+      {permBlocked && (
+        <div className="mx-2 px-4 py-3 bg-orange-50 border border-orange-200 rounded-2xl text-[12px] text-orange-900 leading-relaxed shadow-sm">
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <p className="font-bold mb-1.5">🎤 마이크 권한을 허용해야 해요</p>
+              <p className="text-orange-700 mb-2">Chrome이 이 사이트의 마이크를 차단하고 있어요. 아래 순서대로 해제해 주세요.</p>
+              <ol className="list-decimal list-inside space-y-1 text-orange-800">
+                <li>주소창 왼쪽 <strong>🔒 자물쇠(또는 ℹ️)</strong> 아이콘 클릭</li>
+                <li><strong>사이트 설정</strong> 클릭</li>
+                <li><strong>마이크</strong> 항목을 <strong>허용</strong>으로 변경</li>
+                <li>페이지 <strong>새로고침</strong> 후 다시 시도</li>
+              </ol>
+            </div>
+            <button
+              onClick={() => setPermBlocked(false)}
+              className="text-orange-400 hover:text-orange-700 border-none bg-transparent cursor-pointer shrink-0 text-base leading-none"
+            >
+              ✕
+            </button>
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-3 w-full py-1.5 rounded-xl bg-orange-500 text-white text-[12px] font-semibold border-none cursor-pointer hover:bg-orange-600 transition-colors"
+          >
+            새로고침
+          </button>
         </div>
       )}
     </div>

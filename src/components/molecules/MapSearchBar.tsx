@@ -14,6 +14,7 @@ type MicStatus = "idle" | "requesting" | "listening";
 
 export default function MapSearchBar({ value, onChange, onSearch, onClear }: MapSearchBarProps) {
   const [micStatus, setMicStatus] = useState<MicStatus>("idle");
+  const [permBlocked, setPermBlocked] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const recRef = useRef<any>(null);
   const onChangeRef = useRef(onChange);
@@ -61,7 +62,7 @@ export default function MapSearchBar({ value, onChange, onSearch, onClear }: Map
       setMicStatus("idle");
       if (recRef.current === rec) recRef.current = null;
       if (e.error === "not-allowed" || e.error === "service-not-allowed") {
-        showError("마이크 권한이 차단됐어요. 주소창 🔒 → 마이크 → 허용");
+        setPermBlocked(true);
       } else if (e.error === "no-speech") {
         showError("음성이 감지되지 않았어요.");
       } else if (e.error !== "aborted") {
@@ -154,6 +155,28 @@ export default function MapSearchBar({ value, onChange, onSearch, onClear }: Map
       {errorMsg && (
         <div className="px-4 py-2.5 bg-red-50 border border-red-200 rounded-2xl text-[11px] text-red-700 leading-relaxed shadow-sm">
           ⚠️ {errorMsg}
+        </div>
+      )}
+
+      {permBlocked && (
+        <div className="px-4 py-3 bg-orange-50 border border-orange-200 rounded-2xl text-[11px] text-orange-900 leading-relaxed shadow-sm">
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <p className="font-bold mb-1">🎤 마이크 권한을 허용해야 해요</p>
+              <ol className="list-decimal list-inside space-y-1 text-orange-800">
+                <li>주소창 <strong>🔒 자물쇠</strong> 클릭</li>
+                <li><strong>사이트 설정 → 마이크 → 허용</strong></li>
+                <li>페이지 <strong>새로고침</strong> 후 재시도</li>
+              </ol>
+            </div>
+            <button onClick={() => setPermBlocked(false)} className="text-orange-400 hover:text-orange-700 border-none bg-transparent cursor-pointer shrink-0">✕</button>
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-2 w-full py-1.5 rounded-xl bg-orange-500 text-white text-[11px] font-semibold border-none cursor-pointer hover:bg-orange-600 transition-colors"
+          >
+            새로고침
+          </button>
         </div>
       )}
     </div>
