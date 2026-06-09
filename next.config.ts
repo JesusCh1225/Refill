@@ -8,7 +8,7 @@ const securityHeaders = [
   // Referrer 정보 최소화
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   // 불필요한 브라우저 기능 비활성화
-  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+  { key: "Permissions-Policy", value: "camera=()" },
   // HTTPS 강제 (Vercel은 항상 HTTPS이므로 안전)
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
   // XSS 필터 (레거시 브라우저 대응)
