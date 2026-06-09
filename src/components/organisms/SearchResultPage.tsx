@@ -34,6 +34,7 @@ export default function SearchResultPage({
   const router = useRouter();
   const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState<SearchResultItem[]>([]);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(
@@ -57,8 +58,9 @@ export default function SearchResultPage({
       .then((r) => r.json())
       .then((data) => {
         setResults(Array.isArray(data.results) ? data.results : []);
+        setSuggestions(Array.isArray(data.suggestions) ? data.suggestions : []);
       })
-      .catch(() => setResults([]))
+      .catch(() => { setResults([]); setSuggestions([]); })
       .finally(() => setLoading(false));
   }, [initialQuery]);
 
@@ -211,8 +213,24 @@ export default function SearchResultPage({
             <div className="w-6 h-6 rounded-full border-2 border-brand border-t-transparent animate-spin" />
           </div>
         ) : filtered.length === 0 ? (
-          <div className="py-20 text-center text-text-muted text-[15px]">
-            검색 결과가 없어요.
+          <div className="py-16 text-center">
+            <p className="text-text-muted text-[15px] mb-4">검색 결과가 없어요.</p>
+            {suggestions.length > 0 && (
+              <div>
+                <p className="text-[13px] text-text-muted mb-3">이런 키워드로 검색해볼까요?</p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {suggestions.map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => onBack(s)}
+                      className="px-3 py-1.5 rounded-full text-[13px] font-semibold bg-brand-bg text-brand border border-brand cursor-pointer hover:bg-brand hover:text-white transition-colors"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <>
