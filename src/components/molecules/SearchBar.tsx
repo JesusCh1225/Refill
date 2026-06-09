@@ -16,16 +16,31 @@ export default function SearchBar({ value, onChange, onSearch }: SearchBarProps)
   const [isListening, setIsListening] = useState(false);
   const [permDenied, setPermDenied] = useState(false);
   const recRef = useRef<any>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
 
-  useEffect(() => () => { recRef.current?.abort(); }, []);
+  useEffect(() => () => {
+    recRef.current?.stop();
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+  }, []);
 
-  const startListening = () => {
+  const startListening = async () => {
     const SR = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition;
     if (!SR) {
       setPermDenied(true);
       setTimeout(() => setPermDenied(false), 4000);
+      return;
+    }
+
+    // getUserMedia로 마이크 접근 권한 획득 — 브라우저 기본 다이얼로그 표시
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+    } catch {
+      setPermDenied(true);
+      setTimeout(() => setPermDenied(false), 5000);
       return;
     }
 
@@ -53,11 +68,16 @@ export default function SearchBar({ value, onChange, onSearch }: SearchBarProps)
         setPermDenied(true);
         setTimeout(() => setPermDenied(false), 5000);
       }
+      stream.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
       setIsListening(false);
       if (recRef.current === rec) recRef.current = null;
     };
 
     rec.onend = () => {
+      // 인식 종료 시 스트림 해제
+      stream.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
       if (accumulated.trim()) {
         const keywords = extractKeywords(accumulated.trim().toLowerCase());
         onChangeRef.current(keywords.length > 0 ? keywords.join(" ") : accumulated.trim());
@@ -71,14 +91,17 @@ export default function SearchBar({ value, onChange, onSearch }: SearchBarProps)
       rec.start();
       setIsListening(true);
     } catch {
+      stream.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
       setIsListening(false);
     }
   };
 
   const stopListening = () => {
-    setIsListening(false);
+    // stop()은 onend를 발생시켜 거기서 스트림도 해제됨
     recRef.current?.stop();
     recRef.current = null;
+    setIsListening(false);
   };
 
   return (
@@ -97,14 +120,12 @@ export default function SearchBar({ value, onChange, onSearch }: SearchBarProps)
         className="flex-1 min-w-0 border-none outline-none text-[15px] sm:text-base text-text-body bg-transparent placeholder-text-placeholder"
       />
 
-      {/* 마이크 버튼 + 권한 거부 툴팁 */}
       <div className="relative shrink-0">
         {permDenied && (
           <div className="absolute bottom-full right-0 mb-2 z-50 bg-gray-900 text-white text-[11px] rounded-xl px-3 py-2 whitespace-nowrap shadow-lg leading-relaxed">
             마이크 권한이 차단되어 있어요.
             <br />
             주소창 왼쪽 🔒 아이콘 → <strong>마이크 → 허용</strong>
-            {/* 말풍선 꼬리 */}
             <span className="absolute top-full right-4 border-4 border-transparent border-t-gray-900" />
           </div>
         )}
