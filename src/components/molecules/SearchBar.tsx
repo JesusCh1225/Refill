@@ -42,6 +42,9 @@ export default function SearchBar({
   const startListening = () => {
     if (micStatus !== "idle") return;
 
+    // 마이크 재요청 시 기존에 떠있던 블락 UI나 에러를 잠시 가려주어 초기화 흐름을 확보합니다.
+    setPermBlocked(false);
+
     const SR =
       (window as any).SpeechRecognition ??
       (window as any).webkitSpeechRecognition;
@@ -107,9 +110,12 @@ export default function SearchBar({
     };
 
     recRef.current = rec;
+
     try {
-      setMicStatus("requesting");
+      // 리액트 상태 변경보다 브라우저 마이크 작동 명령(rec.start())을 먼저 처리하여
+      // 최신 브라우저의 사용자 직접 클릭 제스처 보안 조건(User Gesture Restriction)을 우회합니다.
       rec.start();
+      setMicStatus("requesting");
     } catch (err: any) {
       console.error("[Mic] rec.start() threw:", err);
       setMicStatus("idle");
