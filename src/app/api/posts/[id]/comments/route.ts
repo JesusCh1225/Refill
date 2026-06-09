@@ -50,8 +50,13 @@ export async function POST(
   // 비로그인 유저: guestName 사용
   const guestName = userId ? null : ((body.guestName ?? "").trim().slice(0, 20) || "익명");
 
-  const comment = await prisma.comment.create({
+  const { id: commentId } = await prisma.comment.create({
     data: { postId, content, guestName, authorId: userId ?? null },
+    select: { id: true },
+  });
+
+  const comment = await prisma.comment.findUnique({
+    where: { id: commentId },
     select: COMMENT_SELECT,
   });
 

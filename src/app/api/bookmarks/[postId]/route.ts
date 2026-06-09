@@ -21,11 +21,13 @@ export async function POST(
   const postExists = await prisma.post.findUnique({ where: { id: postId }, select: { id: true } });
   if (!postExists) return NextResponse.json({ error: "post not found" }, { status: 404 });
 
-  await prisma.bookmark.upsert({
+  const existing = await prisma.bookmark.findUnique({
     where: { userId_postId: { userId, postId } },
-    create: { userId, postId },
-    update: {},
+    select: { userId: true },
   });
+  if (!existing) {
+    await prisma.bookmark.create({ data: { userId, postId } });
+  }
 
   return NextResponse.json({ ok: true });
 }
