@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@/components/organisms/Header";
 import SearchFilterBar from "@/components/organisms/SearchFilterBar";
@@ -34,8 +34,19 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
   const [showSlider, setShowSlider] = useState(false);
   const [direction, setDirection] = useState<Direction>("all");
 
+  const queryRef = useRef(initialQuery);
   const { isBookmarked, toggle: toggleBookmark } = useBookmarks();
   const dirLabels = getDirectionLabels(selectedCategories);
+
+  const handleSetQuery = (q: string) => {
+    queryRef.current = q;
+    setQuery(q);
+  };
+
+  const handleSearch = (voiceQuery?: string) => {
+    const q = voiceQuery ?? queryRef.current;
+    if (q.trim()) onBack(q);
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -90,7 +101,7 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
       {/* 검색바 */}
       <div className="border-b border-border-header bg-white">
         <div className="mx-auto px-3 sm:px-6 py-4" style={{ maxWidth: "var(--max-w-hero)" }}>
-          <SearchBar value={query} onChange={setQuery} onSearch={() => { if (query.trim()) onBack(query); }} />
+          <SearchBar value={query} onChange={handleSetQuery} onSearch={handleSearch} />
         </div>
       </div>
 

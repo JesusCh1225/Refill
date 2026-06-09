@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import SearchBar from "@/components/molecules/SearchBar";
 import anim from "@/styles/animations.module.css";
 
@@ -10,10 +10,17 @@ interface TitleSectionProps {
 
 export default function TitleSection({ onSearch }: TitleSectionProps) {
   const [query, setQuery] = useState("");
+  const queryRef = useRef("");
 
-  const handleSearch = () => {
-    if (!query.trim()) return;
-    onSearch(query);
+  const handleSetQuery = (q: string) => {
+    queryRef.current = q;
+    setQuery(q);
+  };
+
+  const handleSearch = (voiceQuery?: string) => {
+    const q = voiceQuery ?? queryRef.current;
+    if (!q.trim()) return;
+    onSearch(q);
   };
 
   return (
@@ -45,7 +52,7 @@ export default function TitleSection({ onSearch }: TitleSectionProps) {
         모임, 중고거래까지 빠르게 찾아드려요.
       </p>
 
-      <SearchBar value={query} onChange={setQuery} onSearch={handleSearch} />
+      <SearchBar value={query} onChange={handleSetQuery} onSearch={handleSearch} />
     </main>
   );
 }
