@@ -24,29 +24,23 @@ export default function SearchBar({
   const [errorMsg, setErrorMsg] = useState("");
   const [diagInfo, setDiagInfo] = useState<string | null>(null);
 
+  // 마이크 인스턴스를 저장할 Ref
   const recRef = useRef<any>(null);
+
+  // 리렌더링 시 최신 onChange 함수를 참조하기 위한 Ref
   const onChangeRef = useRef(onChange);
-  onChangeRef.current = onChange;
-
-  // 1. 컴포넌트가 켜질 때 딱 한 번만 SpeechRecognition 초기화 (가장 중요)
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    onChangeRef.current = onChange;
+  }, [onChange]);
 
-    const SR =
-      (window as any).SpeechRecognition ??
-      (window as any).webkitSpeechRecognition;
-    if (!SR) return;
-
-    const rec = new SR();
-    rec.lang = "ko-KR";
-    rec.continuous = false;
-    rec.interimResults = true;
-
-    recRef.current = rec;
-
-    // 컴포넌트 언마운트 시 마이크 종료 정리
+  // 컴포넌트 언마운트 시 안전하게 마이크 종료
+  useEffect(() => {
     return () => {
-      rec.hisStop?.();
+      if (recRef.current) {
+        try {
+          recRef.current.abort();
+        } catch (e) {}
+      }
     };
   }, []);
 
@@ -56,41 +50,71 @@ export default function SearchBar({
   };
 
   const startListening = (e: React.MouseEvent) => {
-    if (micStatus !== "idle") return;
-
-    // 브라우저의 기본 이벤트 흐름을 꽉 잡아두기 위함
     e.preventDefault();
     e.stopPropagation();
 
-    const rec = recRef.current;
-    if (!rec) {
+    if (micStatus !== "idle") return;
+
+    const SR =
+      (window as any).SpeechRecognition ??
+      (window as any).webkitSpeechRecognition;
+    if (!SR) {
       showError(
-        "이 브라우저는 음성 인식을 지원하지 않거나 초기화되지 않았습니다.",
+        "이 브라우저는 음성 인식을 지원하지 않아요. Chrome을 사용해 주세요.",
       );
       return;
     }
 
+    // 초기 상태 리셋
     setPermBlocked(false);
+    setErrorMsg("");
+
+    // 1. 인스턴스를 유저 클릭 핸들러 '내부'에서 완전하게 새로 생성
+    const rec = new SR();
+    rec.lang = "ko-KR";
+    rec.continuous = false;
+    rec.interimResults = true;
+
     let accumulated = "";
 
-    // 이벤트 핸들러들을 매번 실행 시점에 신선하게 주입
-    rec.onstart = () => setMicStatus("listening");
+    // 2. 리액트 상태 변경보다 브라우저 엔진 구동(start)을 먼저 실행하여 보안 우회
+    try {
+      rec.start();
+      // start가 정상적으로 에러 없이 통과해야만 상태를 변경함
+      setMicStatus("requesting");
+      recRef.current = rec;
+    } catch (err: any) {
+      console.error("[Mic] rec.start() threw:", err);
+      setMicStatus("idle");
+      showError(`음성 인식 시작 실패: ${err?.message ?? err}`);
+      return;
+    }
+
+    // 3. 엔진이 무사히 가동된 후 이벤트 리스너들을 바인딩 (리렌더링 스택 분리)
+    rec.onstart = () => {
+      setMicStatus("listening");
+    };
 
     rec.onresult = (event: any) => {
       for (let i = event.resultIndex; i < event.results.length; i++) {
-        if (event.results[i].isFinal)
+        if (event.results[i].isFinal) {
           accumulated += event.results[i][0].transcript;
+        }
       }
       let interim = "";
       for (let i = event.resultIndex; i < event.results.length; i++) {
-        if (!event.results[i].isFinal)
+        if (!event.results[i].isFinal) {
           interim += event.results[i][0].transcript;
+        }
       }
       const live = (accumulated + interim).trim();
       if (live) onChangeRef.current(live);
     };
 
     rec.onerror = async (errEvent: any) => {
+      // aborted는 사용자가 수동으로 stop()을 눌렀을 때도 발생하므로 에러 처리에서 제외
+      if (errEvent.error === "aborted") return;
+
       let permState = "알 수 없음";
       try {
         const ps = await navigator.permissions.query({
@@ -100,9 +124,10 @@ export default function SearchBar({
       } catch {}
 
       const info = `오류: ${errEvent.error} | URL: ${window.location.host} | 보안컨텍스트: ${window.isSecureContext} | 권한: ${permState}`;
-      console.error("[Mic]", info);
+      console.error("[Mic Error]", info);
       setDiagInfo(info);
       setMicStatus("idle");
+      recRef.current = null;
 
       if (
         errEvent.error === "not-allowed" ||
@@ -111,7 +136,7 @@ export default function SearchBar({
         setPermBlocked(true);
       } else if (errEvent.error === "no-speech") {
         showError("음성이 감지되지 않았어요. 마이크에 대고 말씀해 주세요.");
-      } else if (errEvent.error !== "aborted") {
+      } else {
         showError(`음성 인식 오류: ${errEvent.error}`);
       }
     };
@@ -124,22 +149,21 @@ export default function SearchBar({
         );
       }
       setMicStatus("idle");
+      recRef.current = null;
     };
-
-    // 브라우저가 유저의 실시간 onClick 스택 안에서 곧바로 start()를 인지하도록 처리
-    try {
-      rec.start();
-      setMicStatus("requesting");
-    } catch (err: any) {
-      console.error("[Mic] rec.start() threw:", err);
-      setMicStatus("idle");
-      showError(`음성 인식 시작 실패: ${err?.message ?? err}`);
-    }
   };
 
-  const stopListening = () => {
-    recRef.current?.stop();
+  const stopListening = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (recRef.current) {
+      try {
+        recRef.current.stop();
+      } catch (err) {}
+    }
     setMicStatus("idle");
+    recRef.current = null;
   };
 
   return (
@@ -167,10 +191,9 @@ export default function SearchBar({
           className="flex-1 min-w-0 border-none outline-none text-[15px] sm:text-base text-text-body bg-transparent placeholder-text-placeholder"
         />
 
-        {/* 중요: onClick에 이벤트 객체(e)를 넘겨줍니다 */}
         <button
           onClick={(e) =>
-            micStatus === "listening" ? stopListening() : startListening(e)
+            micStatus === "listening" ? stopListening(e) : startListening(e)
           }
           disabled={micStatus === "requesting"}
           title={micStatus === "listening" ? "음성 입력 중지" : "음성으로 검색"}
@@ -217,7 +240,7 @@ export default function SearchBar({
         </RpButton>
       </div>
 
-      {/* 진단 정보 UI */}
+      {/* 진단 정보 */}
       {diagInfo && (
         <div className="mx-4 px-4 py-2 bg-gray-100 border border-gray-300 rounded-2xl text-[11px] text-gray-700 font-mono break-all flex justify-between gap-2">
           <span>{diagInfo}</span>
@@ -230,12 +253,14 @@ export default function SearchBar({
         </div>
       )}
 
-      {/* 에러 및 블락 안내 UI (기존과 동일) */}
+      {/* 일반 오류 */}
       {errorMsg && (
         <div className="mx-4 px-4 py-2.5 bg-red-50 border border-red-200 rounded-2xl text-[12px] text-red-700 leading-relaxed">
           ⚠️ {errorMsg}
         </div>
       )}
+
+      {/* 마이크 권한 차단 안내 */}
       {permBlocked && (
         <div className="mx-2 px-4 py-3 bg-orange-50 border border-orange-200 rounded-2xl text-[12px] text-orange-900 leading-relaxed shadow-sm">
           <div className="flex items-start justify-between gap-2">
@@ -249,7 +274,9 @@ export default function SearchBar({
                 <li>
                   <strong>마이크 → 허용</strong>으로 변경
                 </li>
-                <li>새로고침 후 재시도</li>
+                <li>
+                  페이지 <strong>새로고침</strong> 후 재시도
+                </li>
               </ol>
             </div>
             <button
