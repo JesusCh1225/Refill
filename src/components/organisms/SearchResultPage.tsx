@@ -3,18 +3,12 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@/components/organisms/Header";
-import FilterChip from "@/components/atom/FilterChip";
+import SearchFilterBar from "@/components/organisms/SearchFilterBar";
 import ResultItem from "@/components/atom/ResultItem";
 import SearchBar from "@/components/molecules/SearchBar";
-import PriceRangeSlider from "@/components/molecules/PriceRangeSlider";
 import type { SearchResultItem } from "@/data/sampleMockResults";
-import {
-  WRITE_CATEGORIES,
-  CATEGORY_TAG_MAP,
-  inferCategoriesFromTokens,
-  getDirectionLabels,
-} from "@/data/Categories";
-import { PRICE_RANGES, SLIDER_MAX, parsePrice } from "@/data/postOptions";
+import { CATEGORY_TAG_MAP, inferCategoriesFromTokens, getDirectionLabels } from "@/data/Categories";
+import { SLIDER_MAX, parsePrice } from "@/data/postOptions";
 import { extractKeywords } from "@/lib/mapUtils";
 import { useBookmarks } from "@/lib/useBookmarks";
 
@@ -26,11 +20,7 @@ interface SearchResultPageProps {
   onLogoClick: () => void;
 }
 
-export default function SearchResultPage({
-  initialQuery,
-  onBack,
-  onLogoClick,
-}: SearchResultPageProps) {
+export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: SearchResultPageProps) {
   const router = useRouter();
   const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState<SearchResultItem[]>([]);
@@ -47,7 +37,6 @@ export default function SearchResultPage({
   const { isBookmarked, toggle: toggleBookmark } = useBookmarks();
   const dirLabels = getDirectionLabels(selectedCategories);
 
-  // initialQuery가 변경될 때마다 API에서 검색 결과를 가져옴
   useEffect(() => {
     setLoading(true);
     fetch("/api/search", {
@@ -73,18 +62,6 @@ export default function SearchResultPage({
     });
   };
 
-  const handlePriceChip = (min: number, max: number) => {
-    const chipMax = max === Infinity ? SLIDER_MAX : max;
-    const isActive = priceRange[0] === min && priceRange[1] === chipMax;
-    setPriceRange(isActive ? [0, SLIDER_MAX] : [min, chipMax]);
-  };
-
-  const isChipActive = (min: number, max: number) => {
-    const chipMax = max === Infinity ? SLIDER_MAX : max;
-    return priceRange[0] === min && priceRange[1] === chipMax;
-  };
-
-  // API 결과에 대해 카테고리/방향/가격 클라이언트 필터 적용
   const filtered = results.filter((item) => {
     const matchesCategory =
       selectedCategories.size === 0 ||
@@ -113,97 +90,24 @@ export default function SearchResultPage({
       {/* 검색바 */}
       <div className="border-b border-border-header bg-white">
         <div className="mx-auto px-3 sm:px-6 py-4" style={{ maxWidth: "var(--max-w-hero)" }}>
-          <SearchBar
-            value={query}
-            onChange={setQuery}
-            onSearch={() => { if (query.trim()) onBack(query); }}
-          />
+          <SearchBar value={query} onChange={setQuery} onSearch={() => { if (query.trim()) onBack(query); }} />
         </div>
       </div>
 
-      {/* 필터 바 */}
-      <div className="border-b border-border-header bg-white">
-        <div
-          className="mx-auto px-3 sm:px-6 py-3 sm:py-4 flex flex-col gap-3 sm:gap-4"
-          style={{ maxWidth: "var(--max-w-hero)" }}
-        >
-          {/* 카테고리 칩 */}
-          <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
-            <FilterChip active={selectedCategories.size === 0} onClick={() => toggleCategory("all")}>
-              전체
-            </FilterChip>
-            {WRITE_CATEGORIES.map((cat) => (
-              <FilterChip
-                key={cat.id}
-                active={selectedCategories.has(cat.id)}
-                onClick={() => toggleCategory(cat.id)}
-              >
-                {cat.label}
-              </FilterChip>
-            ))}
-          </div>
-
-          {/* 글 유형 토글 */}
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-semibold text-text-muted shrink-0">글 유형</span>
-            <div className="flex gap-1.5">
-              {(
-                [
-                  { id: "all",   label: "전체" },
-                  { id: "offer", label: dirLabels.offer },
-                  { id: "seek",  label: dirLabels.seek },
-                ] as { id: Direction; label: string }[]
-              ).map(({ id, label }) => (
-                <button
-                  key={id}
-                  onClick={() => setDirection(id)}
-                  className={`shrink-0 px-3 py-1 rounded-full text-[12px] font-semibold border cursor-pointer whitespace-nowrap transition-colors ${
-                    direction === id
-                      ? id === "seek"
-                        ? "bg-sky-500 text-white border-sky-500"
-                        : "bg-brand text-white border-brand"
-                      : "bg-white text-text-muted border-border-base hover:border-brand"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* 가격 칩 */}
-          <div className="flex flex-col gap-3">
-            <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
-              {PRICE_RANGES.map((r) => (
-                <FilterChip
-                  key={r.id}
-                  active={isChipActive(r.min, r.max)}
-                  onClick={() => handlePriceChip(r.min, r.max)}
-                >
-                  {r.label}
-                </FilterChip>
-              ))}
-              <button
-                onClick={() => setShowSlider((v) => !v)}
-                className="shrink-0 text-[12px] font-semibold text-brand border border-brand rounded-full px-3 py-1.5 bg-transparent cursor-pointer hover:bg-brand-bg transition-colors whitespace-nowrap"
-              >
-                {showSlider ? "닫기" : "직접 입력"}
-              </button>
-            </div>
-            {showSlider && (
-              <div style={{ maxWidth: "260px" }}>
-                <PriceRangeSlider value={priceRange} onChange={setPriceRange} />
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      <SearchFilterBar
+        selectedCategories={selectedCategories}
+        onToggleCategory={toggleCategory}
+        direction={direction}
+        onDirectionChange={setDirection}
+        priceRange={priceRange}
+        onPriceRangeChange={setPriceRange}
+        showSlider={showSlider}
+        onToggleSlider={() => setShowSlider((v) => !v)}
+        dirLabels={dirLabels}
+      />
 
       {/* 결과 */}
-      <div
-        className="mx-auto px-3 sm:px-6 py-6 sm:py-8 pb-16"
-        style={{ maxWidth: "var(--max-w-hero)" }}
-      >
+      <div className="mx-auto px-3 sm:px-6 py-6 sm:py-8 pb-16" style={{ maxWidth: "var(--max-w-hero)" }}>
         <h2 className="text-[18px] sm:text-[22px] font-bold text-text-heading tracking-tight mb-4">
           &ldquo;{initialQuery}&rdquo; 검색 결과
         </h2>
