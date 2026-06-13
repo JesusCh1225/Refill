@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import CategorySelector from "@/components/molecules/CategorySelector";
+import CategorySelector, { type CategoryEntry, type EntryType } from "@/components/molecules/CategorySelector";
 import ImagePicker from "@/components/molecules/ImagePicker";
 import TagInput from "@/components/molecules/TagInput";
 import RpInput from "@/components/atom/RpInput";
@@ -10,7 +10,6 @@ import RpTextarea from "@/components/atom/RpTextarea";
 import Field from "@/components/atom/Field";
 import { ALL_KEYWORDS } from "@/data/sampleMockResults";
 import { PRICE_TYPES, generatePriceDisplay } from "@/data/postOptions";
-import { CATEGORY_TAG_MAP } from "@/data/Categories";
 import type { PostDraft, PostDirection, SearchResultItem } from "@/data/sampleMockResults";
 
 interface WritePostModalProps {
@@ -21,13 +20,43 @@ interface WritePostModalProps {
   onEditComplete?: (updated: SearchResultItem) => void;
 }
 
+const ALL_SUBCAT_IDS = ["guitar", "drum", "piano", "vocal", "wind", "string", "dj", "equipment"];
+
+// tags + direction → CategoryEntry[] 역변환 (수정 모드 초기화용)
+function tagsToEntries(tags: string[], direction: PostDirection): CategoryEntry[] {
+  const entries: CategoryEntry[] = [];
+  let n = 1;
+
+  if (tags.includes("lesson")) {
+    const subcat = tags.find((t) => ALL_SUBCAT_IDS.includes(t)) ?? "";
+    entries.push({ id: String(n++), type: "lesson", subcat, direction });
+  }
+  if (tags.includes("band")) {
+    entries.push({ id: String(n++), type: "band", subcat: "", direction });
+  }
+  // instrument 태그가 있거나 레슨 없이 악기 서브카트가 있으면 거래
+  const hasInstrument = tags.includes("instrument") ||
+    (tags.some((t) => ALL_SUBCAT_IDS.includes(t)) && !tags.includes("lesson"));
+  if (hasInstrument) {
+    const subcat = tags.find((t) => ALL_SUBCAT_IDS.filter((s) => s !== "vocal").includes(t)) ?? "";
+    entries.push({ id: String(n++), type: "trade", subcat, direction });
+  }
+
+  return entries.length > 0
+    ? entries
+    : [{ id: "1", type: "lesson", subcat: "", direction: "offer" }];
+}
+
+const DEFAULT_ENTRIES: CategoryEntry[] = [
+  { id: "1", type: "lesson", subcat: "", direction: "offer" },
+];
+
 export default function WritePostModal({
   isOpen, onClose, onSubmit, editData, onEditComplete,
 }: WritePostModalProps) {
   const isEdit = !!editData;
 
-  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set(["lesson"]));
-  const [direction, setDirection] = useState<PostDirection>("offer");
+  const [entries, setEntries] = useState<CategoryEntry[]>(DEFAULT_ENTRIES);
   const [title, setTitle] = useState("");
   const [location, setLocation] = useState("");
   const [priceType, setPriceType] = useState<string>("monthly");
@@ -45,17 +74,15 @@ export default function WritePostModal({
       setTitle(editData.title);
       setDescription(editData.description ?? "");
       setLocation(editData.location);
-      setDirection(editData.direction);
       setKeywords(editData.keywords ?? []);
-      setSelectedCategories(new Set(editData.tags ?? []));
       setEmoji(editData.imageEmoji ?? "🎵");
       setImageUrls(editData.imageUrls ?? []);
       setIconMode((editData.imageUrls?.length ?? 0) > 0 ? "image" : "emoji");
       setPriceType(editData.priceType ?? "monthly");
       setPriceAmount(editData.priceAmount != null ? String(editData.priceAmount) : "");
+      setEntries(tagsToEntries(editData.tags ?? [], editData.direction));
     } else {
-      setSelectedCategories(new Set(["lesson"]));
-      setDirection("offer");
+      setEntries([{ id: "1", type: "lesson" as EntryType, subcat: "", direction: "offer" }]);
       setTitle("");
       setLocation("");
       setPriceType("monthly");
@@ -70,20 +97,22 @@ export default function WritePostModal({
 
   if (!isOpen) return null;
 
-  const toggleCategory = (id: string) => {
-    setSelectedCategories((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) { if (next.size === 1) return prev; next.delete(id); }
-      else next.add(id);
-      return next;
-    });
-  };
-
   const currentPriceType = PRICE_TYPES.find((t) => t.id === priceType)!;
 
   const buildDraft = (): PostDraft => {
-    const tags = [...new Set([...selectedCategories].flatMap((id) => CATEGORY_TAG_MAP[id] ?? [id]))];
+    // 모든 엔트리에서 태그 수집 (중복 제거)
+    const tags = [
+      ...new Set(
+        entries.flatMap((e) => {
+          const base = e.type === "trade" ? "instrument" : e.type;
+          return e.subcat ? [base, e.subcat] : [base];
+        }),
+      ),
+    ];
+    // 첫 번째 엔트리의 direction을 대표 direction으로 사용
+    const direction: PostDirection = entries[0]?.direction ?? "offer";
     const locationTags = location.trim().split(/[\s,]+/).filter((p) => p.length >= 2);
+
     return {
       title: title.trim(),
       location: location.trim(),
@@ -152,12 +181,7 @@ export default function WritePostModal({
         {/* 폼 */}
         <div className="px-6 py-5 flex flex-col gap-5 overflow-y-auto flex-1">
           <Field label="카테고리" required>
-            <CategorySelector
-              selected={selectedCategories}
-              onToggle={toggleCategory}
-              direction={direction}
-              onDirectionChange={setDirection}
-            />
+            <CategorySelector entries={entries} onChange={setEntries} />
           </Field>
 
           <Field label="제목" required>

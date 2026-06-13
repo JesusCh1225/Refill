@@ -51,9 +51,10 @@ export async function POST(req: NextRequest) {
   }
 
   // 악기/서비스 키워드 필터
-  const keywords = [...parsed.instruments, ...parsed.services];
-  if (keywords.length > 0) {
-    where.OR = keywords.flatMap((kw: string) => [
+  // parsed.keywords: 사전 매칭 결과, 아무것도 안 맞으면 원본 단어 폴백 (해시태그 직접 검색 등)
+  const filterKeywords = parsed.keywords;
+  if (filterKeywords.length > 0) {
+    where.OR = filterKeywords.flatMap((kw: string) => [
       { title: { contains: kw } },
       { hashtags: { some: { hashtag: { name: { contains: kw } } } } },
       { categories: { some: { category: { name: { contains: kw } } } } },

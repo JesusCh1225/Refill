@@ -124,7 +124,6 @@ export default function CommentSection({ postId }: Props) {
           ),
         );
         setReplyText("");
-        setReplyingTo(null);
       }
     } finally {
       setReplySaving(false);
@@ -192,30 +191,6 @@ export default function CommentSection({ postId }: Props) {
                   <p className="text-[13px] text-text-body leading-relaxed whitespace-pre-wrap">{c.content}</p>
                 )}
 
-                {/* 답글 버튼 — 로그인 시에만 */}
-                {!editing && session && (
-                  <button
-                    onClick={() => { setReplyingTo(isReplying ? null : c.id); setReplyText(""); }}
-                    className="self-start text-[11px] text-text-muted hover:text-brand transition-colors border-none bg-transparent cursor-pointer p-0"
-                  >
-                    {isReplying ? "취소" : "↩ 답글"}
-                  </button>
-                )}
-
-                {/* 답글 입력 폼 */}
-                {isReplying && session && (
-                  <div className="ml-6 flex flex-col gap-2 border-l-2 border-brand-bg pl-3 mt-1">
-                    <div className="flex gap-2 items-end">
-                      <textarea value={replyText} onChange={(e) => setReplyText(e.target.value)} placeholder="답글을 입력하세요." maxLength={500} rows={2}
-                        className="flex-1 px-3 py-2 rounded-lg border border-border-base text-[12px] text-text-body placeholder:text-text-placeholder focus:outline-none focus:border-brand transition-colors resize-none" />
-                      <button onClick={() => handleReplySubmit(c.id)} disabled={!replyText.trim() || replySaving}
-                        className="h-9 px-4 rounded-xl bg-brand text-white text-[12px] font-semibold border-none cursor-pointer hover:opacity-85 disabled:opacity-40 disabled:cursor-not-allowed shrink-0">
-                        {replySaving ? "…" : "등록"}
-                      </button>
-                    </div>
-                  </div>
-                )}
-
                 {/* 대댓글 목록 */}
                 {(c.replies?.length ?? 0) > 0 && (
                   <ul className="ml-6 flex flex-col gap-0 border-l-2 border-border-base pl-3 mt-1">
@@ -247,6 +222,41 @@ export default function CommentSection({ postId }: Props) {
                       );
                     })}
                   </ul>
+                )}
+
+                {/* 답글 버튼 — 로그인 시에만 */}
+                {!editing && session && (
+                  <button
+                    onClick={() => { setReplyingTo(isReplying ? null : c.id); setReplyText(""); }}
+                    className="self-start text-[11px] text-text-muted hover:text-brand transition-colors border-none bg-transparent cursor-pointer p-0"
+                  >
+                    {isReplying ? "↩ 취소" : "↩ 답글"}
+                  </button>
+                )}
+
+                {/* 답글 입력 폼 */}
+                {isReplying && session && (
+                  <div className="ml-6 flex flex-col gap-2 border-l-2 border-brand-bg pl-3 mt-1">
+                    <div className="flex gap-2 items-end">
+                      <textarea
+                        autoFocus
+                        value={replyText}
+                        onChange={(e) => setReplyText(e.target.value)}
+                        placeholder="답글을 입력하세요."
+                        maxLength={500}
+                        rows={2}
+                        className="flex-1 px-3 py-2 rounded-lg border border-border-base text-[12px] text-text-body placeholder:text-text-placeholder focus:outline-none focus:border-brand transition-colors resize-none"
+                      />
+                      <button
+                        onClick={() => handleReplySubmit(c.id)}
+                        disabled={!replyText.trim() || replySaving}
+                        className="h-9 px-4 rounded-xl bg-brand text-white text-[12px] font-semibold border-none cursor-pointer hover:opacity-85 disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                      >
+                        {replySaving ? "…" : "등록"}
+                      </button>
+                    </div>
+                    <p className="text-right text-[10px] text-text-placeholder">{replyText.length}/500</p>
+                  </div>
                 )}
               </li>
             );

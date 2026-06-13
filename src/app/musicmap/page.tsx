@@ -228,7 +228,7 @@ export default function MusicMapPage() {
   };
 
   return (
-    <div className="flex flex-col flex-1 overflow-hidden">
+    <div className="flex flex-col h-screen overflow-hidden">
       <Header />
       <div className="relative flex-1">
         <div ref={mapRef} className="w-full h-full" />
