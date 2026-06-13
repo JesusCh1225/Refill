@@ -1,42 +1,70 @@
 import { SearchResultItem } from "@/data/sampleMockResults";
-
-function tagChipClass(tags: string[]) {
-  if (tags.includes("lesson"))
-    return "bg-violet-50 text-violet-600 border-violet-200";
-  if (tags.includes("band"))
-    return "bg-teal-50 text-teal-600 border-teal-200";
-  if (tags.includes("instrument") || tags.includes("equipment"))
-    return "bg-amber-50 text-amber-600 border-amber-200";
-  return "bg-surface-card text-text-muted border-border-base";
-}
-import MapPanelItem from "@/components/organisms/MapPanelItem";
+import { dirLabel } from "@/lib/dirLabel";
 
 interface MapPanelProps {
   isOpen: boolean;
   items: SearchResultItem[];
   selectedItem: SearchResultItem | null;
+  userLat?: number;
+  userLng?: number;
   onItemClick: (item: SearchResultItem) => void;
   onBackToList: () => void;
   onClose: () => void;
   onDetailClick: (item: SearchResultItem) => void;
 }
 
+function distKm(lat1: number, lng1: number, lat2: number, lng2: number) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function fmtDist(km: number) {
+  return km < 1 ? `${Math.round(km * 1000)}m` : `${km.toFixed(1)}km`;
+}
+
+function tagChipCls(tags: string[]) {
+  if (tags.includes("lesson")) return "bg-violet-50 text-violet-600";
+  if (tags.includes("band"))   return "bg-teal-50 text-teal-600";
+  return "bg-amber-50 text-amber-600";
+}
+
 export default function MapPanel({
   isOpen,
   items,
   selectedItem,
+  userLat,
+  userLng,
   onItemClick,
   onBackToList,
   onClose,
   onDetailClick,
 }: MapPanelProps) {
+  const hasLocation = userLat !== undefined && userLng !== undefined;
+
+  const sortedItems = hasLocation
+    ? [...items].sort((a, b) => {
+        const da = a.lat && a.lng ? distKm(userLat!, userLng!, a.lat, a.lng) : Infinity;
+        const db = b.lat && b.lng ? distKm(userLat!, userLng!, b.lat, b.lng) : Infinity;
+        return da - db;
+      })
+    : items;
+
   return (
     <div className={`map-panel-responsive${isOpen ? "" : " panel-closed"}`}>
-      {/* 패널 헤더 */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-border-header bg-white shrink-0">
+      {/* 헤더 */}
+      <div className="flex items-center justify-between px-5 py-3.5 border-b border-border-header bg-white shrink-0">
         <div>
-          <p className="text-2xs text-text-muted">
-            {selectedItem ? "선택한 장소" : `검색 결과 ${items.length}개`}
+          <p className="text-[12px] text-text-muted">
+            {selectedItem
+              ? "선택한 장소"
+              : hasLocation
+              ? `내 주변 · ${items.length}개`
+              : `검색 결과 ${items.length}개`}
           </p>
           {selectedItem && (
             <button
@@ -55,71 +83,60 @@ export default function MapPanel({
         </button>
       </div>
 
-      {/* 패널 콘텐츠 */}
+      {/* 콘텐츠 */}
       <div className="flex-1 overflow-y-auto">
         {selectedItem ? (
-          /* 단일 아이템 상세 */
+          /* ── 상세 뷰 ── */
           <div className="p-5 flex flex-col gap-4">
-            {/* 이미지 */}
-            <div className="w-full h-36 rounded-card bg-surface-card flex items-center justify-center text-6xl overflow-hidden shrink-0">
+            <div className="w-full h-32 rounded-card bg-surface-card flex items-center justify-center text-5xl overflow-hidden shrink-0">
               {selectedItem.imageUrl ? (
-                <img
-                  src={selectedItem.imageUrl}
-                  alt={selectedItem.title}
-                  className="w-full h-full object-cover"
-                />
+                <img src={selectedItem.imageUrl} alt={selectedItem.title} className="w-full h-full object-cover" />
               ) : (
                 selectedItem.imageEmoji
               )}
             </div>
 
-            {/* 카테고리 + 제목 */}
             <div>
-              <span className="inline-block mb-1.5 text-2xs font-semibold text-brand bg-brand-bg px-2 py-0.5 rounded-full">
-                {selectedItem.category}
-              </span>
-              <h3 className="text-md font-bold text-text-heading leading-snug">
-                {selectedItem.title}
-              </h3>
+              <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${tagChipCls(selectedItem.tags)}`}>
+                  {selectedItem.category}
+                </span>
+                <span
+                  className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                  style={{
+                    color: selectedItem.direction === "seek" ? "#0ea5e9" : "#8F4BC6",
+                    background: selectedItem.direction === "seek" ? "#e0f2fe" : "#f3e8ff",
+                  }}
+                >
+                  {dirLabel(selectedItem.tags, selectedItem.direction)}
+                </span>
+              </div>
+              <h3 className="text-[15px] font-bold text-text-heading leading-snug">{selectedItem.title}</h3>
             </div>
 
-            {/* 가격 + 지역 + 작성자 */}
             <div className="flex flex-col gap-1">
-              <p className="text-lg font-bold text-text-heading">
-                {selectedItem.price}
-              </p>
-              <p className="text-2xs text-text-muted">
-                {selectedItem.location} · {selectedItem.timeAgo}
-              </p>
+              <p className="text-[16px] font-bold text-text-heading">{selectedItem.price}</p>
+              <p className="text-2xs text-text-muted">{selectedItem.location} · {selectedItem.timeAgo}</p>
               {selectedItem.author && (
                 <p className="text-2xs text-text-muted">
-                  작성자{" "}
-                  <span className="font-semibold text-text-body">
-                    {selectedItem.author}
-                  </span>
+                  작성자 <span className="font-semibold text-text-body">{selectedItem.author}</span>
                 </p>
               )}
             </div>
 
-            {/* 설명 */}
             {selectedItem.description && (
               <div>
-                <p className="text-[11px] font-semibold text-text-muted mb-1">
-                  기타 사항
-                </p>
-                <p className="text-2xs text-text-body leading-relaxed">
-                  {selectedItem.description}
-                </p>
+                <p className="text-[11px] font-semibold text-text-muted mb-1">기타 사항</p>
+                <p className="text-2xs text-text-body leading-relaxed">{selectedItem.description}</p>
               </div>
             )}
 
-            {/* 해시태그 */}
             {selectedItem.keywords.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
                 {selectedItem.keywords.map((kw) => (
                   <span
                     key={kw}
-                    className={`px-2 py-0.5 rounded-full border text-[11px] ${tagChipClass(selectedItem.tags)}`}
+                    className={`px-2 py-0.5 rounded-full border text-[10px] ${tagChipCls(selectedItem.tags)}`}
                   >
                     #{kw}
                   </span>
@@ -127,23 +144,64 @@ export default function MapPanel({
               </div>
             )}
 
-            {/* 상세 페이지 이동 */}
             <button
               onClick={() => onDetailClick(selectedItem)}
-              className="w-full py-4 rounded-full bg-brand text-white font-semibold text-sm border-none cursor-pointer hover:opacity-80 transition-opacity"
+              className="w-full py-3.5 rounded-full bg-brand text-white font-semibold text-sm border-none cursor-pointer hover:opacity-80 transition-opacity"
             >
               상세 페이지 보기 →
             </button>
           </div>
-        ) : items.length === 0 ? (
+        ) : sortedItems.length === 0 ? (
           <div className="flex items-center justify-center h-40 text-text-muted text-xs">
             검색 결과가 없어요.
           </div>
         ) : (
+          /* ── 목록 뷰 ── */
           <ul className="list-none m-0 p-0">
-            {items.map((item) => (
-              <MapPanelItem key={item.id} item={item} onClick={onItemClick} />
-            ))}
+            {sortedItems.map((item) => {
+              const dist =
+                hasLocation && item.lat && item.lng
+                  ? distKm(userLat!, userLng!, item.lat, item.lng)
+                  : null;
+              return (
+                <li
+                  key={item.id}
+                  onClick={() => onItemClick(item)}
+                  className="flex gap-3 px-4 py-3 border-b border-border-header cursor-pointer hover:bg-surface-card transition-colors"
+                >
+                  <div className="w-11 h-11 rounded-xl bg-[#f1f5f9] flex items-center justify-center text-xl shrink-0 overflow-hidden">
+                    {item.imageUrl ? (
+                      <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
+                    ) : (
+                      item.imageEmoji
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0 flex flex-col gap-0.5 justify-center">
+                    <div className="flex items-center gap-1 flex-wrap">
+                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${tagChipCls(item.tags)}`}>
+                        {item.category}
+                      </span>
+                      <span
+                        className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                        style={{
+                          color: item.direction === "seek" ? "#0ea5e9" : "#8F4BC6",
+                          background: item.direction === "seek" ? "#e0f2fe" : "#f3e8ff",
+                        }}
+                      >
+                        {dirLabel(item.tags, item.direction)}
+                      </span>
+                    </div>
+                    <p className="text-[13px] font-semibold text-text-heading leading-snug truncate">{item.title}</p>
+                    <p className="text-[11px] text-text-muted">
+                      {item.price}
+                      {dist !== null && (
+                        <span className="ml-1.5 text-text-placeholder">· {fmtDist(dist)}</span>
+                      )}
+                    </p>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>

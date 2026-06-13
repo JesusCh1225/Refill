@@ -10,7 +10,6 @@ import { REGION_CENTERS } from "@/data/mapConstants";
 import { coordsFromLocation, extractKeywords, CoordsMap } from "@/lib/mapUtils";
 import { useNaverMap } from "@/hooks/useNaverMap";
 import MapPanel from "@/components/organisms/MapPanel";
-import MapListPanel from "@/components/organisms/MapListPanel";
 import MapSearchBar from "@/components/molecules/MapSearchBar";
 import WritePostModal from "@/components/organisms/WritePostModal";
 import FilterChip from "@/components/atom/FilterChip";
@@ -43,9 +42,9 @@ export default function MusicMapPage() {
   const [selectedItem, setSelectedItem] = useState<SearchResultItem | null>(null);
   const [chipFilter, setChipFilter] = useState("all");
   const [geoBlocked, setGeoBlocked] = useState(false);
-  const [listPanelOpen, setListPanelOpen] = useState(false);
   const [userLat, setUserLat] = useState<number | undefined>();
   const [userLng, setUserLng] = useState<number | undefined>();
+  const [showAreaSearch, setShowAreaSearch] = useState(false);
 
   const handleMarkerClick = useCallback((item: SearchResultItem) => {
     setSelectedItem(item);
@@ -63,6 +62,7 @@ export default function MusicMapPage() {
     filteredItemsRef,
     onMarkerClick: handleMarkerClick,
     onGeoError: handleGeoError,
+    onBoundsChange: useCallback(() => setShowAreaSearch(true), []),
   });
 
   /* ── 게시글 로드 ── */
@@ -219,6 +219,24 @@ export default function MusicMapPage() {
     }
   };
 
+  /* ── 현재 화면 영역 기준 검색 ── */
+  const handleAreaSearch = () => {
+    if (!mapObjRef.current) return;
+    const bounds = mapObjRef.current.getBounds();
+    const result = allPosts.filter((item) => {
+      const coords = coordsRef.current[item.id];
+      if (!coords) return false;
+      return bounds.hasLatLng(new window.naver.maps.LatLng(coords.lat, coords.lng));
+    });
+    const applied = applyChipFilter(result, chipFilter);
+    setFilteredItems(applied);
+    filteredItemsRef.current = applied;
+    renderMarkers(applied, mapObjRef.current);
+    setSelectedItem(null);
+    setPanelOpen(true);
+    setShowAreaSearch(false);
+  };
+
   /* ── 현재 위치 취득 (조용히, 지도 이동 없이) ── */
   useEffect(() => {
     if (!navigator.geolocation) return;
@@ -246,15 +264,6 @@ export default function MusicMapPage() {
     );
   };
 
-  const handleListItemClick = (item: SearchResultItem) => {
-    setListPanelOpen(false);
-    setSelectedItem(item);
-    setPanelOpen(true);
-    const coords = coordsRef.current[item.id];
-    if (coords && mapObjRef.current) {
-      mapObjRef.current.panTo(new window.naver.maps.LatLng(coords.lat, coords.lng));
-    }
-  };
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
@@ -274,7 +283,7 @@ export default function MusicMapPage() {
 
         {/* 목록 보기 버튼 */}
         <button
-          onClick={() => setListPanelOpen((v) => !v)}
+          onClick={() => { setSelectedItem(null); setPanelOpen((v) => !v); }}
           className="absolute bottom-20 left-6 z-10 flex items-center gap-1.5 bg-white text-text-body text-xs font-semibold px-4 rounded-full border border-border-base cursor-pointer hover:bg-surface-card transition-colors shadow-search"
           style={{ height: "40px" }}
         >
@@ -283,6 +292,20 @@ export default function MusicMapPage() {
           </svg>
           목록 보기
         </button>
+
+        {/* 이 지역에서 검색 버튼 */}
+        {showAreaSearch && (
+          <button
+            onClick={handleAreaSearch}
+            className="absolute z-10 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-white text-text-body text-xs font-semibold px-4 rounded-full border border-border-base shadow-search cursor-pointer hover:bg-surface-card transition-colors"
+            style={{ top: "112px", height: "36px" }}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+            </svg>
+            이 지역에서 검색
+          </button>
+        )}
 
         <div className="absolute bottom-20 right-6 z-10 flex flex-col items-end gap-2">
           {geoBlocked && (
@@ -317,19 +340,12 @@ export default function MusicMapPage() {
           ✦ 글쓰기
         </button>
 
-        <MapListPanel
-          isOpen={listPanelOpen}
-          items={filteredItems}
-          userLat={userLat}
-          userLng={userLng}
-          onItemClick={handleListItemClick}
-          onClose={() => setListPanelOpen(false)}
-        />
-
         <MapPanel
           isOpen={panelOpen}
           items={filteredItems}
           selectedItem={selectedItem}
+          userLat={userLat}
+          userLng={userLng}
           onItemClick={handleItemClick}
           onBackToList={() => setSelectedItem(null)}
           onClose={() => { setPanelOpen(false); setSelectedItem(null); }}
