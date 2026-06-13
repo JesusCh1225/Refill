@@ -20,6 +20,8 @@ export default function MapPanelItem({ item, onClick }: MapPanelItemProps) {
         price={item.price}
         imageEmoji={item.imageEmoji}
         imageUrl={item.imageUrl}
+        tags={item.tags}
+        direction={item.direction}
       />
     </li>
   );

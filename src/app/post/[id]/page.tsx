@@ -14,6 +14,17 @@ import WritePostModal from "@/components/organisms/WritePostModal";
 import PostImageCarousel from "@/components/post/PostImageCarousel";
 import CommentSection from "@/components/post/CommentSection";
 import { useBookmarks } from "@/lib/useBookmarks";
+import { dirLabel } from "@/lib/dirLabel";
+
+function tagChipClass(tags: string[]) {
+  if (tags.includes("lesson"))
+    return "bg-violet-50 text-violet-600 border-violet-200 hover:border-violet-400 hover:text-violet-700";
+  if (tags.includes("band"))
+    return "bg-teal-50 text-teal-600 border-teal-200 hover:border-teal-400 hover:text-teal-700";
+  if (tags.includes("instrument") || tags.includes("equipment"))
+    return "bg-amber-50 text-amber-600 border-amber-200 hover:border-amber-400 hover:text-amber-700";
+  return "bg-surface-card text-text-muted border-border-base hover:border-brand hover:text-brand";
+}
 
 export default function PostDetailPage({
   params,
@@ -145,7 +156,7 @@ export default function PostDetailPage({
                         background: item.direction === "offer" ? "#f3e8ff" : "#e0f2fe",
                       }}
                     >
-                      {item.direction === "offer" ? "합니다·팝니다" : "구합니다·삽니다"}
+                      {dirLabel(item.tags, item.direction)}
                     </span>
                   )}
                 </div>
@@ -190,7 +201,7 @@ export default function PostDetailPage({
                     <Link
                       key={kw}
                       href={`/?q=${encodeURIComponent(kw)}`}
-                      className="px-3 py-1 rounded-full bg-surface-card text-[11px] text-text-muted border border-border-base hover:border-brand hover:text-brand transition-colors"
+                      className={`px-3 py-1 rounded-full text-[11px] border transition-colors ${tagChipClass(item.tags)}`}
                     >
                       #{kw}
                     </Link>

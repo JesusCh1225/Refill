@@ -10,6 +10,7 @@ import { REGION_CENTERS } from "@/data/mapConstants";
 import { coordsFromLocation, extractKeywords, CoordsMap } from "@/lib/mapUtils";
 import { useNaverMap } from "@/hooks/useNaverMap";
 import MapPanel from "@/components/organisms/MapPanel";
+import MapListPanel from "@/components/organisms/MapListPanel";
 import MapSearchBar from "@/components/molecules/MapSearchBar";
 import WritePostModal from "@/components/organisms/WritePostModal";
 import FilterChip from "@/components/atom/FilterChip";
@@ -42,6 +43,9 @@ export default function MusicMapPage() {
   const [selectedItem, setSelectedItem] = useState<SearchResultItem | null>(null);
   const [chipFilter, setChipFilter] = useState("all");
   const [geoBlocked, setGeoBlocked] = useState(false);
+  const [listPanelOpen, setListPanelOpen] = useState(false);
+  const [userLat, setUserLat] = useState<number | undefined>();
+  const [userLng, setUserLng] = useState<number | undefined>();
 
   const handleMarkerClick = useCallback((item: SearchResultItem) => {
     setSelectedItem(item);
@@ -215,16 +219,41 @@ export default function MusicMapPage() {
     }
   };
 
+  /* ── 현재 위치 취득 (조용히, 지도 이동 없이) ── */
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      ({ coords: { latitude: lat, longitude: lng } }) => {
+        setUserLat(lat);
+        setUserLng(lng);
+      },
+      () => {},
+      { timeout: 8000 },
+    );
+  }, []);
+
   const handleMyLocation = () => {
     if (!navigator.geolocation || !mapObjRef.current) return;
     navigator.geolocation.getCurrentPosition(
       ({ coords: { latitude: lat, longitude: lng } }) => {
+        setUserLat(lat);
+        setUserLng(lng);
         mapObjRef.current.panTo(new window.naver.maps.LatLng(lat, lng));
         mapObjRef.current.setZoom(15);
       },
       handleGeoError,
       { timeout: 5000 },
     );
+  };
+
+  const handleListItemClick = (item: SearchResultItem) => {
+    setListPanelOpen(false);
+    setSelectedItem(item);
+    setPanelOpen(true);
+    const coords = coordsRef.current[item.id];
+    if (coords && mapObjRef.current) {
+      mapObjRef.current.panTo(new window.naver.maps.LatLng(coords.lat, coords.lng));
+    }
   };
 
   return (
@@ -242,6 +271,18 @@ export default function MusicMapPage() {
             </FilterChip>
           ))}
         </div>
+
+        {/* 목록 보기 버튼 */}
+        <button
+          onClick={() => setListPanelOpen((v) => !v)}
+          className="absolute bottom-20 left-6 z-10 flex items-center gap-1.5 bg-white text-text-body text-xs font-semibold px-4 rounded-full border border-border-base cursor-pointer hover:bg-surface-card transition-colors shadow-search"
+          style={{ height: "40px" }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+            <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+          목록 보기
+        </button>
 
         <div className="absolute bottom-20 right-6 z-10 flex flex-col items-end gap-2">
           {geoBlocked && (
@@ -275,6 +316,15 @@ export default function MusicMapPage() {
         >
           ✦ 글쓰기
         </button>
+
+        <MapListPanel
+          isOpen={listPanelOpen}
+          items={filteredItems}
+          userLat={userLat}
+          userLng={userLng}
+          onItemClick={handleListItemClick}
+          onClose={() => setListPanelOpen(false)}
+        />
 
         <MapPanel
           isOpen={panelOpen}

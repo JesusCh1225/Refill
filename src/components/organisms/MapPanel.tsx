@@ -1,4 +1,14 @@
 import { SearchResultItem } from "@/data/sampleMockResults";
+
+function tagChipClass(tags: string[]) {
+  if (tags.includes("lesson"))
+    return "bg-violet-50 text-violet-600 border-violet-200";
+  if (tags.includes("band"))
+    return "bg-teal-50 text-teal-600 border-teal-200";
+  if (tags.includes("instrument") || tags.includes("equipment"))
+    return "bg-amber-50 text-amber-600 border-amber-200";
+  return "bg-surface-card text-text-muted border-border-base";
+}
 import MapPanelItem from "@/components/organisms/MapPanelItem";
 
 interface MapPanelProps {
@@ -109,7 +119,7 @@ export default function MapPanel({
                 {selectedItem.keywords.map((kw) => (
                   <span
                     key={kw}
-                    className="px-2 py-0.5 rounded-full bg-surface-card border border-border-base text-[11px] text-text-muted"
+                    className={`px-2 py-0.5 rounded-full border text-[11px] ${tagChipClass(selectedItem.tags)}`}
                   >
                     #{kw}
                   </span>

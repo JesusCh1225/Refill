@@ -1,4 +1,5 @@
 import BookmarkButton from "@/components/atom/BookmarkButton";
+import { dirLabel } from "@/lib/dirLabel";
 
 interface ResultItemProps {
   title: string;
@@ -8,6 +9,7 @@ interface ResultItemProps {
   price: string;
   imageEmoji: string;
   imageUrl?: string;
+  tags?: string[];
   direction?: "offer" | "seek";
   directionLabel?: string;
   bookmarked?: boolean;
@@ -23,12 +25,15 @@ export default function ResultItem({
   price,
   imageEmoji,
   imageUrl,
+  tags,
   direction,
   directionLabel,
   bookmarked,
   onBookmark,
   onClick,
 }: ResultItemProps) {
+  const resolvedLabel = directionLabel ?? (direction && tags ? dirLabel(tags, direction) : undefined);
+
   return (
     <div
       onClick={onClick}
@@ -50,7 +55,7 @@ export default function ResultItem({
             <span className="text-[12px] font-semibold text-brand bg-brand-bg px-2 py-0.5 rounded-full shrink-0">
               {category}
             </span>
-            {(directionLabel ?? direction) && (
+            {resolvedLabel && (
               <span
                 className="text-[11px] font-semibold px-1.5 py-0.5 rounded-full shrink-0"
                 style={{
@@ -58,7 +63,7 @@ export default function ResultItem({
                   background: direction === "seek" ? "#e0f2fe" : "#f3e8ff",
                 }}
               >
-                {directionLabel ?? (direction === "offer" ? "합니다·팝니다" : "구합니다·삽니다")}
+                {resolvedLabel}
               </span>
             )}
           </div>
