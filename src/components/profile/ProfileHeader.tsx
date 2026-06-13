@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import Avatar from "@/components/atom/Avatar";
 
 const PROVIDER_LABEL: Record<string, string> = { kakao: "카카오", naver: "네이버" };
 
@@ -31,13 +32,7 @@ export default function ProfileHeader({ profile, onFileChange }: Props) {
           className="block rounded-full overflow-hidden w-16 h-16 cursor-pointer border-none p-0 bg-transparent"
           title="프로필 사진 변경"
         >
-          {profile.avatarUrl ? (
-            <img src={profile.avatarUrl} alt={displayName} className="w-16 h-16 rounded-full object-cover" />
-          ) : (
-            <div className="w-16 h-16 rounded-full bg-brand-bg flex items-center justify-center text-2xl font-bold text-brand">
-              {displayName[0]}
-            </div>
-          )}
+          <Avatar src={profile.avatarUrl} name={displayName} className="w-16 h-16" textClassName="text-2xl" />
           <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />

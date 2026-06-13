@@ -1,63 +1,28 @@
-import Image from "next/image";
-import { signIn } from "@/auth";
-import kakaoBtn from "@/styles/kakao_login_medium_wide.png";
+import SocialLoginButtons, { BUTTON_WIDTH } from "@/components/molecules/SocialLoginButtons";
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen bg-surface-page flex flex-col items-center justify-center gap-4">
-      <div className="mb-6 text-center">
-        <h1 className="text-[28px] font-black tracking-widest text-brand">REFILL</h1>
-        <p className="text-[13px] text-text-muted mt-1">음악을 채우다.</p>
+    <div className="min-h-screen bg-surface-page flex items-center justify-center px-4">
+      <div
+        className="bg-white rounded-3xl flex flex-col items-center px-8 py-10 gap-5 w-full"
+        style={{ maxWidth: BUTTON_WIDTH + 64, boxShadow: "0 20px 60px rgba(15,23,42,0.10)" }}
+      >
+        <div className="text-center mb-2">
+          <p className="text-[30px] font-black tracking-widest text-brand">REFILL</p>
+          <p className="text-[13px] text-text-muted mt-1">음악을 채우다.</p>
+        </div>
+
+        <div className="text-center">
+          <p className="text-[16px] font-bold text-text-heading">로그인 / 회원가입</p>
+          <p className="text-[13px] text-text-muted mt-1">소셜 계정으로 간편하게 시작하세요</p>
+        </div>
+
+        <SocialLoginButtons callbackUrl="/" />
+
+        <p className="text-[11px] text-text-placeholder text-center mt-1 leading-relaxed">
+          로그인 시 서비스 이용약관 및 개인정보 처리방침에 동의하게 됩니다.
+        </p>
       </div>
-
-      <p className="text-[14px] font-semibold text-text-heading">소셜 계정으로 시작하기</p>
-
-      {/* 카카오 */}
-      <form
-        action={async () => {
-          "use server";
-          await signIn("kakao", { redirectTo: "/" });
-        }}
-      >
-        <button type="submit" className="cursor-pointer border-none bg-transparent p-0">
-          <Image
-            src={kakaoBtn}
-            alt="카카오 로그인"
-            height={45}
-            priority
-          />
-        </button>
-      </form>
-
-      {/* 네이버 */}
-      <form
-        action={async () => {
-          "use server";
-          await signIn("naver", { redirectTo: "/" });
-        }}
-      >
-        <button
-          type="submit"
-          className="cursor-pointer border-none p-0 flex items-center rounded-[12px] overflow-hidden"
-          style={{ width: kakaoBtn.width, height: 45, background: "#03C75A" }}
-        >
-          {/* 네이버 N 로고 */}
-          <span
-            className="flex items-center justify-center shrink-0 font-black text-white"
-            style={{ width: 45, height: 45, fontSize: 20, letterSpacing: "-1px" }}
-          >
-            N
-          </span>
-          <span
-            className="flex-1 text-center text-white font-semibold"
-            style={{ fontSize: 15 }}
-          >
-            네이버로 로그인
-          </span>
-          {/* 우측 여백 맞춤 */}
-          <span style={{ width: 45 }} />
-        </button>
-      </form>
     </div>
   );
 }

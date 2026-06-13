@@ -10,14 +10,14 @@ import RpTextarea from "@/components/atom/RpTextarea";
 import Field from "@/components/atom/Field";
 import { ALL_KEYWORDS } from "@/data/sampleMockResults";
 import { PRICE_TYPES, generatePriceDisplay } from "@/data/postOptions";
-import { getDirectionLabels } from "@/data/Categories";
+import { CATEGORY_TAG_MAP } from "@/data/Categories";
 import type { PostDraft, PostDirection, SearchResultItem } from "@/data/sampleMockResults";
 
 interface WritePostModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (draft: PostDraft) => void;
-  editData?: SearchResultItem; // 수정 모드
+  editData?: SearchResultItem;
   onEditComplete?: (updated: SearchResultItem) => void;
 }
 
@@ -39,7 +39,6 @@ export default function WritePostModal({
   const [keywords, setKeywords] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
-  // 모달이 열릴 때마다 상태 초기화 / 수정 데이터 반영
   useEffect(() => {
     if (!isOpen) return;
     if (editData) {
@@ -83,6 +82,7 @@ export default function WritePostModal({
   const currentPriceType = PRICE_TYPES.find((t) => t.id === priceType)!;
 
   const buildDraft = (): PostDraft => {
+    const tags = [...new Set([...selectedCategories].flatMap((id) => CATEGORY_TAG_MAP[id] ?? [id]))];
     const locationTags = location.trim().split(/[\s,]+/).filter((p) => p.length >= 2);
     return {
       title: title.trim(),
@@ -93,7 +93,7 @@ export default function WritePostModal({
       priceDisplay: generatePriceDisplay(priceType, priceAmount),
       imageEmoji: emoji,
       imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
-      tags: [...selectedCategories],
+      tags,
       keywords,
       description: description.trim() || undefined,
       direction,
@@ -152,31 +152,12 @@ export default function WritePostModal({
         {/* 폼 */}
         <div className="px-6 py-5 flex flex-col gap-5 overflow-y-auto flex-1">
           <Field label="카테고리" required>
-            <CategorySelector selected={selectedCategories} onToggle={toggleCategory} />
-          </Field>
-
-          <Field label="글 유형" required>
-            {(() => {
-              const { offer, seek } = getDirectionLabels(selectedCategories);
-              return (
-                <div className="flex gap-2">
-                  {([{ value: "offer" as PostDirection, label: offer }, { value: "seek" as PostDirection, label: seek }]).map(({ value, label }) => (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() => setDirection(value)}
-                      className={`flex-1 py-2 rounded-xl text-[13px] font-semibold border cursor-pointer transition-colors ${
-                        direction === value
-                          ? value === "seek" ? "bg-sky-500 text-white border-sky-500" : "bg-brand text-white border-brand"
-                          : "bg-white text-text-muted border-border-base hover:border-brand"
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              );
-            })()}
+            <CategorySelector
+              selected={selectedCategories}
+              onToggle={toggleCategory}
+              direction={direction}
+              onDirectionChange={setDirection}
+            />
           </Field>
 
           <Field label="제목" required>

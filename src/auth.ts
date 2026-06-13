@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import Kakao from "next-auth/providers/kakao";
 import Naver from "next-auth/providers/naver";
+import Google from "next-auth/providers/google";
 import { prisma } from "@/lib/prisma";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -12,6 +13,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Naver({
       clientId: process.env.NAVER_SEARCH_CLIENT_ID!,
       clientSecret: process.env.NAVER_SEARCH_CLIENT_SECRET!,
+    }),
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
   ],
 

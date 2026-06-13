@@ -3,8 +3,8 @@ services:
     image: mysql:8
     container_name: churchdb
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: churchdb
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-changeme}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-churchdb}
     ports:
       - "3306:3306"
     volumes:

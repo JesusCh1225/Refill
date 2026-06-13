@@ -1,15 +1,13 @@
 "use client";
 
-import Image from "next/image";
-import { signIn } from "next-auth/react";
-import kakaoBtn from "@/styles/kakao_login_medium_wide.png";
+import SocialLoginButtons, { BUTTON_WIDTH } from "@/components/molecules/SocialLoginButtons";
 
 interface LoginModalProps {
   onClose: () => void;
 }
 
 export default function LoginModal({ onClose }: LoginModalProps) {
-  const btnWidth = kakaoBtn.width;
+  const cb = typeof window !== "undefined" ? window.location.pathname : "/";
 
   return (
     <div
@@ -18,68 +16,34 @@ export default function LoginModal({ onClose }: LoginModalProps) {
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl flex flex-col items-center px-6 sm:px-10 py-9 gap-5 w-full"
-        style={{
-          maxWidth: btnWidth + 80,
-          boxShadow: "0 24px 64px rgba(15,23,42,0.18)",
-        }}
+        className="bg-white rounded-3xl flex flex-col items-center px-8 py-8 gap-5 w-full"
+        style={{ maxWidth: BUTTON_WIDTH + 64, boxShadow: "0 24px 64px rgba(15,23,42,0.18)" }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* 헤더 */}
-        <div className="w-full flex justify-end">
+        <div className="w-full flex justify-end -mb-2">
           <button
             onClick={onClose}
-            className="text-text-muted hover:text-text-body border-none bg-transparent cursor-pointer text-lg leading-none"
+            className="text-text-muted hover:text-text-body border-none bg-transparent cursor-pointer text-xl leading-none"
           >
             ✕
           </button>
         </div>
 
-        {/* 브랜딩 */}
-        <div className="text-center -mt-2">
+        <div className="text-center">
           <p className="text-[26px] font-black tracking-widest text-brand">REFILL</p>
           <p className="text-[12px] text-text-muted mt-0.5">음악을 채우다.</p>
         </div>
 
         <div className="text-center">
           <p className="text-[15px] font-bold text-text-heading">로그인 / 회원가입</p>
-          <p className="text-[12px] text-text-muted mt-1">
-            소셜 계정으로 간편하게 시작하세요
-          </p>
+          <p className="text-[12px] text-text-muted mt-1">소셜 계정으로 간편하게 시작하세요</p>
         </div>
 
-        {/* 카카오 */}
-        <button
-          onClick={() => signIn("kakao", { callbackUrl: window.location.pathname })}
-          className="cursor-pointer border-none bg-transparent p-0 w-full"
-          style={{ maxWidth: btnWidth }}
-        >
-          <Image
-            src={kakaoBtn}
-            alt="카카오 로그인"
-            height={45}
-            style={{ width: "100%", height: "auto" }}
-            priority
-          />
-        </button>
+        <SocialLoginButtons callbackUrl={cb} />
 
-        {/* 네이버 */}
-        <button
-          onClick={() => signIn("naver", { callbackUrl: window.location.pathname })}
-          className="cursor-pointer border-none p-0 flex items-center rounded-xl overflow-hidden w-full"
-          style={{ maxWidth: btnWidth, height: 45, background: "#03C75A" }}
-        >
-          <span
-            className="flex items-center justify-center shrink-0 font-black text-white"
-            style={{ width: 45, height: 45, fontSize: 20, letterSpacing: "-1px" }}
-          >
-            N
-          </span>
-          <span className="flex-1 text-center text-white font-semibold" style={{ fontSize: 15 }}>
-            네이버로 로그인
-          </span>
-          <span style={{ width: 45 }} />
-        </button>
+        <p className="text-[11px] text-text-placeholder text-center leading-relaxed">
+          로그인 시 서비스 이용약관 및 개인정보 처리방침에 동의하게 됩니다.
+        </p>
       </div>
     </div>
   );

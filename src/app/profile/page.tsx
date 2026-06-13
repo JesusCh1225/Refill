@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import Header from "@/components/organisms/Header";
+import Spinner from "@/components/atom/Spinner";
 import ProfileHeader from "@/components/profile/ProfileHeader";
 import AvatarUploadModal from "@/components/profile/AvatarUploadModal";
 import InfoTab from "@/components/profile/InfoTab";
@@ -19,6 +20,9 @@ interface UserProfile {
   email: string | null;
   nickname: string | null;
   avatarUrl: string | null;
+  bio: string | null;
+  contact: string | null;
+  representativeSong: string | null;
   createdAt: string;
   oauthAccounts: { provider: string }[];
 }
@@ -82,6 +86,19 @@ export default function ProfilePage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleProfileFieldSave = async (
+    field: "bio" | "contact" | "representativeSong",
+    value: string,
+  ) => {
+    if (!profile) return;
+    const res = await fetch("/api/profile", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ [field]: value.trim() || null }),
+    });
+    if (res.ok) setProfile((p) => p ? { ...p, [field]: value.trim() || null } : p);
   };
 
   const handleDeleteAccount = async () => {
@@ -158,7 +175,7 @@ export default function ProfilePage() {
       <div className="min-h-screen bg-surface-page">
         <Header />
         <div className="flex items-center justify-center py-40">
-          <div className="w-8 h-8 rounded-full border-2 border-brand border-t-transparent animate-spin" />
+          <Spinner />
         </div>
       </div>
     );
@@ -212,6 +229,7 @@ export default function ProfilePage() {
             onShowDeleteConfirm={setShowDeleteConfirm}
             onDeleteAccount={handleDeleteAccount}
             deleting={deleting}
+            onProfileFieldSave={handleProfileFieldSave}
           />
         )}
         {tab === "posts" && (

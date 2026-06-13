@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
+import Avatar from "@/components/atom/Avatar";
+import AuthorLink from "@/components/atom/AuthorLink";
 import { type CommentData, displayAuthor, isEdited, formatDate } from "@/types/comment";
 
 interface Props {
@@ -23,27 +25,23 @@ export default function CommentSection({ postId }: Props) {
   }, [postId]);
 
   // ── 댓글 작성 ──────────────────────────────────────────────────────────
-  const [commentName, setCommentName] = useState("");
   const [commentText, setCommentText] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!commentText.trim() || submitting) return;
+    if (!commentText.trim() || submitting || !session) return;
     setSubmitting(true);
     try {
-      const body: Record<string, string> = { content: commentText.trim() };
-      if (!session) body.guestName = commentName.trim() || "익명";
       const res = await fetch(`/api/posts/${postId}/comments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ content: commentText.trim() }),
       });
       if (res.ok) {
         const created: CommentData = await res.json();
         setComments((prev) => [...prev, created]);
         setCommentText("");
-        if (!session) setCommentName("");
       }
     } finally {
       setSubmitting(false);
@@ -107,19 +105,16 @@ export default function CommentSection({ postId }: Props) {
   // ── 대댓글 ─────────────────────────────────────────────────────────────
   const [replyingTo, setReplyingTo] = useState<number | null>(null);
   const [replyText, setReplyText] = useState("");
-  const [replyName, setReplyName] = useState("");
   const [replySaving, setReplySaving] = useState(false);
 
   const handleReplySubmit = async (parentId: number) => {
-    if (!replyText.trim() || replySaving) return;
+    if (!replyText.trim() || replySaving || !session) return;
     setReplySaving(true);
     try {
-      const body: Record<string, string | number> = { content: replyText.trim(), parentId };
-      if (!session) body.guestName = replyName.trim() || "익명";
       const res = await fetch(`/api/posts/${postId}/comments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ content: replyText.trim(), parentId }),
       });
       if (res.ok) {
         const created: CommentData = await res.json();
@@ -129,7 +124,6 @@ export default function CommentSection({ postId }: Props) {
           ),
         );
         setReplyText("");
-        setReplyName("");
         setReplyingTo(null);
       }
     } finally {
@@ -160,7 +154,7 @@ export default function CommentSection({ postId }: Props) {
                 {/* 헤더 */}
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-[13px] font-semibold text-text-heading">{displayAuthor(c)}</span>
+                    <AuthorLink authorId={c.authorId} name={displayAuthor(c)} className="text-[13px] font-semibold text-text-heading" />
                     <span className="text-[11px] text-text-muted">{formatDate(c.createdAt)}</span>
                     {isEdited(c) && <span className="text-[10px] text-text-placeholder">(수정됨)</span>}
                   </div>
@@ -198,10 +192,10 @@ export default function CommentSection({ postId }: Props) {
                   <p className="text-[13px] text-text-body leading-relaxed whitespace-pre-wrap">{c.content}</p>
                 )}
 
-                {/* 답글 버튼 */}
-                {!editing && (
+                {/* 답글 버튼 — 로그인 시에만 */}
+                {!editing && session && (
                   <button
-                    onClick={() => { setReplyingTo(isReplying ? null : c.id); setReplyText(""); setReplyName(""); }}
+                    onClick={() => { setReplyingTo(isReplying ? null : c.id); setReplyText(""); }}
                     className="self-start text-[11px] text-text-muted hover:text-brand transition-colors border-none bg-transparent cursor-pointer p-0"
                   >
                     {isReplying ? "취소" : "↩ 답글"}
@@ -209,12 +203,8 @@ export default function CommentSection({ postId }: Props) {
                 )}
 
                 {/* 답글 입력 폼 */}
-                {isReplying && (
+                {isReplying && session && (
                   <div className="ml-6 flex flex-col gap-2 border-l-2 border-brand-bg pl-3 mt-1">
-                    {!session && (
-                      <input type="text" value={replyName} onChange={(e) => setReplyName(e.target.value)} placeholder="닉네임 (선택)" maxLength={20}
-                        className="w-36 h-8 px-3 rounded-lg border border-border-base text-[12px] focus:outline-none focus:border-brand transition-colors" />
-                    )}
                     <div className="flex gap-2 items-end">
                       <textarea value={replyText} onChange={(e) => setReplyText(e.target.value)} placeholder="답글을 입력하세요." maxLength={500} rows={2}
                         className="flex-1 px-3 py-2 rounded-lg border border-border-base text-[12px] text-text-body placeholder:text-text-placeholder focus:outline-none focus:border-brand transition-colors resize-none" />
@@ -236,7 +226,7 @@ export default function CommentSection({ postId }: Props) {
                         <li key={r.id} className="py-2.5 flex flex-col gap-1.5 border-b border-border-base last:border-none">
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-[12px] font-semibold text-text-heading">{displayAuthor(r)}</span>
+                              <AuthorLink authorId={r.authorId} name={displayAuthor(r)} className="text-[12px] font-semibold text-text-heading" />
                               <span className="text-[10px] text-text-muted">{formatDate(r.createdAt)}</span>
                               {isEdited(r) && <span className="text-[10px] text-text-placeholder">(수정됨)</span>}
                             </div>
@@ -265,43 +255,44 @@ export default function CommentSection({ postId }: Props) {
       )}
 
       {/* 댓글 작성 폼 */}
-      <form onSubmit={handleCommentSubmit} className="flex flex-col gap-3 border-t border-border-base pt-5">
+      <div className="border-t border-border-base pt-5">
         {session ? (
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-brand-bg flex items-center justify-center text-brand text-xs font-bold">
-              {(session.user.name ?? "?")[0]}
+          <form onSubmit={handleCommentSubmit} className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <Avatar src={session.user.image} name={session.user.name ?? "?"} className="w-7 h-7" textClassName="text-xs" />
+              <span className="text-[13px] font-semibold text-text-heading">{session.user.name}</span>
             </div>
-            <span className="text-[13px] font-semibold text-text-heading">{session.user.name}</span>
-          </div>
+            <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
+              <textarea
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                placeholder="댓글을 입력하세요."
+                maxLength={500}
+                rows={3}
+                className="flex-1 px-3 py-2 rounded-lg border border-border-base text-[13px] text-text-body placeholder:text-text-placeholder focus:outline-none focus:border-brand transition-colors resize-none"
+              />
+              <button
+                type="submit"
+                disabled={!commentText.trim() || submitting}
+                className="h-10 px-5 rounded-xl bg-brand text-white text-[13px] font-semibold border-none cursor-pointer hover:opacity-85 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed sm:shrink-0"
+              >
+                {submitting ? "등록중…" : "등록"}
+              </button>
+            </div>
+            <p className="text-right text-[11px] text-text-placeholder">{commentText.length}/500</p>
+          </form>
         ) : (
-          <input
-            type="text"
-            value={commentName}
-            onChange={(e) => setCommentName(e.target.value)}
-            placeholder="닉네임 (선택, 기본: 익명)"
-            maxLength={20}
-            className="w-full sm:w-44 h-9 px-3 rounded-lg border border-border-base text-[13px] text-text-body placeholder:text-text-placeholder focus:outline-none focus:border-brand transition-colors"
-          />
+          <div className="py-4 text-center rounded-xl bg-surface-card border border-border-base">
+            <p className="text-[13px] text-text-muted mb-3">댓글을 작성하려면 로그인이 필요해요.</p>
+            <a
+              href="/login"
+              className="inline-block px-5 py-2 rounded-full bg-brand text-white text-[13px] font-semibold hover:opacity-85 transition-opacity"
+            >
+              로그인하기
+            </a>
+          </div>
         )}
-        <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
-          <textarea
-            value={commentText}
-            onChange={(e) => setCommentText(e.target.value)}
-            placeholder="댓글을 입력하세요."
-            maxLength={500}
-            rows={3}
-            className="flex-1 px-3 py-2 rounded-lg border border-border-base text-[13px] text-text-body placeholder:text-text-placeholder focus:outline-none focus:border-brand transition-colors resize-none"
-          />
-          <button
-            type="submit"
-            disabled={!commentText.trim() || submitting}
-            className="h-10 px-5 rounded-xl bg-brand text-white text-[13px] font-semibold border-none cursor-pointer hover:opacity-85 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed sm:shrink-0"
-          >
-            {submitting ? "등록중…" : "등록"}
-          </button>
-        </div>
-        <p className="text-right text-[11px] text-text-placeholder">{commentText.length}/500</p>
-      </form>
+      </div>
     </div>
   );
 }

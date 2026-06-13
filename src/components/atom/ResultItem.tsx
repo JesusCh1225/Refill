@@ -9,15 +9,11 @@ interface ResultItemProps {
   imageEmoji: string;
   imageUrl?: string;
   direction?: "offer" | "seek";
+  directionLabel?: string;
   bookmarked?: boolean;
   onBookmark?: (e: React.MouseEvent) => void;
   onClick?: () => void;
 }
-
-const DIRECTION_BADGE: Record<string, { label: string; color: string }> = {
-  offer: { label: "합니다·팝니다", color: "#8F4BC6" },
-  seek:  { label: "구합니다·삽니다", color: "#0ea5e9" },
-};
 
 export default function ResultItem({
   title,
@@ -28,6 +24,7 @@ export default function ResultItem({
   imageEmoji,
   imageUrl,
   direction,
+  directionLabel,
   bookmarked,
   onBookmark,
   onClick,
@@ -50,28 +47,28 @@ export default function ResultItem({
       <div className="flex flex-col justify-between flex-1 py-1 min-w-0">
         <div>
           <div className="flex items-center gap-1.5 flex-wrap mb-1">
-            <span className="text-[11px] font-semibold text-brand bg-brand-bg px-2 py-0.5 rounded-full shrink-0">
+            <span className="text-[12px] font-semibold text-brand bg-brand-bg px-2 py-0.5 rounded-full shrink-0">
               {category}
             </span>
-            {direction && (
+            {(directionLabel ?? direction) && (
               <span
-                className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0"
+                className="text-[11px] font-semibold px-1.5 py-0.5 rounded-full shrink-0"
                 style={{
-                  color: DIRECTION_BADGE[direction].color,
-                  background: direction === "offer" ? "#f3e8ff" : "#e0f2fe",
+                  color: direction === "seek" ? "#0ea5e9" : "#8F4BC6",
+                  background: direction === "seek" ? "#e0f2fe" : "#f3e8ff",
                 }}
               >
-                {DIRECTION_BADGE[direction].label}
+                {directionLabel ?? (direction === "offer" ? "합니다·팝니다" : "구합니다·삽니다")}
               </span>
             )}
           </div>
-          <h3 className="text-[15px] font-semibold text-text-heading leading-snug group-hover:text-brand transition-colors truncate">
+          <h3 className="text-[16px] font-semibold text-text-heading leading-snug group-hover:text-brand transition-colors truncate">
             {title}
           </h3>
         </div>
         <div>
-          <p className="text-[17px] sm:text-[20px] font-bold text-text-heading">{price}</p>
-          <p className="text-[12px] text-text-muted mt-0.5">
+          <p className="text-[18px] sm:text-[21px] font-bold text-text-heading">{price}</p>
+          <p className="text-[13px] text-text-muted mt-0.5">
             {location} · {timeAgo}
           </p>
         </div>

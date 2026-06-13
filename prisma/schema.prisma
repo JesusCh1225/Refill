@@ -10,15 +10,17 @@ datasource db {
 // ── 사용자 ──────────────────────────────────────────────────────────────
 
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String?  @unique @db.VarChar(255) // OAuth 제공자에 따라 없을 수 있음
-  name      String   @db.VarChar(50)
-  nickname  String?  @db.VarChar(50)
-  phone     String?  @db.VarChar(20)
-  avatarUrl String?  @db.VarChar(500)
-  bio       String?  @db.Text
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                 Int      @id @default(autoincrement())
+  email              String?  @unique @db.VarChar(255)
+  name               String   @db.VarChar(50)
+  nickname           String?  @db.VarChar(50)
+  phone              String?  @db.VarChar(20)
+  avatarUrl          String?  @db.VarChar(500)
+  bio                String?  @db.Text
+  contact            String?  @db.VarChar(200)
+  representativeSong String?  @db.VarChar(500)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   oauthAccounts    OAuthAccount[]
   posts            Post[]
@@ -27,6 +29,8 @@ model User {
   bookmarks        Bookmark[]
   sentMessages     Message[] @relation("SentMessages")
   receivedMessages Message[] @relation("ReceivedMessages")
+  reviewsGiven     Review[]  @relation("ReviewsGiven")
+  reviewsReceived  Review[]  @relation("ReviewsReceived")
 }
 
 // ── OAuth 계정 연동 ──────────────────────────────────────────────────────
@@ -125,6 +129,7 @@ model Post {
   likes        Like[]
   bookmarks    Bookmark[]
   messages     Message[]
+  reviews      Review[]
 }
 
 // ── 게시글 ↔ 카테고리 (N:M) ──────────────────────────────────────────────
@@ -207,6 +212,26 @@ model Bookmark {
   post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@id([userId, postId])
+}
+
+// ── 리뷰/평점 ─────────────────────────────────────────────────────────────
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  rating    Int      // 1–5
+  content   String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reviewerId Int
+  revieweeId Int
+  postId     Int? // 어떤 글에서 소통했는지
+
+  reviewer User  @relation("ReviewsGiven",    fields: [reviewerId], references: [id], onDelete: Cascade)
+  reviewee User  @relation("ReviewsReceived", fields: [revieweeId], references: [id], onDelete: Cascade)
+  post     Post? @relation(fields: [postId],  references: [id],     onDelete: SetNull)
+
+  @@unique([reviewerId, revieweeId, postId])
 }
 
 // ── 메시지 ────────────────────────────────────────────────────────────────

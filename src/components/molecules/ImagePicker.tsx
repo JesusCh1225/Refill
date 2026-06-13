@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { EMOJIS } from "@/data/postOptions";
+import Spinner from "@/components/atom/Spinner";
 
 interface ImagePickerProps {
   mode: "emoji" | "image";
@@ -125,7 +126,7 @@ export default function ImagePicker({
                   className="aspect-square rounded-xl border-2 border-dashed border-border-base bg-surface-card text-text-muted cursor-pointer hover:border-brand hover:text-brand transition-colors flex flex-col items-center justify-center gap-1 disabled:opacity-50"
                 >
                   {uploading ? (
-                    <div className="w-4 h-4 rounded-full border-2 border-brand border-t-transparent animate-spin" />
+                    <Spinner size="sm" />
                   ) : (
                     <>
                       <span className="text-lg">+</span>
@@ -145,7 +146,7 @@ export default function ImagePicker({
               className="w-full h-24 rounded-xl border-2 border-dashed border-border-base bg-surface-card text-text-muted text-xs cursor-pointer hover:border-brand hover:text-brand transition-colors flex flex-col items-center justify-center gap-1 disabled:opacity-50"
             >
               {uploading ? (
-                <div className="w-5 h-5 rounded-full border-2 border-brand border-t-transparent animate-spin" />
+                <Spinner size="md" />
               ) : (
                 <>
                   <span className="text-xl">+</span>

@@ -47,12 +47,15 @@ export default function TitleSection({ onSearch }: TitleSectionProps) {
           animationDelay: "200ms",
         }}
       >
-        AI가 음악 레슨, 악기, 선생님,{" "}
-        <br className="sm:hidden" />
-        모임, 중고거래까지 빠르게 찾아드려요.
+        AI가 찾아주고, 음악 레슨부터 중고거래까지, <br className="sm:hidden" />
+        필요한 순간마다 리필이 연결합니다.
       </p>
 
-      <SearchBar value={query} onChange={handleSetQuery} onSearch={handleSearch} />
+      <SearchBar
+        value={query}
+        onChange={handleSetQuery}
+        onSearch={handleSearch}
+      />
     </main>
   );
 }

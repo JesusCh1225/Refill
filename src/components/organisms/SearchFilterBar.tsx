@@ -1,40 +1,62 @@
 "use client";
 
+import { useState, useRef, useEffect } from "react";
 import FilterChip from "@/components/atom/FilterChip";
 import PriceRangeSlider from "@/components/molecules/PriceRangeSlider";
-import { WRITE_CATEGORIES } from "@/data/Categories";
+import { MAIN_CATEGORIES, INSTRUMENT_SUBCATS, SUBCATS_VISIBLE } from "@/data/Categories";
 import { PRICE_RANGES, SLIDER_MAX } from "@/data/postOptions";
 
-type Direction = "all" | "offer" | "seek";
+export type SortOption = "latest" | "price_low" | "price_high";
 
 interface Props {
-  selectedCategories: Set<string>;
-  onToggleCategory: (id: string) => void;
-  direction: Direction;
-  onDirectionChange: (d: Direction) => void;
+  mainCatId: string;
+  onMainCatChange: (id: string) => void;
+  subCats: Set<string>;
+  onToggleSubCat: (id: string) => void;
+  location: string;
+  onLocationChange: (v: string) => void;
+  sort: SortOption;
+  onSortChange: (s: SortOption) => void;
   priceRange: [number, number];
   onPriceRangeChange: (r: [number, number]) => void;
   showSlider: boolean;
   onToggleSlider: () => void;
-  dirLabels: { offer: string; seek: string };
 }
 
+const SORT_OPTIONS: { id: SortOption; label: string }[] = [
+  { id: "latest",     label: "최근순" },
+  { id: "price_low",  label: "가격 낮은순" },
+  { id: "price_high", label: "가격 높은순" },
+];
+
 export default function SearchFilterBar({
-  selectedCategories,
-  onToggleCategory,
-  direction,
-  onDirectionChange,
-  priceRange,
-  onPriceRangeChange,
-  showSlider,
-  onToggleSlider,
-  dirLabels,
+  mainCatId, onMainCatChange,
+  subCats, onToggleSubCat,
+  location, onLocationChange,
+  sort, onSortChange,
+  priceRange, onPriceRangeChange,
+  showSlider, onToggleSlider,
 }: Props) {
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const currentCat = MAIN_CATEGORIES.find(c => c.id === mainCatId) ?? MAIN_CATEGORIES[0];
+  const showSubs = SUBCATS_VISIBLE.has(mainCatId);
+
   const isChipActive = (min: number, max: number) => {
     const chipMax = max === Infinity ? SLIDER_MAX : max;
     return priceRange[0] === min && priceRange[1] === chipMax;
   };
-
   const handlePriceChip = (min: number, max: number) => {
     const chipMax = max === Infinity ? SLIDER_MAX : max;
     const isActive = priceRange[0] === min && priceRange[1] === chipMax;
@@ -43,39 +65,72 @@ export default function SearchFilterBar({
 
   return (
     <div className="border-b border-border-header bg-white">
-      <div
-        className="mx-auto px-3 sm:px-6 py-3 sm:py-4 flex flex-col gap-3 sm:gap-4"
-        style={{ maxWidth: "var(--max-w-hero)" }}
-      >
-        {/* 카테고리 칩 */}
-        <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
-          <FilterChip active={selectedCategories.size === 0} onClick={() => onToggleCategory("all")}>
-            전체
-          </FilterChip>
-          {WRITE_CATEGORIES.map((cat) => (
-            <FilterChip key={cat.id} active={selectedCategories.has(cat.id)} onClick={() => onToggleCategory(cat.id)}>
-              {cat.label}
-            </FilterChip>
-          ))}
-        </div>
+      <div className="mx-auto px-3 sm:px-6 py-3 flex flex-col gap-3" style={{ maxWidth: "var(--max-w-hero)" }}>
 
-        {/* 글 유형 토글 */}
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] font-semibold text-text-muted shrink-0">글 유형</span>
-          <div className="flex gap-1.5">
-            {(
-              [
-                { id: "all", label: "전체" },
-                { id: "offer", label: dirLabels.offer },
-                { id: "seek", label: dirLabels.seek },
-              ] as { id: Direction; label: string }[]
-            ).map(({ id, label }) => (
+        {/* Row 1: 카테고리 드롭다운 + 위치 + 정렬 */}
+        <div className="flex flex-wrap items-center gap-2">
+
+          {/* 카테고리 드롭다운 */}
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={() => setDropdownOpen((v) => !v)}
+              className={`flex items-center gap-1.5 h-9 px-3.5 rounded-full border text-[14px] font-semibold cursor-pointer transition-colors whitespace-nowrap ${
+                mainCatId !== "all"
+                  ? "bg-brand text-white border-brand"
+                  : "bg-white text-text-body border-border-base hover:border-brand"
+              }`}
+            >
+              <span>{currentCat.emoji}</span>
+              <span>{currentCat.label}</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                className={`transition-transform ${dropdownOpen ? "rotate-180" : ""}`}>
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </button>
+
+            {dropdownOpen && (
+              <div className="absolute top-full left-0 mt-1 z-50 bg-white rounded-2xl shadow-lg border border-border-base py-1 min-w-40">
+                {MAIN_CATEGORIES.map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => { onMainCatChange(cat.id); setDropdownOpen(false); }}
+                    className={`w-full flex items-center gap-2 px-4 py-2.5 text-[14px] text-left cursor-pointer transition-colors hover:bg-surface-card border-none bg-transparent ${
+                      mainCatId === cat.id ? "font-bold text-brand" : "font-medium text-text-body"
+                    }`}
+                  >
+                    <span>{cat.emoji}</span>
+                    <span>{cat.label}</span>
+                    {mainCatId === cat.id && <span className="ml-auto text-brand text-xs">✓</span>}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* 위치 입력 */}
+          <div className="flex items-center gap-1 h-9 px-3 rounded-full border border-border-base bg-white focus-within:border-brand transition-colors">
+            <span className="text-[13px] text-text-muted">📍</span>
+            <input
+              type="text"
+              value={location}
+              onChange={(e) => onLocationChange(e.target.value)}
+              placeholder="지역 입력 (예: 홍대, 강남)"
+              className="border-none outline-none text-[13px] text-text-body bg-transparent w-36 placeholder:text-text-placeholder"
+            />
+            {location && (
+              <button onClick={() => onLocationChange("")} className="text-text-muted hover:text-text-body border-none bg-transparent cursor-pointer text-xs">✕</button>
+            )}
+          </div>
+
+          {/* 정렬 */}
+          <div className="flex gap-1 ml-auto">
+            {SORT_OPTIONS.map(({ id, label }) => (
               <button
                 key={id}
-                onClick={() => onDirectionChange(id)}
-                className={`shrink-0 px-3 py-1 rounded-full text-[12px] font-semibold border cursor-pointer whitespace-nowrap transition-colors ${
-                  direction === id
-                    ? id === "seek" ? "bg-sky-500 text-white border-sky-500" : "bg-brand text-white border-brand"
+                onClick={() => onSortChange(id)}
+                className={`h-9 px-3 rounded-full text-[13px] font-semibold border cursor-pointer whitespace-nowrap transition-colors ${
+                  sort === id
+                    ? "bg-brand text-white border-brand"
                     : "bg-white text-text-muted border-border-base hover:border-brand"
                 }`}
               >
@@ -85,8 +140,20 @@ export default function SearchFilterBar({
           </div>
         </div>
 
-        {/* 가격 칩 */}
-        <div className="flex flex-col gap-3">
+        {/* Row 2: 악기 세부 카테고리 */}
+        {showSubs && (
+          <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+            <span className="text-[12px] font-semibold text-text-muted shrink-0 self-center">악기</span>
+            {INSTRUMENT_SUBCATS.map((sub) => (
+              <FilterChip key={sub.id} active={subCats.has(sub.id)} onClick={() => onToggleSubCat(sub.id)}>
+                {sub.label}
+              </FilterChip>
+            ))}
+          </div>
+        )}
+
+        {/* Row 3: 가격 필터 */}
+        <div className="flex flex-col gap-2">
           <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
             {PRICE_RANGES.map((r) => (
               <FilterChip key={r.id} active={isChipActive(r.min, r.max)} onClick={() => handlePriceChip(r.min, r.max)}>
@@ -95,7 +162,7 @@ export default function SearchFilterBar({
             ))}
             <button
               onClick={onToggleSlider}
-              className="shrink-0 text-[12px] font-semibold text-brand border border-brand rounded-full px-3 py-1.5 bg-transparent cursor-pointer hover:bg-brand-bg transition-colors whitespace-nowrap"
+              className="shrink-0 text-[13px] font-semibold text-brand border border-brand rounded-full px-3 py-1.5 bg-transparent cursor-pointer hover:bg-brand-bg transition-colors whitespace-nowrap"
             >
               {showSlider ? "닫기" : "직접 입력"}
             </button>

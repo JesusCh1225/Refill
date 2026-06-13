@@ -38,6 +38,9 @@ export async function GET() {
       email: true,
       nickname: true,
       avatarUrl: true,
+      bio: true,
+      contact: true,
+      representativeSong: true,
       createdAt: true,
       oauthAccounts: { select: { provider: true } },
     },
@@ -53,15 +56,33 @@ export async function PATCH(req: NextRequest) {
   const userId = await getSessionUserId();
   if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const { nickname } = await req.json();
-  const trimmed = (nickname ?? "").trim();
-  if (!trimmed) return NextResponse.json({ error: "nickname required" }, { status: 400 });
-  if (trimmed.length > 50) return NextResponse.json({ error: "too long" }, { status: 400 });
+  const body = await req.json();
+  const data: Record<string, string | null> = {};
+
+  if ("nickname" in body) {
+    const trimmed = (body.nickname ?? "").trim();
+    if (!trimmed) return NextResponse.json({ error: "nickname required" }, { status: 400 });
+    if (trimmed.length > 50) return NextResponse.json({ error: "too long" }, { status: 400 });
+    data.nickname = trimmed;
+  }
+  if ("bio" in body) {
+    data.bio = body.bio ? String(body.bio).slice(0, 500) : null;
+  }
+  if ("contact" in body) {
+    data.contact = body.contact ? String(body.contact).slice(0, 200) : null;
+  }
+  if ("representativeSong" in body) {
+    data.representativeSong = body.representativeSong ? String(body.representativeSong).slice(0, 500) : null;
+  }
+
+  if (Object.keys(data).length === 0) {
+    return NextResponse.json({ error: "nothing to update" }, { status: 400 });
+  }
 
   const user = await prisma.user.update({
     where: { id: userId },
-    data: { nickname: trimmed },
-    select: { id: true, name: true, email: true, nickname: true },
+    data,
+    select: { id: true, name: true, email: true, nickname: true, bio: true, contact: true, representativeSong: true },
   });
 
   return NextResponse.json(user);

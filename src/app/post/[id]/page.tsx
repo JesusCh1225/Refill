@@ -6,6 +6,8 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import type { SearchResultItem } from "@/data/sampleMockResults";
 import Header from "@/components/organisms/Header";
+import AuthorLink from "@/components/atom/AuthorLink";
+import Spinner from "@/components/atom/Spinner";
 import InfoRow from "@/components/atom/InfoRow";
 import BookmarkButton from "@/components/atom/BookmarkButton";
 import WritePostModal from "@/components/organisms/WritePostModal";
@@ -54,7 +56,7 @@ export default function PostDetailPage({
       <div className="min-h-screen bg-surface-page">
         <Header />
         <div className="flex items-center justify-center py-40">
-          <div className="w-8 h-8 rounded-full border-2 border-brand border-t-transparent animate-spin" />
+          <Spinner />
         </div>
       </div>
     );
@@ -162,7 +164,12 @@ export default function PostDetailPage({
               <InfoRow label="가격" value={item.price} highlight />
               <InfoRow label="지역" value={item.location} />
               <InfoRow label="등록일" value={item.timeAgo} />
-              {item.author && <InfoRow label="작성자" value={item.author} />}
+              {item.author && item.authorId && (
+                <div className="flex items-center gap-4">
+                  <span className="text-[12px] font-semibold text-text-muted w-14 shrink-0">작성자</span>
+                  <AuthorLink authorId={item.authorId} name={item.author} className="text-[14px] text-text-body font-medium" />
+                </div>
+              )}
             </div>
 
             {item.description && (

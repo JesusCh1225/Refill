@@ -46,6 +46,7 @@ export async function POST(
 
   const session = await auth();
   const userId = (session?.user as any)?.id as number | undefined;
+  if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const body = await req.json();
   const content = (body.content ?? "").trim();
@@ -70,10 +71,8 @@ export async function POST(
     }
   }
 
-  const guestName = userId ? null : ((body.guestName ?? "").trim().slice(0, 20) || "익명");
-
   const { id: commentId } = await prisma.comment.create({
-    data: { postId, content, guestName, authorId: userId ?? null, parentId },
+    data: { postId, content, guestName: null, authorId: userId, parentId },
     select: { id: true },
   });
 
