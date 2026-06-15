@@ -200,7 +200,7 @@ export default function PostDetailPage({
                   {item.keywords.map((kw) => (
                     <Link
                       key={kw}
-                      href={`/?q=${encodeURIComponent(kw)}`}
+                      href={`/musicmap?q=${encodeURIComponent(kw)}`}
                       className={`px-3 py-1 rounded-full text-[11px] border transition-colors ${tagChipClass(item.tags)}`}
                     >
                       #{kw}

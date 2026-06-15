@@ -87,19 +87,46 @@ export default function MusicMapPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const matchesToken = useCallback((item: SearchResultItem, token: string) =>
+    item.title.toLowerCase().includes(token) ||
+    item.category.toLowerCase().includes(token) ||
+    item.keywords.some((kw) => kw.toLowerCase().includes(token)) ||
+    item.locationTags.some((lt) => lt.toLowerCase().includes(token)),
+  []);
+
   /* ── URL 필터 ── */
   useEffect(() => {
+    if (allPosts.length === 0) return;
     const params = new URLSearchParams(window.location.search);
-    const filter = params.get("filter");
-    if (!filter || allPosts.length === 0) return;
 
-    const filtered = allPosts.filter((item) => item.tags.includes(filter));
-    if (filtered.length > 0) {
-      setFilteredItems(filtered);
-      filteredItemsRef.current = filtered;
+    // ?filter=lesson 등 카테고리 필터
+    const filter = params.get("filter");
+    if (filter) {
+      const filtered = allPosts.filter((item) => item.tags.includes(filter));
+      if (filtered.length > 0) {
+        setFilteredItems(filtered);
+        filteredItemsRef.current = filtered;
+        if (mapObjRef.current) renderMarkers(filtered, mapObjRef.current);
+      }
+      const label = CATEGORIES.find((c) => c.id === filter)?.label;
+      if (label) setSearchInput(label);
+      setPanelOpen(true);
     }
-    const label = CATEGORIES.find((c) => c.id === filter)?.label;
-    if (label) setSearchInput(label);
+
+    // ?q=바이올린 등 해시태그/키워드 검색
+    const q = params.get("q");
+    if (q) {
+      setSearchInput(q);
+      const tokens = extractKeywords(q.toLowerCase());
+      const result = tokens.length
+        ? allPosts.filter((item) => tokens.every((t) => matchesToken(item, t)))
+        : allPosts;
+      setFilteredItems(result);
+      filteredItemsRef.current = result;
+      setPanelOpen(true);
+      if (mapObjRef.current) renderMarkers(result, mapObjRef.current);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allPosts]);
 
   /* ── 새 글 등록 ── */
@@ -164,13 +191,6 @@ export default function MusicMapPage() {
     const q = searchInput.trim().toLowerCase();
     const base = applyChipFilter(allPosts, chipFilter);
     const tokens = extractKeywords(q);
-
-    const matchesToken = (item: SearchResultItem, token: string) =>
-      item.title.toLowerCase().includes(token) ||
-      item.category.toLowerCase().includes(token) ||
-      item.keywords.some((kw) => kw.toLowerCase().includes(token)) ||
-      item.locationTags.some((lt) => lt.toLowerCase().includes(token));
-
     const result = tokens.length ? base.filter((item) => tokens.every((t) => matchesToken(item, t))) : base;
 
     setFilteredItems(result);

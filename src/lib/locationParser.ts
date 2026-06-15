@@ -4,9 +4,9 @@ export interface ParsedLocation {
   si: string;
   gu: string;
   dong: string;
-  filterVal: string; // 클라이언트 필터용 (dong > gu > si)
-  label: string;     // 표시용 (e.g. "인천 남동구 논현동")
-  restQuery: string; // 지역 제거 후 남은 검색어
+  filterVal: string;
+  label: string;
+  restQuery: string;
 }
 
 function escape(s: string) {
@@ -21,12 +21,15 @@ function removeTerms(query: string, ...terms: string[]): string {
   return q.replace(/\s+/g, " ").trim();
 }
 
-/** 검색어에서 지역 정보를 추출합니다. 가장 구체적인 단위(동 > 구 > 시) 기준으로 매칭. */
+/**
+ * 검색어에서 지역 정보를 추출합니다.
+ * 우선순위: 동 > 구+시 동시 매칭 > 구만 매칭 > 시만 매칭
+ */
 export function parseLocationFromQuery(query: string): ParsedLocation | null {
   const q = query.trim();
   if (!q) return null;
 
-  // 1) 동 수준 매칭
+  // 1) 동 수준 매칭 (가장 구체적)
   for (const siData of KOREA_LOCATIONS) {
     for (const guData of siData.gus) {
       for (const dong of guData.dongs ?? []) {
@@ -44,7 +47,24 @@ export function parseLocationFromQuery(query: string): ParsedLocation | null {
     }
   }
 
-  // 2) 구/군 수준 매칭
+  // 2) 구 매칭 — 쿼리에 시 이름도 함께 있는 경우 우선
+  for (const siData of KOREA_LOCATIONS) {
+    if (!q.includes(siData.si)) continue;          // 시가 쿼리에 있어야 우선 진입
+    for (const guData of siData.gus) {
+      if (q.includes(guData.gu)) {
+        return {
+          si: siData.si,
+          gu: guData.gu,
+          dong: "",
+          filterVal: guData.gu,
+          label: `${siData.si} ${guData.gu}`,
+          restQuery: removeTerms(q, guData.gu, siData.si),
+        };
+      }
+    }
+  }
+
+  // 3) 구만 매칭 (시 없이) — 첫 번째 발견 도시로
   for (const siData of KOREA_LOCATIONS) {
     for (const guData of siData.gus) {
       if (q.includes(guData.gu)) {
@@ -60,7 +80,7 @@ export function parseLocationFromQuery(query: string): ParsedLocation | null {
     }
   }
 
-  // 3) 시/도 수준 매칭
+  // 4) 시만 매칭
   for (const siData of KOREA_LOCATIONS) {
     if (q.includes(siData.si)) {
       return {

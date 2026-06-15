@@ -12,6 +12,7 @@ interface ResultItemProps {
   tags?: string[];
   direction?: "offer" | "seek";
   directionLabel?: string;
+  distanceLabel?: string;
   bookmarked?: boolean;
   onBookmark?: (e: React.MouseEvent) => void;
   onClick?: () => void;
@@ -28,6 +29,7 @@ export default function ResultItem({
   tags,
   direction,
   directionLabel,
+  distanceLabel,
   bookmarked,
   onBookmark,
   onClick,
@@ -75,6 +77,9 @@ export default function ResultItem({
           <p className="text-[18px] sm:text-[21px] font-bold text-text-heading">{price}</p>
           <p className="text-[13px] text-text-muted mt-0.5">
             {location} · {timeAgo}
+            {distanceLabel && (
+              <span className="ml-1.5 font-semibold text-brand">📍 {distanceLabel}</span>
+            )}
           </p>
         </div>
       </div>

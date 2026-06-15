@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@/components/organisms/Header";
 import Spinner from "@/components/atom/Spinner";
@@ -12,6 +12,13 @@ import { MAIN_CATEGORIES, tagsAndDirToMainCatId } from "@/data/Categories";
 import { SLIDER_MAX, parsePrice } from "@/data/postOptions";
 import { useBookmarks } from "@/lib/useBookmarks";
 import { parseLocationFromQuery } from "@/lib/locationParser";
+import {
+  isNearbyQuery,
+  stripNearbyKeywords,
+  haversineKm,
+  fmtDist,
+  NEARBY_RADIUS_KM,
+} from "@/lib/nearbySearch";
 import type { LocationSelection } from "@/components/molecules/LocationPicker";
 
 interface SearchResultPageProps {
@@ -22,8 +29,13 @@ interface SearchResultPageProps {
 
 const EMPTY_LOC: LocationSelection = { si: "", gu: "", dong: "" };
 
-function locFilterVal(sel: LocationSelection): string {
-  return sel.dong || sel.gu || sel.si;
+type GeoState = "idle" | "requesting" | "ready" | "denied";
+
+function locTerms(sel: LocationSelection): string[] {
+  if (sel.dong) return [sel.si, sel.gu, sel.dong].filter(Boolean);
+  if (sel.gu)   return [sel.si, sel.gu].filter(Boolean);
+  if (sel.si)   return [sel.si];
+  return [];
 }
 
 export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: SearchResultPageProps) {
@@ -39,6 +51,12 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
   const [sort, setSort] = useState<SortOption>("latest");
   const [priceRange, setPriceRange] = useState<[number, number]>([0, SLIDER_MAX]);
   const [showSlider, setShowSlider] = useState(false);
+
+  // 근처 검색 상태
+  const [isNearby, setIsNearby] = useState(false);
+  const [geoState, setGeoState] = useState<GeoState>("idle");
+  const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [nearbyRadius, setNearbyRadius] = useState(NEARBY_RADIUS_KM);
 
   const queryRef = useRef(initialQuery);
   const { isBookmarked, toggle: toggleBookmark } = useBookmarks();
@@ -65,23 +83,46 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
       .finally(() => setLoading(false));
   };
 
-  // 초기 로드: 검색어에서 지역 자동 추출
+  const requestGeo = useCallback(() => {
+    if (!navigator.geolocation) { setGeoState("denied"); return; }
+    setGeoState("requesting");
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        setUserCoords({ lat: coords.latitude, lng: coords.longitude });
+        setGeoState("ready");
+      },
+      () => setGeoState("denied"),
+      { timeout: 8000 },
+    );
+  }, []);
+
+  // 초기 로드
   useEffect(() => {
-    const parsed = parseLocationFromQuery(initialQuery);
+    const nearby = isNearbyQuery(initialQuery);
+    setIsNearby(nearby);
+
+    // 근처 검색이면 "근처/주변" 키워드 제거 후 쿼리 정제
+    const cleanedQuery = nearby ? stripNearbyKeywords(initialQuery) : initialQuery;
+
+    const parsed = parseLocationFromQuery(cleanedQuery);
     if (parsed) {
       setLocationSel({ si: parsed.si, gu: parsed.gu, dong: parsed.dong });
-      // 지역을 제외한 나머지 검색어만 표시
-      const rest = parsed.restQuery;
-      setQuery(rest);
-      queryRef.current = rest;
+      setQuery(parsed.restQuery);
+      queryRef.current = parsed.restQuery;
+    } else {
+      setQuery(cleanedQuery);
+      queryRef.current = cleanedQuery;
     }
+
     fetchResults(initialQuery);
+
+    if (nearby) requestGeo();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialQuery]);
 
-  // "이 조건으로 검색" 클릭 — API에 현재 쿼리 + 지역 합쳐서 재호출
   const handleReSearch = () => {
-    const locVal = locFilterVal(locationSel);
+    const terms = locTerms(locationSel);
+    const locVal = terms[terms.length - 1] ?? "";
     const combined = [queryRef.current.trim(), locVal].filter(Boolean).join(" ");
     fetchResults(combined || initialQuery);
   };
@@ -100,7 +141,17 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
   };
 
   const selectedCat = MAIN_CATEGORIES.find((c) => c.id === mainCatId);
-  const locationFilter = locFilterVal(locationSel).toLowerCase();
+  const locationFilterTerms = locTerms(locationSel).map((t) => t.toLowerCase());
+
+  // 근처 검색용 거리 계산 맵
+  const distanceMap = new Map<number, number>();
+  if (isNearby && geoState === "ready" && userCoords) {
+    for (const item of results) {
+      if (item.lat && item.lng) {
+        distanceMap.set(item.id, haversineKm(userCoords.lat, userCoords.lng, item.lat, item.lng));
+      }
+    }
+  }
 
   const filtered = results
     .filter((item) => {
@@ -114,11 +165,15 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
         if (!hasSubCat) return false;
       }
 
-      if (locationFilter) {
-        if (!item.location.toLowerCase().includes(locationFilter) &&
-            !item.locationTags.some((t) => t.toLowerCase().includes(locationFilter))) {
-          return false;
-        }
+      if (locationFilterTerms.length > 0) {
+        const combined = [item.location, ...item.locationTags].join(" ").toLowerCase();
+        if (!locationFilterTerms.every((t) => combined.includes(t))) return false;
+      }
+
+      // 근처 검색: 반경 이내만 통과
+      if (isNearby && geoState === "ready" && userCoords) {
+        const dist = distanceMap.get(item.id);
+        if (dist === undefined || dist > nearbyRadius) return false;
       }
 
       const [lo, hi] = priceRange;
@@ -133,6 +188,12 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
       return true;
     })
     .sort((a, b) => {
+      // 근처 검색이면 거리순 우선
+      if (isNearby && geoState === "ready") {
+        const da = distanceMap.get(a.id) ?? Infinity;
+        const db = distanceMap.get(b.id) ?? Infinity;
+        if (da !== db) return da - db;
+      }
       if (sort === "price_low") {
         const pa = parsePrice(a.price); const pb = parsePrice(b.price);
         if (pa === -1 && pb === -1) return 0;
@@ -147,6 +208,8 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
       }
       return 0;
     });
+
+  const RADIUS_OPTIONS = [5, 10, 20, 30];
 
   return (
     <div className="min-h-screen bg-surface-page text-text-body">
@@ -181,6 +244,54 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
           &ldquo;{initialQuery}&rdquo; 검색 결과
         </h2>
 
+        {/* 근처 검색 상태 배너 */}
+        {isNearby && (
+          <div className="mb-4 rounded-2xl border border-border-base bg-white px-4 py-3 flex flex-col gap-2">
+            {geoState === "requesting" && (
+              <div className="flex items-center gap-2 text-[13px] text-text-muted">
+                <span className="w-3 h-3 rounded-full border-2 border-brand border-t-transparent animate-spin shrink-0" />
+                현재 위치를 확인하는 중...
+              </div>
+            )}
+            {geoState === "ready" && userCoords && (
+              <>
+                <div className="flex items-center gap-2 text-[13px] font-semibold text-brand">
+                  <span>📍</span>
+                  <span>현재 위치 기준 {nearbyRadius}km 이내</span>
+                </div>
+                <div className="flex gap-1.5 flex-wrap">
+                  {RADIUS_OPTIONS.map((r) => (
+                    <button
+                      key={r}
+                      onClick={() => setNearbyRadius(r)}
+                      className={`h-7 px-3 rounded-full text-[12px] font-semibold border cursor-pointer transition-colors ${
+                        nearbyRadius === r
+                          ? "bg-brand text-white border-brand"
+                          : "bg-white text-text-muted border-border-base hover:border-brand"
+                      }`}
+                    >
+                      {r}km
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+            {geoState === "denied" && (
+              <div className="flex items-center gap-2">
+                <span className="text-[13px] text-text-muted">
+                  ⚠️ 위치 권한이 없어 근처 검색을 할 수 없어요.
+                </span>
+                <button
+                  onClick={requestGeo}
+                  className="text-[12px] text-brand font-semibold border-none bg-transparent cursor-pointer hover:underline shrink-0"
+                >
+                  다시 시도
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <Spinner size="lg" />
@@ -189,7 +300,9 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
           <div className="py-16 text-center">
             <p className="text-text-muted text-[15px] mb-2">검색 결과가 없어요.</p>
             <p className="text-text-placeholder text-[13px] mb-6">
-              다른 검색어를 사용하거나 지역 조건을 넓혀보세요.
+              {isNearby && geoState === "ready"
+                ? `현재 위치 ${nearbyRadius}km 이내에 게시글이 없어요. 반경을 늘려보세요.`
+                : "다른 검색어를 사용하거나 지역 조건을 넓혀보세요."}
             </p>
             {suggestions.length > 0 && (
               <div>
@@ -215,6 +328,7 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
               {filtered.map((item) => {
                 const catId = tagsAndDirToMainCatId(item.tags ?? [], item.direction ?? "offer");
                 const cat = MAIN_CATEGORIES.find((c) => c.id === catId);
+                const dist = distanceMap.get(item.id);
                 return (
                   <ResultItem
                     key={item.id}
@@ -227,6 +341,7 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
                     imageUrl={item.imageUrl}
                     direction={item.direction}
                     directionLabel={cat ? `${cat.emoji} ${cat.label}` : undefined}
+                    distanceLabel={dist !== undefined ? fmtDist(dist) : undefined}
                     bookmarked={isBookmarked(item.id)}
                     onBookmark={() => toggleBookmark(item.id)}
                     onClick={() => router.push(`/post/${item.id}`)}
