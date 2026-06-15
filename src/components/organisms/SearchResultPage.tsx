@@ -11,11 +11,19 @@ import type { SearchResultItem } from "@/data/sampleMockResults";
 import { MAIN_CATEGORIES, tagsAndDirToMainCatId } from "@/data/Categories";
 import { SLIDER_MAX, parsePrice } from "@/data/postOptions";
 import { useBookmarks } from "@/lib/useBookmarks";
+import { parseLocationFromQuery } from "@/lib/locationParser";
+import type { LocationSelection } from "@/components/molecules/LocationPicker";
 
 interface SearchResultPageProps {
   initialQuery: string;
   onBack: (query: string) => void;
   onLogoClick: () => void;
+}
+
+const EMPTY_LOC: LocationSelection = { si: "", gu: "", dong: "" };
+
+function locFilterVal(sel: LocationSelection): string {
+  return sel.dong || sel.gu || sel.si;
 }
 
 export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: SearchResultPageProps) {
@@ -27,8 +35,7 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
 
   const [mainCatId, setMainCatId] = useState("all");
   const [subCats, setSubCats] = useState<Set<string>>(new Set());
-  const [location, setLocation] = useState("");
-  const [locationLabel, setLocationLabel] = useState("전국");
+  const [locationSel, setLocationSel] = useState<LocationSelection>(EMPTY_LOC);
   const [sort, setSort] = useState<SortOption>("latest");
   const [priceRange, setPriceRange] = useState<[number, number]>([0, SLIDER_MAX]);
   const [showSlider, setShowSlider] = useState(false);
@@ -58,23 +65,24 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
       .finally(() => setLoading(false));
   };
 
+  // 초기 로드: 검색어에서 지역 자동 추출
   useEffect(() => {
+    const parsed = parseLocationFromQuery(initialQuery);
+    if (parsed) {
+      setLocationSel({ si: parsed.si, gu: parsed.gu, dong: parsed.dong });
+      // 지역을 제외한 나머지 검색어만 표시
+      const rest = parsed.restQuery;
+      setQuery(rest);
+      queryRef.current = rest;
+    }
     fetchResults(initialQuery);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialQuery]);
 
-  const handleLocationSelect = (filterVal: string, label: string) => {
-    setLocation(filterVal);
-    setLocationLabel(label || "전국");
-  };
-
-  const handleLocationClear = () => {
-    setLocation("");
-    setLocationLabel("전국");
-  };
-
+  // "이 조건으로 검색" 클릭 — API에 현재 쿼리 + 지역 합쳐서 재호출
   const handleReSearch = () => {
-    const combined = [query.trim(), location.trim()].filter(Boolean).join(" ");
+    const locVal = locFilterVal(locationSel);
+    const combined = [queryRef.current.trim(), locVal].filter(Boolean).join(" ");
     fetchResults(combined || initialQuery);
   };
 
@@ -92,6 +100,7 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
   };
 
   const selectedCat = MAIN_CATEGORIES.find((c) => c.id === mainCatId);
+  const locationFilter = locFilterVal(locationSel).toLowerCase();
 
   const filtered = results
     .filter((item) => {
@@ -105,9 +114,11 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
         if (!hasSubCat) return false;
       }
 
-      if (location.trim()) {
-        const loc = location.trim().toLowerCase();
-        if (!item.location.toLowerCase().includes(loc)) return false;
+      if (locationFilter) {
+        if (!item.location.toLowerCase().includes(locationFilter) &&
+            !item.locationTags.some((t) => t.toLowerCase().includes(locationFilter))) {
+          return false;
+        }
       }
 
       const [lo, hi] = priceRange;
@@ -153,9 +164,8 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
         onMainCatChange={handleMainCatChange}
         subCats={subCats}
         onToggleSubCat={toggleSubCat}
-        locationLabel={locationLabel}
-        onLocationSelect={handleLocationSelect}
-        onLocationClear={handleLocationClear}
+        locationSel={locationSel}
+        onLocationChange={setLocationSel}
         sort={sort}
         onSortChange={setSort}
         priceRange={priceRange}
@@ -177,7 +187,10 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
           </div>
         ) : filtered.length === 0 ? (
           <div className="py-16 text-center">
-            <p className="text-text-muted text-[15px] mb-4">검색 결과가 없어요.</p>
+            <p className="text-text-muted text-[15px] mb-2">검색 결과가 없어요.</p>
+            <p className="text-text-placeholder text-[13px] mb-6">
+              다른 검색어를 사용하거나 지역 조건을 넓혀보세요.
+            </p>
             {suggestions.length > 0 && (
               <div>
                 <p className="text-[14px] text-text-muted mb-3">이런 키워드로 검색해볼까요?</p>

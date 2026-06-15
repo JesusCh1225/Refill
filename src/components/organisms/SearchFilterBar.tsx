@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import FilterChip from "@/components/atom/FilterChip";
 import PriceRangeSlider from "@/components/molecules/PriceRangeSlider";
-import LocationPicker from "@/components/molecules/LocationPicker";
+import LocationPicker, { type LocationSelection } from "@/components/molecules/LocationPicker";
 import { MAIN_CATEGORIES, INSTRUMENT_SUBCATS, SUBCATS_VISIBLE } from "@/data/Categories";
 import { PRICE_RANGES, SLIDER_MAX } from "@/data/postOptions";
 
@@ -14,9 +14,8 @@ interface Props {
   onMainCatChange: (id: string) => void;
   subCats: Set<string>;
   onToggleSubCat: (id: string) => void;
-  locationLabel: string;
-  onLocationSelect: (filterVal: string, label: string) => void;
-  onLocationClear: () => void;
+  locationSel: LocationSelection;
+  onLocationChange: (sel: LocationSelection) => void;
   sort: SortOption;
   onSortChange: (s: SortOption) => void;
   priceRange: [number, number];
@@ -35,7 +34,7 @@ const SORT_OPTIONS: { id: SortOption; label: string }[] = [
 export default function SearchFilterBar({
   mainCatId, onMainCatChange,
   subCats, onToggleSubCat,
-  locationLabel, onLocationSelect, onLocationClear,
+  locationSel, onLocationChange,
   sort, onSortChange,
   priceRange, onPriceRangeChange,
   showSlider, onToggleSlider,
@@ -112,11 +111,7 @@ export default function SearchFilterBar({
           </div>
 
           {/* 지역 선택 */}
-          <LocationPicker
-            label={locationLabel}
-            onSelect={onLocationSelect}
-            onClear={onLocationClear}
-          />
+          <LocationPicker value={locationSel} onChange={onLocationChange} />
 
           {/* 정렬 */}
           <div className="flex gap-1 ml-auto">

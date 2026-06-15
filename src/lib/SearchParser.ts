@@ -32,13 +32,13 @@ export async function parseSearchQuery(query: string): Promise<ParsedQuery> {
     Promise.resolve(extractFromDict(q, SERVICE_DICT)),
   ]);
 
-  const regionKeywords = regions.flatMap((r) => r.keywords);
+  // 제목/해시태그/카테고리 검색에 쓸 키워드 — 지역 키워드 제외
+  // (지역 필터는 where.locationTags 에서 별도 처리됨)
+  const contentKeywords = [...new Set([...instruments, ...services])];
   const keywords =
-    regionKeywords.length === 0 &&
-    instruments.length === 0 &&
-    services.length === 0
+    contentKeywords.length === 0 && regions.length === 0
       ? q.split(/\s+/).filter(Boolean) // 아무것도 매칭 안 되면 원본 단어로 폴백
-      : [...new Set([...regionKeywords, ...instruments, ...services])];
+      : contentKeywords;
 
   return { regions, instruments, services, keywords };
 }
