@@ -130,6 +130,9 @@ model Post {
   bookmarks    Bookmark[]
   messages     Message[]
   reviews      Review[]
+
+  @@index([status, createdAt])
+  @@index([authorId])
 }
 
 // ── 게시글 ↔ 카테고리 (N:M) ──────────────────────────────────────────────

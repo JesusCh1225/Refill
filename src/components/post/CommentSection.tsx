@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import Avatar from "@/components/atom/Avatar";
 import AuthorLink from "@/components/atom/AuthorLink";
+import ConfirmDeleteButton from "@/components/atom/ConfirmDeleteButton";
 import { type CommentData, displayAuthor, isEdited, formatDate } from "@/types/comment";
 
 interface Props {
@@ -158,18 +159,17 @@ export default function CommentSection({ postId }: Props) {
                     {isEdited(c) && <span className="text-[10px] text-text-placeholder">(수정됨)</span>}
                   </div>
                   {isMine && !editing && (
-                    pendingDelete ? (
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-[11px] text-red-500 font-medium">삭제할까요?</span>
-                        <button onClick={() => handleDelete(c.id)} className="text-[11px] font-semibold text-red-500 hover:text-red-600 border-none bg-transparent cursor-pointer p-0">확인</button>
-                        <button onClick={() => setDeletingId(null)} className="text-[11px] text-text-muted hover:text-text-body border-none bg-transparent cursor-pointer p-0">취소</button>
-                      </div>
-                    ) : (
-                      <div className="flex gap-2 shrink-0">
+                    <div className="flex gap-2 shrink-0">
+                      {!pendingDelete && (
                         <button onClick={() => startEdit(c)} className="text-[11px] text-text-muted hover:text-brand transition-colors border-none bg-transparent cursor-pointer p-0">수정</button>
-                        <button onClick={() => setDeletingId(c.id)} className="text-[11px] text-text-muted hover:text-red-500 transition-colors border-none bg-transparent cursor-pointer p-0">삭제</button>
-                      </div>
-                    )
+                      )}
+                      <ConfirmDeleteButton
+                        confirming={pendingDelete}
+                        onConfirmingChange={(v) => setDeletingId(v ? c.id : null)}
+                        onConfirm={() => handleDelete(c.id)}
+                        textSize="11px"
+                      />
+                    </div>
                   )}
                 </div>
 
@@ -206,15 +206,13 @@ export default function CommentSection({ postId }: Props) {
                               {isEdited(r) && <span className="text-[10px] text-text-placeholder">(수정됨)</span>}
                             </div>
                             {rMine && (
-                              rPendingDelete ? (
-                                <div className="flex items-center gap-1.5 shrink-0">
-                                  <span className="text-[10px] text-red-500 font-medium">삭제?</span>
-                                  <button onClick={() => handleDelete(r.id, c.id)} className="text-[10px] font-semibold text-red-500 border-none bg-transparent cursor-pointer p-0">확인</button>
-                                  <button onClick={() => setDeletingId(null)} className="text-[10px] text-text-muted border-none bg-transparent cursor-pointer p-0">취소</button>
-                                </div>
-                              ) : (
-                                <button onClick={() => setDeletingId(r.id)} className="text-[10px] text-text-muted hover:text-red-500 transition-colors border-none bg-transparent cursor-pointer p-0 shrink-0">삭제</button>
-                              )
+                              <ConfirmDeleteButton
+                                confirming={rPendingDelete}
+                                onConfirmingChange={(v) => setDeletingId(v ? r.id : null)}
+                                onConfirm={() => handleDelete(r.id, c.id)}
+                                textSize="10px"
+                                confirmLabel="삭제?"
+                              />
                             )}
                           </div>
                           <p className="text-[12px] text-text-body leading-relaxed whitespace-pre-wrap">{r.content}</p>

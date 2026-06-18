@@ -1,4 +1,5 @@
 import { KOREA_LOCATIONS } from "@/data/koreaLocations";
+import { wordVariants } from "@/lib/textMatching";
 
 export interface ParsedLocation {
   si: string;
@@ -11,12 +12,6 @@ export interface ParsedLocation {
 
 function escape(s: string) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-// "수원시" -> ["수원시", "수원"]처럼 "시"를 생략한 구어체 표기도 허용
-function wordVariants(word: string): string[] {
-  if (word.endsWith("시") && word.length > 1) return [word, word.slice(0, -1)];
-  return [word];
 }
 
 // term이 "수원시 장안구"처럼 여러 단어여도 각 단어(+변형)가 모두 쿼리에 있으면 매칭

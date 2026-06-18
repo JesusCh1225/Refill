@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { POST_SELECT, mapPost } from "@/lib/postMapper";
+import { syncPostCategories, syncPostHashtags, syncPostLocationTags, syncPostImages } from "@/lib/postRelations";
 
 const PAGE_SIZE = 50;
 
@@ -62,22 +63,6 @@ export async function POST(req: NextRequest) {
   if (!priceDisplay?.trim()) return NextResponse.json({ error: "price required" }, { status: 400 });
 
   try {
-    // 카테고리 슬러그로 ID 조회
-    const categories = await prisma.category.findMany({
-      where: { slug: { in: Array.isArray(tags) ? tags : [] } },
-      select: { id: true },
-    });
-
-    // 해시태그 find-or-create (upsert는 HTTP 모드에서 트랜잭션 사용 가능)
-    const hashtagIds: number[] = [];
-    for (const name of (Array.isArray(keywords) ? keywords : [])) {
-      if (!name?.trim()) continue;
-      const trimmed = name.trim();
-      let h = await prisma.hashtag.findUnique({ where: { name: trimmed }, select: { id: true } });
-      if (!h) h = await prisma.hashtag.create({ data: { name: trimmed }, select: { id: true } });
-      hashtagIds.push(h.id);
-    }
-
     const post = await (prisma.post.create as any)({
       data: {
         title: title.trim().slice(0, 100),
@@ -97,22 +82,12 @@ export async function POST(req: NextRequest) {
 
     const postId = post.id;
 
-    // 중첩 create 대신 순차 create (PrismaNeonHttp는 트랜잭션 미지원)
-    for (const c of categories) {
-      await prisma.postCategory.create({ data: { postId, categoryId: c.id } });
-    }
-    for (const hashtagId of hashtagIds) {
-      await prisma.postHashtag.create({ data: { postId, hashtagId } });
-    }
-    for (const t of (Array.isArray(locationTags) ? locationTags : [])) {
-      if (!t?.trim()) continue;
-      await prisma.postLocationTag.create({ data: { postId, tag: t.trim().slice(0, 50) } });
-    }
-    const urls: string[] = Array.isArray(imageUrls) ? imageUrls : [];
-    for (let i = 0; i < urls.length; i++) {
-      if (!urls[i]) continue;
-      await prisma.postImage.create({ data: { postId, url: urls[i], order: i } });
-    }
+    await Promise.all([
+      syncPostCategories(postId, Array.isArray(tags) ? tags : []),
+      syncPostHashtags(postId, keywords),
+      syncPostLocationTags(postId, locationTags),
+      syncPostImages(postId, imageUrls),
+    ]);
 
     const created = await prisma.post.findUnique({
       where: { id: postId },

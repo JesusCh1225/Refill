@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { POST_SELECT, mapPost } from "@/lib/postMapper";
+import { syncPostCategories, syncPostHashtags, syncPostLocationTags, syncPostImages } from "@/lib/postRelations";
 
 // GET /api/posts/[id]
 export async function GET(
@@ -87,40 +88,20 @@ export async function PATCH(
       },
     });
 
-    // 카테고리 교체
-    await prisma.postCategory.deleteMany({ where: { postId } });
-    const categories = await prisma.category.findMany({
-      where: { slug: { in: Array.isArray(tags) ? tags : [] } },
-      select: { id: true },
-    });
-    for (const c of categories) {
-      await prisma.postCategory.create({ data: { postId, categoryId: c.id } });
-    }
+    // 기존 관계 전부 비우고 새로 생성
+    await Promise.all([
+      prisma.postCategory.deleteMany({ where: { postId } }),
+      prisma.postHashtag.deleteMany({ where: { postId } }),
+      prisma.postLocationTag.deleteMany({ where: { postId } }),
+      prisma.postImage.deleteMany({ where: { postId } }),
+    ]);
 
-    // 해시태그 교체
-    await prisma.postHashtag.deleteMany({ where: { postId } });
-    for (const name of (Array.isArray(keywords) ? keywords : [])) {
-      if (!name?.trim()) continue;
-      const trimmed = name.trim();
-      let h = await prisma.hashtag.findUnique({ where: { name: trimmed }, select: { id: true } });
-      if (!h) h = await prisma.hashtag.create({ data: { name: trimmed }, select: { id: true } });
-      await prisma.postHashtag.create({ data: { postId, hashtagId: h.id } });
-    }
-
-    // 지역 태그 교체
-    await prisma.postLocationTag.deleteMany({ where: { postId } });
-    for (const t of (Array.isArray(locationTags) ? locationTags : [])) {
-      if (!t?.trim()) continue;
-      await prisma.postLocationTag.create({ data: { postId, tag: t.trim().slice(0, 50) } });
-    }
-
-    // 이미지 교체
-    await prisma.postImage.deleteMany({ where: { postId } });
-    const urls: string[] = Array.isArray(imageUrls) ? imageUrls : [];
-    for (let i = 0; i < urls.length; i++) {
-      if (!urls[i]) continue;
-      await prisma.postImage.create({ data: { postId, url: urls[i], order: i } });
-    }
+    await Promise.all([
+      syncPostCategories(postId, Array.isArray(tags) ? tags : []),
+      syncPostHashtags(postId, keywords),
+      syncPostLocationTags(postId, locationTags),
+      syncPostImages(postId, imageUrls),
+    ]);
 
     const updated = await prisma.post.findUnique({ where: { id: postId }, select: POST_SELECT });
     return NextResponse.json(mapPost(updated!));

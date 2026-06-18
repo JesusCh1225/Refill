@@ -33,6 +33,7 @@ export default function Header({ onLogoClick }: HeaderProps) {
 
         {/* 데스크톱 네비게이션 */}
         <nav className="hidden sm:flex items-center gap-8">
+          <NavLink href="/">검색</NavLink>
           {NAV_LINKS.map((link) =>
             link.disabled ? (
               <div
@@ -85,6 +86,12 @@ export default function Header({ onLogoClick }: HeaderProps) {
 
         {/* 모바일 우측 영역 */}
         <div className="flex sm:hidden items-center gap-2">
+          <Link
+            href="/"
+            className="px-2 text-sm text-text-body hover:text-brand transition-colors"
+          >
+            검색
+          </Link>
           {loading ? (
             <div className="w-8 h-8 rounded-full bg-brand-bg animate-pulse" />
           ) : session ? (

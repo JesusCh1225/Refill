@@ -7,10 +7,13 @@ import Spinner from "@/components/atom/Spinner";
 import SearchFilterBar, { type SortOption } from "@/components/organisms/SearchFilterBar";
 import ResultItem from "@/components/atom/ResultItem";
 import SearchBar from "@/components/molecules/SearchBar";
-import type { SearchResultItem } from "@/data/sampleMockResults";
+import WritePostModal from "@/components/organisms/WritePostModal";
+import type { SearchResultItem, PostDraft } from "@/data/sampleMockResults";
 import { MAIN_CATEGORIES, tagsAndDirToMainCatId } from "@/data/Categories";
 import { SLIDER_MAX, NEGOTIABLE_PRICE, parsePrice } from "@/data/postOptions";
 import { useBookmarks } from "@/lib/useBookmarks";
+import { useCreatePost } from "@/hooks/useCreatePost";
+import { wordVariants } from "@/lib/textMatching";
 import { parseLocationFromQuery } from "@/lib/locationParser";
 import {
   isNearbyQuery,
@@ -29,11 +32,6 @@ interface SearchResultPageProps {
 
 type GeoState = "idle" | "requesting" | "ready" | "denied";
 
-// "수원시" -> ["수원시", "수원"]처럼 "시"를 생략한 구어체 표기도 매칭 허용
-function wordVariants(word: string): string[] {
-  return word.endsWith("시") && word.length > 1 ? [word, word.slice(0, -1)] : [word];
-}
-
 // 선택 항목 하나를 "단어별 변형(AND 조건) 그룹" 배열로 분해 (예: "수원시 장안구" -> [["수원시","수원"], ["장안구"]])
 function entryTermGroups(e: LocationEntry): string[][] {
   const parts = e.dong ? [e.si, e.gu, e.dong] : e.gu ? [e.si, e.gu] : e.si ? [e.si] : [];
@@ -51,10 +49,12 @@ function mostSpecificLocLabel(e: LocationEntry): string {
 
 export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: SearchResultPageProps) {
   const router = useRouter();
+  const { requireLogin, createPost } = useCreatePost();
   const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState<SearchResultItem[]>([]);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [writeOpen, setWriteOpen] = useState(false);
 
   const [mainCatId, setMainCatId] = useState("all");
   const [subCats, setSubCats] = useState<Set<string>>(new Set());
@@ -135,6 +135,16 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
     const locVal = locationSel.map(mostSpecificLocLabel).filter(Boolean).join(" ");
     const combined = [queryRef.current.trim(), locVal].filter(Boolean).join(" ");
     fetchResults(combined || initialQuery);
+  };
+
+  const handleWriteClick = () => {
+    if (requireLogin()) setWriteOpen(true);
+  };
+
+  // 검색 화면에서 작성한 글은 바로 상세 화면으로 이동
+  const handlePostSubmit = async (draft: PostDraft) => {
+    const newPost = await createPost(draft);
+    if (newPost) router.push(`/post/${newPost.id}`);
   };
 
   const toggleSubCat = (id: string) => {
@@ -365,6 +375,16 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
           </>
         )}
       </div>
+
+      <button
+        onClick={handleWriteClick}
+        className="fixed bottom-6 right-6 z-10 flex items-center gap-2 bg-brand text-white text-xs font-semibold px-4 rounded-full border-none cursor-pointer hover:opacity-85 transition-opacity shadow-search"
+        style={{ height: "44px" }}
+      >
+        ✦ 글쓰기
+      </button>
+
+      <WritePostModal isOpen={writeOpen} onClose={() => setWriteOpen(false)} onSubmit={handlePostSubmit} />
     </div>
   );
 }

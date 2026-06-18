@@ -10,6 +10,7 @@ import AuthorLink from "@/components/atom/AuthorLink";
 import Spinner from "@/components/atom/Spinner";
 import InfoRow from "@/components/atom/InfoRow";
 import BookmarkButton from "@/components/atom/BookmarkButton";
+import ConfirmDeleteButton from "@/components/atom/ConfirmDeleteButton";
 import WritePostModal from "@/components/organisms/WritePostModal";
 import PostImageCarousel from "@/components/post/PostImageCarousel";
 import CommentSection from "@/components/post/CommentSection";
@@ -113,26 +114,24 @@ export default function PostDetailPage({
             ← 목록으로
           </button>
           {isAuthor && (
-            postDeletePending ? (
-              <div className="flex items-center gap-2">
-                <span className="text-[12px] text-red-500 font-medium">정말 삭제할까요?</span>
-                <button onClick={handlePostDelete} disabled={postDeleting} className="px-3 h-7 rounded-lg bg-red-500 text-white text-[12px] font-semibold border-none cursor-pointer hover:bg-red-600 disabled:opacity-50">
-                  {postDeleting ? "삭제중…" : "삭제"}
-                </button>
-                <button onClick={() => setPostDeletePending(false)} className="px-3 h-7 rounded-lg border border-border-base text-[12px] text-text-muted bg-white cursor-pointer hover:bg-surface-card">
-                  취소
-                </button>
-              </div>
-            ) : (
-              <div className="flex gap-2">
+            <div className="flex items-center gap-2">
+              {!postDeletePending && (
                 <button onClick={() => setEditModalOpen(true)} className="px-3 h-7 rounded-lg border border-brand text-brand text-[12px] font-semibold bg-transparent cursor-pointer hover:bg-brand-bg transition-colors">
                   수정
                 </button>
-                <button onClick={() => setPostDeletePending(true)} className="px-3 h-7 rounded-lg border border-red-300 text-red-500 text-[12px] font-semibold bg-transparent cursor-pointer hover:bg-red-50 transition-colors">
-                  삭제
-                </button>
-              </div>
-            )
+              )}
+              <ConfirmDeleteButton
+                confirming={postDeletePending}
+                onConfirmingChange={setPostDeletePending}
+                onConfirm={handlePostDelete}
+                pending={postDeleting}
+                textSize="12px"
+                confirmLabel="정말 삭제할까요?"
+                triggerClassName="px-3 h-7 rounded-lg border border-red-300 text-red-500 text-[12px] font-semibold bg-transparent cursor-pointer hover:bg-red-50 transition-colors"
+                confirmButtonClassName="px-3 h-7 rounded-lg bg-red-500 text-white text-[12px] font-semibold border-none cursor-pointer hover:bg-red-600 disabled:opacity-50"
+                cancelButtonClassName="px-3 h-7 rounded-lg border border-border-base text-[12px] text-text-muted bg-white cursor-pointer hover:bg-surface-card"
+              />
+            </div>
           )}
         </div>
 

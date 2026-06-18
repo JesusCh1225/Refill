@@ -8,6 +8,7 @@ import Header from "@/components/organisms/Header";
 import Avatar from "@/components/atom/Avatar";
 import AuthorLink from "@/components/atom/AuthorLink";
 import Spinner from "@/components/atom/Spinner";
+import { StarRating, InteractiveStars } from "@/components/atom/StarRating";
 
 interface PublicPost {
   id: number;
@@ -42,40 +43,6 @@ interface PublicProfile {
   reviewsReceived: ReviewItem[];
   avgRating: number | null;
   reviewCount: number;
-}
-
-function StarRating({ rating, size = 16 }: { rating: number; size?: number }) {
-  return (
-    <span className="flex items-center gap-0.5">
-      {[1, 2, 3, 4, 5].map((s) => (
-        <svg key={s} width={size} height={size} viewBox="0 0 24 24" fill={s <= rating ? "#f59e0b" : "#e5e7eb"}>
-          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-        </svg>
-      ))}
-    </span>
-  );
-}
-
-function InteractiveStars({ value, onChange }: { value: number; onChange: (v: number) => void }) {
-  const [hover, setHover] = useState(0);
-  return (
-    <span className="flex items-center gap-1">
-      {[1, 2, 3, 4, 5].map((s) => (
-        <button
-          key={s}
-          type="button"
-          onMouseEnter={() => setHover(s)}
-          onMouseLeave={() => setHover(0)}
-          onClick={() => onChange(s)}
-          className="border-none bg-transparent cursor-pointer p-0"
-        >
-          <svg width={24} height={24} viewBox="0 0 24 24" fill={s <= (hover || value) ? "#f59e0b" : "#e5e7eb"}>
-            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-          </svg>
-        </button>
-      ))}
-    </span>
-  );
 }
 
 function formatDate(iso: string) {

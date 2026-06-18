@@ -2,13 +2,13 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 import Header from "@/components/organisms/Header";
 import type { SearchResultItem, PostDraft } from "@/data/sampleMockResults";
 import { CATEGORIES, CATEGORY_TAG_MAP } from "@/data/Categories";
 import { REGION_CENTERS } from "@/data/mapConstants";
 import { coordsFromLocation, extractKeywords, CoordsMap } from "@/lib/mapUtils";
 import { useNaverMap } from "@/hooks/useNaverMap";
+import { useCreatePost } from "@/hooks/useCreatePost";
 import MapPanel from "@/components/organisms/MapPanel";
 import MapSearchBar from "@/components/molecules/MapSearchBar";
 import WritePostModal from "@/components/organisms/WritePostModal";
@@ -27,7 +27,7 @@ const CHIP_FILTERS = [
 
 export default function MusicMapPage() {
   const router = useRouter();
-  const { status: authStatus } = useSession();
+  const { requireLogin } = useCreatePost();
   const mapRef = useRef<HTMLDivElement>(null);
   const coordsRef = useRef<CoordsMap>({});
 
@@ -317,7 +317,7 @@ export default function MusicMapPage() {
         {showAreaSearch && (
           <button
             onClick={handleAreaSearch}
-            className="absolute z-10 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-white text-text-body text-xs font-semibold px-4 rounded-full border border-border-base shadow-search cursor-pointer hover:bg-surface-card transition-colors top-4"
+            className="absolute z-10 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-white text-text-body text-xs font-semibold px-4 rounded-full border border-border-base shadow-search cursor-pointer hover:bg-surface-card transition-colors top-28 md:top-4"
             style={{ height: "36px" }}
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -351,8 +351,7 @@ export default function MusicMapPage() {
 
         <button
           onClick={() => {
-            if (authStatus !== "authenticated") { alert("글을 작성하려면 로그인이 필요해요."); return; }
-            setWriteModalOpen(true);
+            if (requireLogin()) setWriteModalOpen(true);
           }}
           className="absolute bottom-6 right-6 z-10 flex items-center gap-2 bg-brand text-white text-xs font-semibold px-4 rounded-full border-none cursor-pointer hover:opacity-85 transition-opacity shadow-search"
           style={{ height: "44px" }}
