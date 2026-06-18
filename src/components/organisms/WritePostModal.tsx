@@ -41,6 +41,10 @@ function tagsToEntries(tags: string[], direction: PostDirection): CategoryEntry[
     const subcat = tags.find((t) => ALL_SUBCAT_IDS.filter((s) => s !== "vocal").includes(t)) ?? "";
     entries.push({ id: String(n++), type: "trade", subcat, direction });
   }
+  if (tags.includes("record") || tags.includes("book")) {
+    const subcat = tags.includes("record") ? "record" : "book";
+    entries.push({ id: String(n++), type: "etc", subcat, direction });
+  }
 
   return entries.length > 0
     ? entries

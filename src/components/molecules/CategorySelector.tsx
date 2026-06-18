@@ -4,9 +4,10 @@ const TYPE_OPTIONS = [
   { value: "lesson", label: "레슨" },
   { value: "trade",  label: "악기거래" },
   { value: "band",   label: "밴드/합주" },
+  { value: "etc",    label: "기타" },
 ] as const;
 
-export type EntryType = "lesson" | "trade" | "band";
+export type EntryType = "lesson" | "trade" | "band" | "etc";
 
 const SUBCATS: Record<EntryType, { id: string; label: string }[]> = {
   lesson: [
@@ -29,12 +30,17 @@ const SUBCATS: Record<EntryType, { id: string; label: string }[]> = {
     { id: "equipment", label: "음향장비" },
   ],
   band: [],
+  etc: [
+    { id: "record", label: "음반/LP" },
+    { id: "book",   label: "교재/악보" },
+  ],
 };
 
 export const DIR_LABELS: Record<EntryType, { offer: string; seek: string }> = {
   lesson: { offer: "가르칩니다", seek: "배웁니다" },
   trade:  { offer: "팝니다",     seek: "삽니다" },
   band:   { offer: "모집합니다", seek: "합류 원합니다" },
+  etc:    { offer: "팝니다",     seek: "삽니다" },
 };
 
 export interface CategoryEntry {

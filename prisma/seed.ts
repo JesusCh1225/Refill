@@ -33,6 +33,7 @@ async function main() {
     { slug: "string",     name: "현악기" },
     { slug: "dj",         name: "DJ/전자음악" },
     { slug: "record",     name: "음반/LP" },
+    { slug: "book",       name: "교재/악보" },
     { slug: "instrument", name: "악기거래" },
     { slug: "equipment",  name: "음향장비" },
     { slug: "etc",        name: "기타" },

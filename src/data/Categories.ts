@@ -17,6 +17,7 @@ export const MAIN_CATEGORIES: MainCategory[] = [
   { id: "equipment_buy",   label: "장비 삽니다",   tag: "equipment",  direction: "seek",  emoji: "🎚️" },
   { id: "band",            label: "밴드/합주",     tag: "band",       direction: null,    emoji: "🎼" },
   { id: "record",          label: "음반/LP",       tag: "record",     direction: null,    emoji: "💿" },
+  { id: "book",            label: "교재/악보",     tag: "book",       direction: null,    emoji: "📖" },
 ];
 
 // 악기 세부 카테고리 (레슨/악기거래 선택 시 추가 필터)
