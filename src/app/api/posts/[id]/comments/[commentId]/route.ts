@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { getSessionUserId } from "@/lib/auth";
 
 async function resolveOwnership(commentId: number) {
-  const session = await auth();
-  const userId = (session?.user as any)?.id as number | undefined;
+  const userId = await getSessionUserId();
   if (!userId) return { error: "unauthorized", status: 401 } as const;
 
   const comment = await prisma.comment.findUnique({

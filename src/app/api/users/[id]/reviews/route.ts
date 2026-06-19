@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-
-async function getSessionUserId() {
-  const session = await auth();
-  const id = (session?.user as any)?.id;
-  return typeof id === "number" ? id : null;
-}
+import { getSessionUserId } from "@/lib/auth";
 
 // GET /api/users/[id]/reviews — 받은 리뷰 목록
 export async function GET(

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { getSessionUserId } from "@/lib/auth";
 
 const REPLY_SELECT = {
   id: true,
@@ -44,8 +44,7 @@ export async function POST(
   const postId = Number((await params).id);
   if (isNaN(postId)) return NextResponse.json({ error: "invalid id" }, { status: 400 });
 
-  const session = await auth();
-  const userId = (session?.user as any)?.id as number | undefined;
+  const userId = await getSessionUserId();
   if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const body = await req.json();

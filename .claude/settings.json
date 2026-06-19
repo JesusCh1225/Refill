@@ -8,23 +8,16 @@
       "Bash(Get-Service -Name \"MySQL*\")",
       "Bash(Get-Service -Name \"mysql*\")",
       "PowerShell(npx prisma migrate dev --name update_price_type 2>&1)",
-      "PowerShell(New-Item -ItemType Directory -Path \"d:\\\\church_project\\\\prisma\\\\migrations\\\\20260601000000_update_price_type\" -Force)",
-      "PowerShell(New-Item -ItemType Directory -Path \"d:\\\\church_project\\\\prisma\\\\migrations\\\\20260606000000_hashtag_and_comment\" -Force)",
-      "Bash(mkdir -p d:/church_project/src/app/api/posts/[id]/comments)",
+      "PowerShell(New-Item -ItemType Directory -Path * -Force)",
+      "Bash(mkdir -p *)",
       "Bash(npx tsc *)",
-      "PowerShell(New-Item -ItemType Directory -Path \"d:\\\\church_project\\\\prisma\\\\migrations\\\\20260606010000_user_nickname\" -Force)",
       "Bash(npm list *)",
       "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\('version','not found'\\)\\)\")",
       "Bash(node -e \"const p = require\\('./node_modules/next-auth/package.json'\\); console.log\\(p.version\\)\")",
       "Bash(node -e \"const k = require\\('./node_modules/next-auth/providers/kakao'\\); console.log\\(Object.keys\\(k\\)\\)\")",
-      "PowerShell(New-Item -ItemType Directory -Path \"d:\\\\church_project\\\\prisma\\\\migrations\\\\20260606020000_oauth_auth\" -Force)",
       "Bash(node -e \"const crypto = require\\('crypto'\\); console.log\\(crypto.randomBytes\\(32\\).toString\\('hex'\\)\\)\")",
-      "Bash(mkdir -p d:/church_project/src/types && mkdir -p d:/church_project/src/app/api/auth/[...nextauth])",
-      "Bash(mkdir \"d:\\\\church_project\\\\src\\\\app\\\\api\\\\bookmarks\\\\[postId]\" 2>nul; echo done)",
-      "Bash(mkdir \"d:\\\\church_project\\\\src\\\\app\\\\api\\\\posts\\\\[id]\\\\comments\\\\[commentId]\" 2>nul; echo done)",
+      "Bash(mkdir *)",
       "Bash(findstr -i \"blob\\\\|cloudinary\\\\|upload\\\\|multer\\\\|sharp\")",
-      "Bash(mkdir \"d:\\\\church_project\\\\src\\\\app\\\\api\\\\upload\")",
-      "Bash(mkdir \"d:\\\\church_project\\\\src\\\\app\\\\api\\\\upload\\\\avatar\")",
       "Bash(node -e \"const b = require\\('@vercel/blob'\\); console.log\\(Object.keys\\(b\\).filter\\(k => ['put','del','list'].includes\\(k\\)\\)\\)\")",
       "Bash(node -e ' *)",
       "Bash(awk '/si: \"세종\"/,/^  },/' src/data/koreaLocations.ts)",
@@ -32,7 +25,7 @@
       "Bash(grep -l \"scripts\" package.json)",
       "Skill(run)",
       "Skill(run:*)",
-      "Bash(sleep 5 && cat /tmp/nextdev.log 2>/dev/null || cat \"C:\\\\Users\\\\USER\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--church-project\\\\df683e73-13f5-4066-8033-942fc21b6790\\\\tasks\\\\bv22r4fyd.output\")",
+      "Bash(sleep 5 && cat /tmp/nextdev.log 2>/dev/null)",
       "Read(//tmp/**)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3000/)",
       "Bash(curl -s http://localhost:3000/)",
@@ -61,14 +54,7 @@
       "Bash(curl -s \"http://localhost:3000/?q=%EB%A0%88%EC%8A%A8\" -o /dev/null -w \"%{http_code}\\\\n\" -D -)",
       "Bash(node scripts/finalSmoke.mjs)",
       "Bash(git add *)",
-      "Bash(node scripts/checkBookCat.mjs)",
-      "Bash(node scripts/genKoreaLocations.mjs)"
-    ],
-    "additionalDirectories": [
-      "d:\\church_project\\src\\app\\api\\posts\\[id]",
-      "d:\\church_project\\src\\app\\api\\auth",
-      "d:\\church_project\\src\\app\\api\\bookmarks",
-      "d:\\church_project\\src\\app\\api\\posts\\[id]\\comments"
+      "Bash(node scripts/checkBookCat.mjs)"
     ]
   }
 }

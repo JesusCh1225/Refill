@@ -4,7 +4,42 @@
       "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --yes)",
       "Bash(npm install *)",
       "Bash(npm run *)",
-      "Bash(npm ls *)"
+      "Bash(npm ls *)",
+      "Bash(curl -s \"https://api.github.com/repos/kr-juso/administrationCode/contents/\")",
+      "Bash(awk -F'\\\\t' '$6!=\"\"' /tmp/admdong.tsv)",
+      "Bash(awk -F'\\\\t' '{print NF}' /tmp/admdong.tsv)",
+      "Bash(awk -F'\\\\t' '$3==\"\" {print $2}' /tmp/admdong.tsv)",
+      "Bash(awk -F'\\\\t' '$3!=\"\" && $4==\"\" {print}' /tmp/admdong.tsv)",
+      "Bash(awk -F'\\\\t' '$2==\"세종특별자치시\"' /tmp/admdong.tsv)",
+      "Bash(awk -F'\\\\t' '$2==\"세종특별자치시\" && $4!=\"\"' /tmp/admdong.tsv)",
+      "Bash(awk -F'\\\\t' '$2==\"제주특별자치도\"' /tmp/admdong.tsv)",
+      "Bash(awk -F'\\\\t' '$2==\"울산광역시\" && $4==\"\"' /tmp/admdong.tsv)",
+      "Bash(awk -F'\\\\t' '$2==\"대구광역시\" && $4==\"\"' /tmp/admdong.tsv)",
+      "Bash(node scripts/build-admdong.mjs)",
+      "Bash(cp /tmp/admdong.tsv \"c:/refill/church_project/scripts/admdong.tsv\" && wc -l \"c:/refill/church_project/scripts/admdong.tsv\")",
+      "Bash(awk -F'\\\\t' '$3==\"동해시\"' /tmp/admdong.tsv)",
+      "Bash(curl -s \"https://raw.githubusercontent.com/kr-juso/administrationCode/main/administrationCode.tsv\" -o /tmp/admdong2.tsv)",
+      "Bash(awk -F'\\\\t' '$3 ~ /부천/' /tmp/admdong2.tsv)",
+      "WebSearch",
+      "Bash(node -e ' *)",
+      "WebFetch(domain:ko.wikipedia.org)",
+      "WebFetch(domain:www.mois.go.kr)",
+      "WebFetch(domain:namu.wiki)",
+      "Bash(curl -s \"https://api.github.com/repos/vuski/admdongkor/releases\")",
+      "Bash(curl -s \"https://api.github.com/repos/vuski/admdongkor/contents/\")",
+      "Bash(curl -s \"https://api.github.com/repos/vuski/admdongkor/contents/ver20260401\")",
+      "Bash(curl -s \"https://raw.githubusercontent.com/vuski/admdongkor/master/ver20260401/HangJeongDong_ver20260401.geojson\" -o \"c:/refill/church_project/scripts/admdong_geo.geojson\")",
+      "Bash(node scripts/diff-admdongkor.mjs)",
+      "Bash(node scripts/apply-admdongkor-diff.mjs)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(grep -rl \"korea_legal_dong\\\\|korea_local_data2\" --include=\"*.ts\" --include=\"*.tsx\" --include=\"*.js\" --include=\"*.mjs\" src/ scripts/)",
+      "Bash(git status *)",
+      "Bash(grep -rn \"/tmp/\\\\|d:/church\\\\|D:/church\\\\|d:\\\\\\\\\\\\\\\\church\\\\|D:\\\\\\\\\\\\\\\\church\" scripts/*.mjs)",
+      "Bash(grep -in \"^[A-Za-z_]*=.*[a-zA-Z]:[\\\\\\\\\\\\\\\\/]\" .env*)",
+      "Bash(Get-ChildItem -Path \"C:\\\\refill\\\\church_project\\\\src\\\\components\" -Directory)"
+    ],
+    "additionalDirectories": [
+      "\\tmp"
     ]
   }
 }

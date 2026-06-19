@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { POST_SELECT, mapPost } from "@/lib/postMapper";
+import { POST_SELECT, mapPost, PRICE_TYPE_MAP } from "@/lib/postMapper";
 import { syncPostCategories, syncPostHashtags, syncPostLocationTags, syncPostImages } from "@/lib/postRelations";
+import { getSessionUserId } from "@/lib/auth";
 
 // GET /api/posts/[id]
 export async function GET(
@@ -30,8 +30,7 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await auth();
-  const userId = (session?.user as any)?.id as number | undefined;
+  const userId = await getSessionUserId();
   if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const postId = Number((await params).id);
@@ -49,18 +48,12 @@ export async function DELETE(
   return NextResponse.json({ ok: true });
 }
 
-const PRICE_TYPE_MAP: Record<string, string> = {
-  free: "FREE", monthly: "MONTHLY", yearly: "YEARLY",
-  per_session: "PER_SESSION", negotiable: "NEGOTIABLE",
-};
-
 // PATCH /api/posts/[id] — 작성자만 수정 가능
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await auth();
-  const userId = (session?.user as any)?.id as number | undefined;
+  const userId = await getSessionUserId();
   if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const postId = Number((await params).id);

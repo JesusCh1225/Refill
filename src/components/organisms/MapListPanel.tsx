@@ -2,6 +2,8 @@
 
 import { SearchResultItem } from "@/data/sampleMockResults";
 import { dirLabel } from "@/lib/dirLabel";
+import { haversineKm as distKm, fmtDist } from "@/lib/nearbySearch";
+import { tagChipCls as chipCls } from "@/lib/tagStyles";
 
 interface Props {
   isOpen: boolean;
@@ -10,26 +12,6 @@ interface Props {
   userLng?: number;
   onItemClick: (item: SearchResultItem) => void;
   onClose: () => void;
-}
-
-function distKm(lat1: number, lng1: number, lat2: number, lng2: number) {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-function fmtDist(km: number) {
-  return km < 1 ? `${Math.round(km * 1000)}m` : `${km.toFixed(1)}km`;
-}
-
-function chipCls(tags: string[]) {
-  if (tags.includes("lesson")) return "bg-violet-50 text-violet-600";
-  if (tags.includes("band")) return "bg-teal-50 text-teal-600";
-  return "bg-amber-50 text-amber-600";
 }
 
 export default function MapListPanel({ isOpen, items, userLat, userLng, onItemClick, onClose }: Props) {

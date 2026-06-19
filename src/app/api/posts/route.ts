@@ -1,18 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { POST_SELECT, mapPost } from "@/lib/postMapper";
+import { POST_SELECT, mapPost, PRICE_TYPE_MAP } from "@/lib/postMapper";
 import { syncPostCategories, syncPostHashtags, syncPostLocationTags, syncPostImages } from "@/lib/postRelations";
+import { getSessionUserId } from "@/lib/auth";
 
 const PAGE_SIZE = 50;
-
-const PRICE_TYPE_MAP: Record<string, string> = {
-  free: "FREE",
-  monthly: "MONTHLY",
-  yearly: "YEARLY",
-  per_session: "PER_SESSION",
-  negotiable: "NEGOTIABLE",
-};
 
 // GET /api/posts?q=&category=&direction=&page=
 export async function GET(req: NextRequest) {
@@ -43,8 +35,7 @@ export async function GET(req: NextRequest) {
 
 // POST /api/posts — 새 게시글 작성 (로그인 필수)
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  const userId = (session?.user as any)?.id as number | undefined;
+  const userId = await getSessionUserId();
   if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   let body: any;
