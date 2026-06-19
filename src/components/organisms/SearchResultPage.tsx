@@ -75,7 +75,7 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
   const handleSetQuery = (q: string) => { queryRef.current = q; setQuery(q); };
   const handleSearch = (voiceQuery?: string) => {
     const q = voiceQuery ?? queryRef.current;
-    if (q.trim()) onBack(q);
+    onBack(q);
   };
 
   const fetchResults = (apiQuery: string) => {
@@ -109,13 +109,15 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
 
   // 초기 로드
   useEffect(() => {
-    const nearby = isNearbyQuery(initialQuery);
+    // 검색어 없이 검색하면 현재 위치 기준 근처 게시글을 보여줌
+    const isEmptyQuery = initialQuery.trim() === "";
+    const nearby = isNearbyQuery(initialQuery) || isEmptyQuery;
     setIsNearby(nearby);
 
     // 근처 검색이면 "근처/주변" 키워드 제거 후 쿼리 정제
     const cleanedQuery = nearby ? stripNearbyKeywords(initialQuery) : initialQuery;
 
-    const parsed = parseLocationFromQuery(cleanedQuery);
+    const parsed = cleanedQuery.trim() ? parseLocationFromQuery(cleanedQuery) : null;
     if (parsed) {
       setLocationSel([{ si: parsed.si, gu: parsed.gu, dong: parsed.dong }]);
       setQuery(parsed.restQuery);
@@ -264,7 +266,11 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
       {/* 결과 */}
       <div className="mx-auto px-3 sm:px-6 py-6 sm:py-8 pb-16" style={{ maxWidth: "var(--max-w-hero)" }}>
         <h2 className="text-[19px] sm:text-[23px] font-bold text-text-heading tracking-tight mb-4">
-          &ldquo;{initialQuery}&rdquo; 검색 결과
+          {initialQuery.trim() ? (
+            <>&ldquo;{initialQuery}&rdquo; 검색 결과</>
+          ) : (
+            "내 주변 게시글"
+          )}
         </h2>
 
         {/* 근처 검색 상태 배너 */}

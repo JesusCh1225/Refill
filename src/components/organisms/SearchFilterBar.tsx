@@ -26,7 +26,7 @@ interface Props {
 }
 
 const SORT_OPTIONS: { id: SortOption; label: string }[] = [
-  { id: "latest",     label: "최근순" },
+  { id: "latest",     label: "최신순" },
   { id: "price_low",  label: "가격 낮은순" },
   { id: "price_high", label: "가격 높은순" },
 ];

@@ -73,7 +73,7 @@ export const CATEGORIES: Category[] = [
 export const CATEGORY_TAG_MAP: Record<string, string[]> = {
   all: [], lesson: ["lesson"], band: ["band"], guitar: ["guitar"],
   drum: ["drum"], piano: ["piano"], vocal: ["vocal"], wind: ["wind"],
-  string: ["string"], dj: ["dj"], record: ["record"],
+  string: ["string"], dj: ["dj"], record: ["record"], book: ["book"],
   instrument: ["instrument"], equipment: ["equipment"],
 };
 

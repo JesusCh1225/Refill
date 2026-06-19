@@ -28,13 +28,13 @@ export const NEGOTIABLE_PRICE = -1;
 
 export const PRICE_RANGES = [
   { id: "free",       label: "무료",       min: 0,       max: 0 },
+  { id: "negotiable", label: "협의",       min: NEGOTIABLE_PRICE, max: NEGOTIABLE_PRICE },
   { id: "u5",         label: "5만원 이하",  min: 0,       max: 50_000 },
   { id: "5to10",      label: "5~10만원",   min: 50_000,  max: 100_000 },
   { id: "10to15",     label: "10~15만원",  min: 100_000, max: 150_000 },
   { id: "15to20",     label: "15~20만원",  min: 150_000, max: 200_000 },
   { id: "20to50",     label: "20~50만원",  min: 200_000, max: 500_000 },
   { id: "o50",        label: "50만원 이상", min: 500_000, max: Infinity },
-  { id: "negotiable", label: "협의",       min: NEGOTIABLE_PRICE, max: NEGOTIABLE_PRICE },
 ] as const;
 
 export type PriceRangeId = (typeof PRICE_RANGES)[number]["id"];

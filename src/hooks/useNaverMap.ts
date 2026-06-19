@@ -11,6 +11,7 @@ interface UseNaverMapOptions {
   onMarkerClick: (item: SearchResultItem) => void;
   onGeoError?: () => void;
   onBoundsChange?: () => void;
+  onUserLocation?: (lat: number, lng: number) => void;
 }
 
 export function useNaverMap({
@@ -20,11 +21,14 @@ export function useNaverMap({
   onMarkerClick,
   onGeoError,
   onBoundsChange,
+  onUserLocation,
 }: UseNaverMapOptions) {
   const mapObjRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
   const onBoundsChangeRef = useRef(onBoundsChange);
   onBoundsChangeRef.current = onBoundsChange;
+  const onUserLocationRef = useRef(onUserLocation);
+  onUserLocationRef.current = onUserLocation;
 
   const renderMarkers = useCallback(
     (items: SearchResultItem[], map: any) => {
@@ -111,6 +115,7 @@ export function useNaverMap({
               anchor: new window.naver.maps.Point(8, 8),
             },
           });
+          onUserLocationRef.current?.(lat, lng);
           setReady();
         },
         () => {

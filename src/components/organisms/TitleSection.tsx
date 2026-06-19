@@ -19,7 +19,6 @@ export default function TitleSection({ onSearch }: TitleSectionProps) {
 
   const handleSearch = (voiceQuery?: string) => {
     const q = voiceQuery ?? queryRef.current;
-    if (!q.trim()) return;
     onSearch(q);
   };
 

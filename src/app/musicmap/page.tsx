@@ -23,6 +23,8 @@ const CHIP_FILTERS = [
   { id: "lesson", label: "레슨" },
   { id: "band", label: "밴드/합주" },
   { id: "instrument", label: "악기거래" },
+  { id: "record", label: "음반/LP" },
+  { id: "book", label: "악보/교재" },
 ];
 
 export default function MusicMapPage() {
@@ -63,6 +65,10 @@ export default function MusicMapPage() {
     onMarkerClick: handleMarkerClick,
     onGeoError: handleGeoError,
     onBoundsChange: useCallback(() => setShowAreaSearch(true), []),
+    onUserLocation: useCallback((lat: number, lng: number) => {
+      setUserLat(lat);
+      setUserLng(lng);
+    }, []),
   });
 
   /* ── 게시글 로드 ── */
@@ -256,19 +262,6 @@ export default function MusicMapPage() {
     setPanelOpen(true);
     setShowAreaSearch(false);
   };
-
-  /* ── 현재 위치 취득 (조용히, 지도 이동 없이) ── */
-  useEffect(() => {
-    if (!navigator.geolocation) return;
-    navigator.geolocation.getCurrentPosition(
-      ({ coords: { latitude: lat, longitude: lng } }) => {
-        setUserLat(lat);
-        setUserLng(lng);
-      },
-      () => {},
-      { timeout: 8000 },
-    );
-  }, []);
 
   const handleMyLocation = () => {
     if (!navigator.geolocation || !mapObjRef.current) return;

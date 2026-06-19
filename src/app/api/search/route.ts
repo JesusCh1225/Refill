@@ -33,48 +33,51 @@ async function getGeminiSuggestions(query: string): Promise<string[]> {
 
 export async function POST(req: NextRequest) {
   const { query } = await req.json();
-
-  if (!query?.trim()) {
-    return NextResponse.json({ results: [], keywords: [] });
-  }
-
-  const parsed = await parseSearchQuery(query);
+  const trimmed = (query ?? "").trim();
 
   const where: any = { status: "PUBLISHED" };
+  let keywords: string[] = [];
+  let regionNames: string[] = [];
 
-  // 지역 필터
-  if (parsed.regions.length > 0) {
-    const regionKeywords = parsed.regions.flatMap((r: any) => r.keywords);
-    where.locationTags = {
-      some: { tag: { in: regionKeywords } },
-    };
-  }
+  // 빈 쿼리: 위치 기반(근처) 검색용으로 최근 게시글을 폭넓게 가져옴
+  if (trimmed) {
+    const parsed = await parseSearchQuery(trimmed);
+    keywords = parsed.keywords;
+    regionNames = parsed.regions.map((r: any) => r.name);
 
-  // 악기/서비스 키워드 필터
-  // parsed.keywords: 사전 매칭 결과, 아무것도 안 맞으면 원본 단어 폴백 (해시태그 직접 검색 등)
-  const filterKeywords = parsed.keywords;
-  if (filterKeywords.length > 0) {
-    where.OR = filterKeywords.flatMap((kw: string) => [
-      { title: { contains: kw } },
-      { hashtags: { some: { hashtag: { name: { contains: kw } } } } },
-      { categories: { some: { category: { name: { contains: kw } } } } },
-    ]);
+    // 지역 필터
+    if (parsed.regions.length > 0) {
+      const regionKeywords = parsed.regions.flatMap((r: any) => r.keywords);
+      where.locationTags = {
+        some: { tag: { in: regionKeywords } },
+      };
+    }
+
+    // 악기/서비스 키워드 필터
+    // parsed.keywords: 사전 매칭 결과, 아무것도 안 맞으면 원본 단어 폴백 (해시태그 직접 검색 등)
+    if (parsed.keywords.length > 0) {
+      where.OR = parsed.keywords.flatMap((kw: string) => [
+        { title: { contains: kw } },
+        { hashtags: { some: { hashtag: { name: { contains: kw } } } } },
+        { categories: { some: { category: { name: { contains: kw } } } } },
+      ]);
+    }
   }
 
   const results = await prisma.post.findMany({
     where,
     orderBy: { createdAt: "desc" },
-    take: 50,
+    take: trimmed ? 50 : 200,
     select: POST_SELECT,
   });
 
   const mapped = results.map(mapPost);
-  const suggestions = mapped.length === 0 ? await getGeminiSuggestions(query.trim()) : [];
+  const suggestions = trimmed && mapped.length === 0 ? await getGeminiSuggestions(trimmed) : [];
 
   return NextResponse.json({
     results: mapped,
     suggestions,
-    keywords: parsed.keywords,
-    regions: parsed.regions.map((r: any) => r.name),
+    keywords,
+    regions: regionNames,
   });
 }

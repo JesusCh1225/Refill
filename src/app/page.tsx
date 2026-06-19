@@ -13,11 +13,11 @@ function HomePageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { requireLogin, createPost } = useCreatePost();
-  const query = searchParams.get("q") ?? "";
+  const queryParam = searchParams.get("q");
   const [writeOpen, setWriteOpen] = useState(false);
 
   const handleSearch = (q: string) => {
-    if (q.trim()) router.push(`/?q=${encodeURIComponent(q.trim())}`);
+    router.push(`/?q=${encodeURIComponent(q.trim())}`);
   };
 
   const handleLogoClick = () => router.push("/");
@@ -32,11 +32,11 @@ function HomePageContent() {
     if (newPost) router.push("/musicmap");
   };
 
-  if (query) {
+  if (queryParam !== null) {
     return (
       <SearchResultPage
-        key={query}
-        initialQuery={query}
+        key={queryParam}
+        initialQuery={queryParam}
         onBack={handleSearch}
         onLogoClick={handleLogoClick}
       />
