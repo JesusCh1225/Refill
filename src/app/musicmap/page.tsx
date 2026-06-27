@@ -224,22 +224,26 @@ export default function MusicMapPage() {
     if (q) {
       let instruments: string[] = [];
       let services: string[] = [];
+      let rawTokens: string[] = [];
       try {
         const res = await fetch(`/api/search/parse?q=${encodeURIComponent(q)}`);
         const data = await res.json();
         instruments = data.instruments ?? [];
         services = data.services ?? [];
+        rawTokens = data.rawTokens ?? [];
       } catch { /* 실패 시 아래 폴백 사용 */ }
 
-      if (instruments.length > 0 || services.length > 0) {
+      if (instruments.length > 0 || services.length > 0 || rawTokens.length > 0) {
         // 악기/서비스 각각 OR, 둘 사이는 AND
+        // rawTokens(미등록 악기 등)는 각각 AND 조건으로 추가
         keywordFiltered = base.filter((item) => {
           const matchInstr = instruments.length === 0 || instruments.some((kw) => matchesToken(item, kw));
           const matchSvc = services.length === 0 || services.some((kw) => matchesToken(item, kw));
-          return matchInstr && matchSvc;
+          const matchRaw = rawTokens.every((t) => matchesToken(item, t));
+          return matchInstr && matchSvc && matchRaw;
         });
       } else {
-        // AI가 악기/서비스를 인식 못한 경우: 원문 토큰으로 폴백
+        // 아무것도 인식 못한 경우: 원문 토큰으로 폴백
         const tokens = extractKeywords(q.toLowerCase());
         keywordFiltered = tokens.length ? base.filter((item) => tokens.every((t) => matchesToken(item, t))) : base;
       }
@@ -348,6 +352,18 @@ export default function MusicMapPage() {
     setShowAreaSearch(false);
   };
 
+  const handleHashtagClick = useCallback((tag: string) => {
+    setSearchInput(`#${tag}`);
+    const result = applyChipFilter(allPosts, chipFilter).filter((item) =>
+      item.keywords.some((kw) => kw.toLowerCase() === tag.toLowerCase()),
+    );
+    setFilteredItems(result);
+    filteredItemsRef.current = result;
+    setSelectedItem(null);
+    setPanelOpen(true);
+    if (mapObjRef.current) renderMarkers(result, mapObjRef.current);
+  }, [allPosts, chipFilter, renderMarkers]);
+
   const handleMyLocation = () => {
     if (!navigator.geolocation || !mapObjRef.current) return;
     navigator.geolocation.getCurrentPosition(
@@ -447,6 +463,7 @@ export default function MusicMapPage() {
           onBackToList={() => setSelectedItem(null)}
           onClose={() => { setPanelOpen(false); setSelectedItem(null); }}
           onDetailClick={(item) => router.push(`/post/${item.id}`)}
+          onHashtagClick={handleHashtagClick}
         />
       </div>
 

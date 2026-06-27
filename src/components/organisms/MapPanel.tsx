@@ -13,11 +13,12 @@ interface MapPanelProps {
   onBackToList: () => void;
   onClose: () => void;
   onDetailClick: (item: SearchResultItem) => void;
+  onHashtagClick?: (tag: string) => void;
 }
 
 export default function MapPanel({
   isOpen, items, selectedItem, userLat, userLng,
-  onItemClick, onBackToList, onClose, onDetailClick,
+  onItemClick, onBackToList, onClose, onDetailClick, onHashtagClick,
 }: MapPanelProps) {
   const hasLocation = userLat !== undefined && userLng !== undefined;
 
@@ -93,9 +94,13 @@ export default function MapPanel({
             {selectedItem.keywords.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
                 {selectedItem.keywords.map((kw) => (
-                  <span key={kw} className={`px-2 py-0.5 rounded-full border text-[10px] ${tagChipCls(selectedItem.tags)}`}>
+                  <button
+                    key={kw}
+                    onClick={() => onHashtagClick?.(kw)}
+                    className={`px-2 py-0.5 rounded-full border text-[10px] cursor-pointer bg-transparent transition-opacity hover:opacity-70 ${tagChipCls(selectedItem.tags)}`}
+                  >
                     #{kw}
-                  </span>
+                  </button>
                 ))}
               </div>
             )}
