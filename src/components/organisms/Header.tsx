@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
+import { usePathname } from "next/navigation";
 import Logo from "@/components/atom/Logo";
 import NavLink from "@/components/atom/NavLink";
 import Avatar from "@/components/atom/Avatar";
@@ -17,11 +18,32 @@ interface HeaderProps {
   onLogoClick?: () => void;
 }
 
+function BellIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    </svg>
+  );
+}
+
 export default function Header({ onLogoClick }: HeaderProps) {
   const { data: session, status } = useSession();
   const loading = status === "loading";
   const [loginOpen, setLoginOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (!session) { setUnreadCount(0); return; }
+    // 알림 페이지에 머무는 동안은 뱃지를 즉시 0으로
+    if (pathname === "/notifications") { setUnreadCount(0); return; }
+    fetch("/api/notifications")
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => { if (data) setUnreadCount(data.unreadCount); })
+      .catch(() => {});
+  }, [session, pathname]);
 
   return (
     <>
@@ -58,6 +80,14 @@ export default function Header({ onLogoClick }: HeaderProps) {
             <div className="w-8 h-8 rounded-full bg-brand-bg animate-pulse" />
           ) : session ? (
             <div className="flex items-center gap-3">
+              <Link href="/notifications" className="relative text-text-muted hover:text-text-body transition-colors">
+                <BellIcon />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-4 h-4 px-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center leading-none">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
+              </Link>
               <Link
                 href="/profile"
                 className="flex items-center gap-2 hover:opacity-80 transition-opacity"
@@ -95,12 +125,19 @@ export default function Header({ onLogoClick }: HeaderProps) {
           {loading ? (
             <div className="w-8 h-8 rounded-full bg-brand-bg animate-pulse" />
           ) : session ? (
-            <Link
-              href="/profile"
-              className="hover:opacity-80 transition-opacity"
-            >
-              <Avatar src={session.user.image} name={session.user.name ?? "?"} className="w-8 h-8" textClassName="text-sm" />
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link href="/notifications" className="relative text-text-muted hover:text-text-body transition-colors">
+                <BellIcon />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-4 h-4 px-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center leading-none">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
+              </Link>
+              <Link href="/profile" className="hover:opacity-80 transition-opacity">
+                <Avatar src={session.user.image} name={session.user.name ?? "?"} className="w-8 h-8" textClassName="text-sm" />
+              </Link>
+            </div>
           ) : (
             <button
               onClick={() => setLoginOpen(true)}

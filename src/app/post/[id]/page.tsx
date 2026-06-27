@@ -34,6 +34,20 @@ export default function PostDetailPage({
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [postDeletePending, setPostDeletePending] = useState(false);
   const [postDeleting, setPostDeleting] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportDone, setReportDone] = useState(false);
+
+  const REPORT_REASONS = ["스팸/광고", "불법 정보", "욕설/혐오", "사기 의심", "기타"];
+
+  const handleReport = async (reason: string) => {
+    await fetch(`/api/posts/${id}/report`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reason }),
+    });
+    setReportOpen(false);
+    setReportDone(true);
+  };
 
   useEffect(() => {
     fetch(`/api/posts/${id}`)
@@ -112,7 +126,7 @@ export default function PostDetailPage({
           >
             ← 목록으로
           </button>
-          {isAuthor && (
+          {isAuthor ? (
             <div className="flex items-center gap-2">
               {!postDeletePending && (
                 <button onClick={() => setEditModalOpen(true)} className="px-3 h-7 rounded-lg border border-brand text-brand text-[12px] font-semibold bg-transparent cursor-pointer hover:bg-brand-bg transition-colors">
@@ -130,6 +144,32 @@ export default function PostDetailPage({
                 confirmButtonClassName="px-3 h-7 rounded-lg bg-red-500 text-white text-[12px] font-semibold border-none cursor-pointer hover:bg-red-600 disabled:opacity-50"
                 cancelButtonClassName="px-3 h-7 rounded-lg border border-border-base text-[12px] text-text-muted bg-white cursor-pointer hover:bg-surface-card"
               />
+            </div>
+          ) : myUserId && (
+            <div className="relative">
+              {reportDone ? (
+                <span className="text-[12px] text-text-muted">신고 접수됨</span>
+              ) : (
+                <button
+                  onClick={() => setReportOpen((v) => !v)}
+                  className="px-3 h-7 rounded-lg border border-border-base text-[12px] text-text-muted bg-transparent cursor-pointer hover:border-red-300 hover:text-red-400 transition-colors"
+                >
+                  신고
+                </button>
+              )}
+              {reportOpen && (
+                <div className="absolute right-0 top-full mt-1 z-50 bg-white rounded-xl border border-border-base shadow-lg py-1 min-w-35">
+                  {REPORT_REASONS.map((r) => (
+                    <button
+                      key={r}
+                      onClick={() => handleReport(r)}
+                      className="w-full text-left px-4 py-2.5 text-[13px] text-text-body hover:bg-surface-card border-none bg-transparent cursor-pointer"
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -204,7 +244,7 @@ export default function PostDetailPage({
           </div>
         </div>
 
-        <CommentSection postId={id} />
+        <CommentSection postId={id} postAuthorId={item.authorId} />
       </div>
     </div>
   );

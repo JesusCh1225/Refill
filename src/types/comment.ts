@@ -1,6 +1,7 @@
 export interface CommentData {
   id: number;
-  content: string;
+  content: string | null; // null = 비밀 댓글 중 열람 불가
+  isSecret: boolean;
   guestName: string | null;
   authorId: number | null;
   parentId: number | null;

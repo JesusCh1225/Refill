@@ -22,15 +22,18 @@ model User {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
-  oauthAccounts    OAuthAccount[]
-  posts            Post[]
-  comments         Comment[]
-  likes            Like[]
-  bookmarks        Bookmark[]
-  sentMessages     Message[] @relation("SentMessages")
-  receivedMessages Message[] @relation("ReceivedMessages")
-  reviewsGiven     Review[]  @relation("ReviewsGiven")
-  reviewsReceived  Review[]  @relation("ReviewsReceived")
+  oauthAccounts        OAuthAccount[]
+  posts                Post[]
+  comments             Comment[]
+  likes                Like[]
+  bookmarks            Bookmark[]
+  sentMessages         Message[]      @relation("SentMessages")
+  receivedMessages     Message[]      @relation("ReceivedMessages")
+  reviewsGiven         Review[]       @relation("ReviewsGiven")
+  reviewsReceived      Review[]       @relation("ReviewsReceived")
+  notifications        Notification[] @relation("NotificationsReceived")
+  actedNotifications   Notification[] @relation("NotificationsSent")
+  reports              Report[]
 }
 
 // ── OAuth 계정 연동 ──────────────────────────────────────────────────────
@@ -125,11 +128,13 @@ model Post {
   images       PostImage[]
   locationTags PostLocationTag[]
   hashtags     PostHashtag[]
-  comments     Comment[]
-  likes        Like[]
-  bookmarks    Bookmark[]
-  messages     Message[]
-  reviews      Review[]
+  comments      Comment[]
+  likes         Like[]
+  bookmarks     Bookmark[]
+  messages      Message[]
+  reviews       Review[]
+  notifications Notification[]
+  reports       Report[]
 
   @@index([status, createdAt])
   @@index([authorId])
@@ -178,6 +183,7 @@ model Comment {
   id        Int      @id @default(autoincrement())
   content   String   @db.Text
   guestName String?  @db.VarChar(50)
+  isSecret  Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -259,4 +265,40 @@ model Message {
   post     Post? @relation(fields: [postId], references: [id])
 
   @@index([receiverId, isRead])
+}
+
+// ── 알림 ──────────────────────────────────────────────────────────────────
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int                           // 수신자
+  actorId   Int                           // 발생자 (댓글 작성자 등)
+  type      String   @db.VarChar(20)      // COMMENT | REPLY
+  postId    Int?
+  commentId Int?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user    User  @relation("NotificationsReceived", fields: [userId],  references: [id], onDelete: Cascade)
+  actor   User  @relation("NotificationsSent",     fields: [actorId], references: [id], onDelete: Cascade)
+  post    Post? @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+}
+
+// ── 신고 ──────────────────────────────────────────────────────────────────
+
+model Report {
+  id         Int      @id @default(autoincrement())
+  reporterId Int
+  postId     Int?
+  reason     String   @db.VarChar(200)
+  status     String   @default("PENDING") @db.VarChar(20)
+  createdAt  DateTime @default(now())
+
+  reporter User  @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  post     Post? @relation(fields: [postId],     references: [id], onDelete: Cascade)
+
+  @@index([status])
 }

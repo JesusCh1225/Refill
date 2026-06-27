@@ -58,7 +58,11 @@
       "Bash(vercel --version)",
       "PowerShell(vercel --version 2>&1)",
       "PowerShell(npm install -g vercel 2>&1)",
-      "PowerShell(vercel --version)"
+      "PowerShell(vercel --version)",
+      "Bash(mkdir -p /d/church_project/src/app/api/posts/\\\\[id\\\\]/report)"
+    ],
+    "additionalDirectories": [
+      "D:\\church_project\\src\\app\\api\\posts\\[id]"
     ]
   }
 }

@@ -9,9 +9,19 @@ import { type CommentData, displayAuthor, isEdited, formatDate } from "@/types/c
 
 interface Props {
   postId: string;
+  postAuthorId?: number;
 }
 
-export default function CommentSection({ postId }: Props) {
+function LockIcon() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="inline-block shrink-0">
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
+  );
+}
+
+export default function CommentSection({ postId, postAuthorId }: Props) {
   const { data: session } = useSession();
   const myUserId = (session?.user as any)?.id as number | undefined;
 
@@ -27,6 +37,7 @@ export default function CommentSection({ postId }: Props) {
 
   // ── 댓글 작성 ──────────────────────────────────────────────────────────
   const [commentText, setCommentText] = useState("");
+  const [commentSecret, setCommentSecret] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const handleCommentSubmit = async (e: React.FormEvent) => {
@@ -37,12 +48,13 @@ export default function CommentSection({ postId }: Props) {
       const res = await fetch(`/api/posts/${postId}/comments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: commentText.trim() }),
+        body: JSON.stringify({ content: commentText.trim(), isSecret: commentSecret }),
       });
       if (res.ok) {
         const created: CommentData = await res.json();
         setComments((prev) => [...prev, created]);
         setCommentText("");
+        setCommentSecret(false);
       }
     } finally {
       setSubmitting(false);
@@ -56,7 +68,7 @@ export default function CommentSection({ postId }: Props) {
 
   const startEdit = (c: CommentData) => {
     setEditingId(c.id);
-    setEditText(c.content);
+    setEditText(c.content ?? "");
     setDeletingId(null);
   };
 
@@ -106,6 +118,7 @@ export default function CommentSection({ postId }: Props) {
   // ── 대댓글 ─────────────────────────────────────────────────────────────
   const [replyingTo, setReplyingTo] = useState<number | null>(null);
   const [replyText, setReplyText] = useState("");
+  const [replySecret, setReplySecret] = useState(false);
   const [replySaving, setReplySaving] = useState(false);
 
   const handleReplySubmit = async (parentId: number) => {
@@ -115,7 +128,7 @@ export default function CommentSection({ postId }: Props) {
       const res = await fetch(`/api/posts/${postId}/comments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: replyText.trim(), parentId }),
+        body: JSON.stringify({ content: replyText.trim(), parentId, isSecret: replySecret }),
       });
       if (res.ok) {
         const created: CommentData = await res.json();
@@ -125,11 +138,17 @@ export default function CommentSection({ postId }: Props) {
           ),
         );
         setReplyText("");
+        setReplySecret(false);
       }
     } finally {
       setReplySaving(false);
     }
   };
+
+  // ── 비밀 댓글 열람 가능 여부 ──────────────────────────────────────────
+  const canSeeSecret = (authorId: number | null) =>
+    myUserId !== undefined &&
+    (myUserId === authorId || myUserId === postAuthorId);
 
   return (
     <div className="mt-6 bg-white rounded-2xl border border-border-card px-4 py-5 sm:px-8 sm:py-7 flex flex-col gap-6">
@@ -148,17 +167,27 @@ export default function CommentSection({ postId }: Props) {
             const editing = editingId === c.id;
             const pendingDelete = deletingId === c.id;
             const isReplying = replyingTo === c.id;
+            const isHidden = c.isSecret && c.content === null;
 
             return (
               <li key={c.id} className="py-4 flex flex-col gap-2">
                 {/* 헤더 */}
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <AuthorLink authorId={c.authorId} name={displayAuthor(c)} className="text-[13px] font-semibold text-text-heading" />
+                    {isHidden ? (
+                      <span className="text-[13px] font-semibold text-text-muted">작성자</span>
+                    ) : (
+                      <AuthorLink authorId={c.authorId} name={displayAuthor(c)} className="text-[13px] font-semibold text-text-heading" />
+                    )}
                     <span className="text-[11px] text-text-muted">{formatDate(c.createdAt)}</span>
-                    {isEdited(c) && <span className="text-[10px] text-text-placeholder">(수정됨)</span>}
+                    {isEdited(c) && !isHidden && <span className="text-[10px] text-text-placeholder">(수정됨)</span>}
+                    {c.isSecret && (
+                      <span className="inline-flex items-center gap-0.5 text-[10px] text-text-muted">
+                        <LockIcon /> 비밀
+                      </span>
+                    )}
                   </div>
-                  {isMine && !editing && (
+                  {isMine && !editing && !isHidden && (
                     <div className="flex gap-2 shrink-0">
                       {!pendingDelete && (
                         <button onClick={() => startEdit(c)} className="text-[11px] text-text-muted hover:text-brand transition-colors border-none bg-transparent cursor-pointer p-0">수정</button>
@@ -187,6 +216,10 @@ export default function CommentSection({ postId }: Props) {
                       </div>
                     </div>
                   </div>
+                ) : isHidden ? (
+                  <p className="text-[13px] text-text-muted italic flex items-center gap-1.5">
+                    <LockIcon /> 비밀 댓글입니다.
+                  </p>
                 ) : (
                   <p className="text-[13px] text-text-body leading-relaxed whitespace-pre-wrap">{c.content}</p>
                 )}
@@ -197,15 +230,25 @@ export default function CommentSection({ postId }: Props) {
                     {c.replies!.map((r) => {
                       const rMine = myUserId !== undefined && r.authorId === myUserId;
                       const rPendingDelete = deletingId === r.id;
+                      const rHidden = r.isSecret && r.content === null;
                       return (
                         <li key={r.id} className="py-2.5 flex flex-col gap-1.5 border-b border-border-base last:border-none">
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <AuthorLink authorId={r.authorId} name={displayAuthor(r)} className="text-[12px] font-semibold text-text-heading" />
+                              {rHidden ? (
+                                <span className="text-[12px] font-semibold text-text-muted">작성자</span>
+                              ) : (
+                                <AuthorLink authorId={r.authorId} name={displayAuthor(r)} className="text-[12px] font-semibold text-text-heading" />
+                              )}
                               <span className="text-[10px] text-text-muted">{formatDate(r.createdAt)}</span>
-                              {isEdited(r) && <span className="text-[10px] text-text-placeholder">(수정됨)</span>}
+                              {isEdited(r) && !rHidden && <span className="text-[10px] text-text-placeholder">(수정됨)</span>}
+                              {r.isSecret && (
+                                <span className="inline-flex items-center gap-0.5 text-[10px] text-text-muted">
+                                  <LockIcon /> 비밀
+                                </span>
+                              )}
                             </div>
-                            {rMine && (
+                            {rMine && !rHidden && (
                               <ConfirmDeleteButton
                                 confirming={rPendingDelete}
                                 onConfirmingChange={(v) => setDeletingId(v ? r.id : null)}
@@ -215,7 +258,13 @@ export default function CommentSection({ postId }: Props) {
                               />
                             )}
                           </div>
-                          <p className="text-[12px] text-text-body leading-relaxed whitespace-pre-wrap">{r.content}</p>
+                          {rHidden ? (
+                            <p className="text-[12px] text-text-muted italic flex items-center gap-1.5">
+                              <LockIcon /> 비밀 댓글입니다.
+                            </p>
+                          ) : (
+                            <p className="text-[12px] text-text-body leading-relaxed whitespace-pre-wrap">{r.content}</p>
+                          )}
                         </li>
                       );
                     })}
@@ -223,9 +272,9 @@ export default function CommentSection({ postId }: Props) {
                 )}
 
                 {/* 답글 버튼 — 로그인 시에만 */}
-                {!editing && session && (
+                {!editing && session && !isHidden && (
                   <button
-                    onClick={() => { setReplyingTo(isReplying ? null : c.id); setReplyText(""); }}
+                    onClick={() => { setReplyingTo(isReplying ? null : c.id); setReplyText(""); setReplySecret(false); }}
                     className="self-start text-[11px] text-text-muted hover:text-brand transition-colors border-none bg-transparent cursor-pointer p-0"
                   >
                     {isReplying ? "↩ 취소" : "↩ 답글"}
@@ -253,7 +302,20 @@ export default function CommentSection({ postId }: Props) {
                         {replySaving ? "…" : "등록"}
                       </button>
                     </div>
-                    <p className="text-right text-[10px] text-text-placeholder">{replyText.length}/500</p>
+                    <div className="flex items-center justify-between">
+                      <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={replySecret}
+                          onChange={(e) => setReplySecret(e.target.checked)}
+                          className="w-3.5 h-3.5 accent-brand cursor-pointer"
+                        />
+                        <span className="text-[11px] text-text-muted flex items-center gap-0.5">
+                          <LockIcon /> 비밀 답글
+                        </span>
+                      </label>
+                      <p className="text-[10px] text-text-placeholder">{replyText.length}/500</p>
+                    </div>
                   </div>
                 )}
               </li>
@@ -287,7 +349,20 @@ export default function CommentSection({ postId }: Props) {
                 {submitting ? "등록중…" : "등록"}
               </button>
             </div>
-            <p className="text-right text-[11px] text-text-placeholder">{commentText.length}/500</p>
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={commentSecret}
+                  onChange={(e) => setCommentSecret(e.target.checked)}
+                  className="w-3.5 h-3.5 accent-brand cursor-pointer"
+                />
+                <span className="text-[11px] text-text-muted flex items-center gap-0.5">
+                  <LockIcon /> 비밀 댓글
+                </span>
+              </label>
+              <p className="text-[11px] text-text-placeholder">{commentText.length}/500</p>
+            </div>
           </form>
         ) : (
           <div className="py-4 text-center rounded-xl bg-surface-card border border-border-base">
