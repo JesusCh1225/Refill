@@ -112,13 +112,23 @@ export async function POST(
 
   // 알림 생성 (자신의 글/댓글에는 알림 안 보냄)
   if (parentId) {
-    const parent = await prisma.comment.findUnique({
-      where: { id: parentId },
-      select: { authorId: true },
-    });
-    if (parent?.authorId && parent.authorId !== userId) {
+    // 스레드 참여자 전원 조회: 최상위 댓글 작성자 + 기존 답글 작성자
+    const [parentComment, existingReplies] = await Promise.all([
+      prisma.comment.findUnique({ where: { id: parentId }, select: { authorId: true } }),
+      prisma.comment.findMany({ where: { parentId }, select: { authorId: true } }),
+    ]);
+
+    const recipientIds = new Set<number>();
+    if (parentComment?.authorId && parentComment.authorId !== userId) {
+      recipientIds.add(parentComment.authorId);
+    }
+    for (const r of existingReplies) {
+      if (r.authorId && r.authorId !== userId) recipientIds.add(r.authorId);
+    }
+
+    for (const recipientId of recipientIds) {
       await prisma.notification.create({
-        data: { userId: parent.authorId, actorId: userId, type: "REPLY", postId, commentId },
+        data: { userId: recipientId, actorId: userId, type: "REPLY", postId, commentId },
       });
     }
   } else if (post.authorId !== userId) {
