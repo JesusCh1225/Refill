@@ -37,12 +37,19 @@ export default function Header({ onLogoClick }: HeaderProps) {
 
   useEffect(() => {
     if (!session) { setUnreadCount(0); return; }
-    // 알림 페이지에 머무는 동안은 뱃지를 즉시 0으로
     if (pathname === "/notifications") { setUnreadCount(0); return; }
-    fetch("/api/notifications")
-      .then((r) => r.ok ? r.json() : null)
-      .then((data) => { if (data) setUnreadCount(data.unreadCount); })
-      .catch(() => {});
+
+    const fetchCount = () => {
+      fetch("/api/notifications")
+        .then((r) => r.ok ? r.json() : null)
+        .then((data) => { if (data) setUnreadCount(data.unreadCount); })
+        .catch(() => {});
+    };
+
+    fetchCount();
+    // 60초마다 폴링 — 같은 페이지에 머물 때도 새 알림 뱃지 표시
+    const timer = setInterval(fetchCount, 60_000);
+    return () => clearInterval(timer);
   }, [session, pathname]);
 
   return (
