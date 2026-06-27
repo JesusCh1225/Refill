@@ -7,16 +7,19 @@ export async function PATCH(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const userId = await getSessionUserId();
-  if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  try {
+    const userId = await getSessionUserId();
+    if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const id = Number((await params).id);
-  if (isNaN(id)) return NextResponse.json({ error: "invalid id" }, { status: 400 });
+    const id = Number((await params).id);
+    if (isNaN(id)) return NextResponse.json({ error: "invalid id" }, { status: 400 });
 
-  await prisma.notification.updateMany({
-    where: { id, userId },
-    data: { isRead: true },
-  });
+    await prisma.$executeRaw`UPDATE "Notification" SET "isRead" = true WHERE id = ${id} AND "userId" = ${userId}`;
 
-  return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true });
+  } catch (err: unknown) {
+    console.error("[PATCH /api/notifications/[id]]", err);
+    const msg = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
 }
