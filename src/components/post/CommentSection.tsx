@@ -303,16 +303,15 @@ export default function CommentSection({ postId, postAuthorId }: Props) {
                       </button>
                     </div>
                     <div className="flex items-center justify-between">
-                      <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                      <label className={`flex items-center gap-1.5 cursor-pointer select-none px-2.5 py-1 rounded-full border transition-colors ${replySecret ? "border-brand bg-brand-bg text-brand" : "border-border-base text-text-muted hover:border-brand hover:text-brand"}`}>
                         <input
                           type="checkbox"
                           checked={replySecret}
                           onChange={(e) => setReplySecret(e.target.checked)}
-                          className="w-3.5 h-3.5 accent-brand cursor-pointer"
+                          className="sr-only"
                         />
-                        <span className="text-[11px] text-text-muted flex items-center gap-0.5">
-                          <LockIcon /> 비밀 답글
-                        </span>
+                        <LockIcon />
+                        <span className="text-[11px] font-medium">비밀 답글</span>
                       </label>
                       <p className="text-[10px] text-text-placeholder">{replyText.length}/500</p>
                     </div>
@@ -350,16 +349,15 @@ export default function CommentSection({ postId, postAuthorId }: Props) {
               </button>
             </div>
             <div className="flex items-center justify-between">
-              <label className="flex items-center gap-1.5 cursor-pointer select-none">
+              <label className={`flex items-center gap-1.5 cursor-pointer select-none px-2.5 py-1 rounded-full border transition-colors ${commentSecret ? "border-brand bg-brand-bg text-brand" : "border-border-base text-text-muted hover:border-brand hover:text-brand"}`}>
                 <input
                   type="checkbox"
                   checked={commentSecret}
                   onChange={(e) => setCommentSecret(e.target.checked)}
-                  className="w-3.5 h-3.5 accent-brand cursor-pointer"
+                  className="sr-only"
                 />
-                <span className="text-[11px] text-text-muted flex items-center gap-0.5">
-                  <LockIcon /> 비밀 댓글
-                </span>
+                <LockIcon />
+                <span className="text-[11px] font-medium">비밀 댓글</span>
               </label>
               <p className="text-[11px] text-text-placeholder">{commentText.length}/500</p>
             </div>
