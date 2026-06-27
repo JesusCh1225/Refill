@@ -2,17 +2,23 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUserId } from "@/lib/auth";
 
-// GET /api/users/[id]/reviews — 받은 리뷰 목록
+const REVIEWS_PAGE_SIZE = 10;
+
+// GET /api/users/[id]/reviews?skip=N — 받은 리뷰 목록 (페이지네이션)
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const revieweeId = Number((await params).id);
   if (isNaN(revieweeId)) return NextResponse.json({ error: "invalid id" }, { status: 400 });
 
+  const skip = Math.max(0, Number(new URL(req.url).searchParams.get("skip") ?? "0"));
+
   const reviews = await prisma.review.findMany({
     where: { revieweeId },
     orderBy: { createdAt: "desc" },
+    skip,
+    take: REVIEWS_PAGE_SIZE,
     select: {
       id: true,
       rating: true,

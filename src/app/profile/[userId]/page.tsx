@@ -59,6 +59,11 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userId
   const [loading, setLoading] = useState(true);
   const [postTab, setPostTab] = useState<"all" | "lesson" | "band" | "trade">("all");
 
+  // 리뷰 목록 (더보기 포함)
+  const [visibleReviews, setVisibleReviews] = useState<ReviewItem[]>([]);
+  const [reviewsExhausted, setReviewsExhausted] = useState(false);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+
   // 리뷰 작성 폼
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewContent, setReviewContent] = useState("");
@@ -70,10 +75,27 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userId
     setLoading(true);
     fetch(`/api/users/${userId}`)
       .then((r) => { if (!r.ok) throw new Error(); return r.json(); })
-      .then(setProfile)
+      .then((data: PublicProfile) => {
+        setProfile(data);
+        setVisibleReviews(data.reviewsReceived);
+        setReviewsExhausted(data.reviewsReceived.length >= data.reviewCount);
+      })
       .catch(() => setProfile(null))
       .finally(() => setLoading(false));
   }, [userId]);
+
+  const loadMoreReviews = async () => {
+    if (reviewsLoading || reviewsExhausted) return;
+    setReviewsLoading(true);
+    try {
+      const res = await fetch(`/api/users/${userId}/reviews?skip=${visibleReviews.length}`);
+      const data: ReviewItem[] = await res.json();
+      setVisibleReviews((prev) => [...prev, ...data]);
+      if (data.length < 10) setReviewsExhausted(true);
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
 
   const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,11 +110,11 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userId
       });
       const data = await res.json();
       if (!res.ok) { setReviewError(data.error ?? "오류가 발생했어요."); return; }
+      setVisibleReviews((prev) => [data, ...prev]);
       setProfile((p) =>
         p
           ? {
               ...p,
-              reviewsReceived: [data, ...p.reviewsReceived],
               reviewCount: p.reviewCount + 1,
               avgRating:
                 p.reviewCount === 0
@@ -290,22 +312,33 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userId
           </div>
 
           {/* 리뷰 목록 */}
-          {profile.reviewsReceived.length === 0 ? (
+          {visibleReviews.length === 0 ? (
             <p className="text-[13px] text-text-muted py-2">아직 리뷰가 없어요.</p>
           ) : (
-            <ul className="flex flex-col divide-y divide-border-base">
-              {profile.reviewsReceived.map((rv) => (
-                <li key={rv.id} className="py-4 flex flex-col gap-1.5">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Avatar src={rv.reviewer.avatarUrl} name={rv.reviewer.nickname ?? rv.reviewer.name} className="w-7 h-7 shrink-0" textClassName="text-[11px]" />
-                    <AuthorLink authorId={rv.reviewer.id} name={rv.reviewer.nickname ?? rv.reviewer.name} className="text-[13px] font-semibold text-text-heading" />
-                    <StarRating rating={rv.rating} size={13} />
-                    <span className="text-[11px] text-text-muted ml-auto">{formatDate(rv.createdAt)}</span>
-                  </div>
-                  {rv.content && <p className="text-[13px] text-text-body leading-relaxed pl-9">{rv.content}</p>}
-                </li>
-              ))}
-            </ul>
+            <>
+              <ul className="flex flex-col divide-y divide-border-base">
+                {visibleReviews.map((rv) => (
+                  <li key={rv.id} className="py-4 flex flex-col gap-1.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Avatar src={rv.reviewer.avatarUrl} name={rv.reviewer.nickname ?? rv.reviewer.name} className="w-7 h-7 shrink-0" textClassName="text-[11px]" />
+                      <AuthorLink authorId={rv.reviewer.id} name={rv.reviewer.nickname ?? rv.reviewer.name} className="text-[13px] font-semibold text-text-heading" />
+                      <StarRating rating={rv.rating} size={13} />
+                      <span className="text-[11px] text-text-muted ml-auto">{formatDate(rv.createdAt)}</span>
+                    </div>
+                    {rv.content && <p className="text-[13px] text-text-body leading-relaxed pl-9">{rv.content}</p>}
+                  </li>
+                ))}
+              </ul>
+              {!reviewsExhausted && (
+                <button
+                  onClick={loadMoreReviews}
+                  disabled={reviewsLoading}
+                  className="self-center text-[13px] text-text-muted hover:text-text-body border border-border-base rounded-full px-4 py-1.5 bg-transparent cursor-pointer hover:border-brand transition-colors disabled:opacity-50"
+                >
+                  {reviewsLoading ? "불러오는 중…" : "리뷰 더보기"}
+                </button>
+              )}
+            </>
           )}
 
           {/* 리뷰 작성 폼 (본인 제외, 로그인 필요) */}

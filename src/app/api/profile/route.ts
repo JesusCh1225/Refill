@@ -14,8 +14,17 @@ async function revokeKakao(accessToken: string) {
 async function revokeNaver(accessToken: string) {
   const clientId = process.env.NAVER_SEARCH_CLIENT_ID ?? "";
   const clientSecret = process.env.NAVER_SEARCH_CLIENT_SECRET ?? "";
-  const url = `https://nid.naver.com/oauth2.0/token?grant_type=delete&client_id=${clientId}&client_secret=${clientSecret}&access_token=${encodeURIComponent(accessToken)}&service_provider=NAVER`;
-  await fetch(url).catch(() => {});
+  await fetch("https://nid.naver.com/oauth2.0/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "delete",
+      client_id: clientId,
+      client_secret: clientSecret,
+      access_token: accessToken,
+      service_provider: "NAVER",
+    }).toString(),
+  }).catch(() => {});
 }
 
 // ── GET /api/profile ───────────────────────────────────────────────────────

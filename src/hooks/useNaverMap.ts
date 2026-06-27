@@ -25,6 +25,10 @@ export function useNaverMap({
 }: UseNaverMapOptions) {
   const mapObjRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
+
+  function escHtml(s: string) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
   const onBoundsChangeRef = useRef(onBoundsChange);
   onBoundsChangeRef.current = onBoundsChange;
   const onUserLocationRef = useRef(onUserLocation);
@@ -41,7 +45,7 @@ export function useNaverMap({
         const isCluster = cluster.items.length > 1;
         const content = isCluster
           ? `<div style="background:#8F4BC6;color:#fff;border-radius:50%;width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;box-shadow:0 2px 10px rgba(0,0,0,0.25);border:3px solid #fff;cursor:pointer;">${cluster.items.length}</div>`
-          : `<div style="background:#8F4BC6;color:#fff;border-radius:20px;padding:4px 10px;font-size:12px;font-weight:600;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.2);cursor:pointer;border:2px solid #fff;">${cluster.items[0].imageEmoji} ${cluster.items[0].price}</div>`;
+          : `<div style="background:#8F4BC6;color:#fff;border-radius:20px;padding:4px 10px;font-size:12px;font-weight:600;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.2);cursor:pointer;border:2px solid #fff;">${escHtml(cluster.items[0].imageEmoji)} ${escHtml(cluster.items[0].price)}</div>`;
 
         const marker = new window.naver.maps.Marker({
           position: new window.naver.maps.LatLng(cluster.lat, cluster.lng),

@@ -86,40 +86,65 @@ function extractFromDict(query: string, dict: Record<string, string[]>): string[
   return [...new Set(result)];
 }
 
+// AI 없이 키워드만으로 구인/구직 방향 감지
+function detectDirection(q: string): "OFFER" | "SEEK" | null {
+  const lower = q.toLowerCase();
+  const isSeek = ["삽니다", "살게요", "구합니다", "구해요", "구하고", "찾아요", "찾습니다", "배우고싶어", "배우고 싶어"].some((k) => lower.includes(k));
+  const isOffer = ["팝니다", "팔아요", "팔겠습니다", "판매합니다", "판매해요", "드립니다", "드려요", "가르쳐드"].some((k) => lower.includes(k));
+  if (isSeek && !isOffer) return "SEEK";
+  if (isOffer && !isSeek) return "OFFER";
+  return null;
+}
+
 export async function parseSearchQuery(query: string): Promise<ParsedQuery> {
   const q = query.trim();
 
-  const [regions, aiResult] = await Promise.all([
-    extractRegions(q),
-    parseWithAI(q),
-  ]);
+  // 지역 감지는 항상 실행
+  const regions = await extractRegions(q);
+
+  // 1단계: dict로 먼저 시도 (AI 호출 없음)
+  const dictInstruments = extractFromDict(q, INSTRUMENT_DICT);
+  const dictServices = extractFromDict(q, SERVICE_DICT);
+  const dictFound = dictInstruments.length > 0 || dictServices.length > 0;
 
   let instruments: string[];
   let services: string[];
   let direction: "OFFER" | "SEEK" | null;
+  let recognizedTerms: Set<string>;
 
-  if (aiResult) {
-    instruments = expandKeywords(aiResult.instruments, INSTRUMENT_DICT);
-    services = expandKeywords(aiResult.services, SERVICE_DICT);
-    // 밴드/합주는 구인·구직 양방향이 모두 유의미해서 direction 필터 적용 안 함
-    const hasBand = aiResult.services.some((s) => ["밴드", "합주"].includes(s));
-    direction = hasBand ? null : aiResult.direction;
+  if (q.length < 2 || dictFound) {
+    // dict 결과 사용 — AI 호출 안 함
+    instruments = dictInstruments;
+    services = dictServices;
+    direction = detectDirection(q);
+    // 밴드/합주는 구인·구직 양방향 모두 유의미해서 direction 필터 안 함
+    if (services.some((s) => ["밴드", "합주"].includes(s))) direction = null;
+    // dict에서 매칭된 원문 키 수집 (unrecognized 계산용)
+    recognizedTerms = new Set(
+      [...Object.keys(INSTRUMENT_DICT), ...Object.keys(SERVICE_DICT)]
+        .filter((key) => q.includes(key))
+        .map((key) => key.toLowerCase()),
+    );
   } else {
-    // dict 폴백
-    instruments = extractFromDict(q, INSTRUMENT_DICT);
-    services = extractFromDict(q, SERVICE_DICT);
-    direction = null;
+    // dict에서 못 찾음 → 오타·미등록 악기 가능성 → AI 호출
+    const aiResult = await parseWithAI(q);
+    if (aiResult) {
+      instruments = expandKeywords(aiResult.instruments, INSTRUMENT_DICT);
+      services = expandKeywords(aiResult.services, SERVICE_DICT);
+      const hasBand = aiResult.services.some((s) => ["밴드", "합주"].includes(s));
+      direction = hasBand ? null : aiResult.direction;
+      recognizedTerms = new Set([...aiResult.instruments, ...aiResult.services].map((s) => s.toLowerCase()));
+    } else {
+      instruments = [];
+      services = [];
+      direction = null;
+      recognizedTerms = new Set();
+    }
   }
 
   const contentKeywords = [...new Set([...instruments, ...services])];
 
-  // AI가 인식한 원문 단어 집합 (오카리나처럼 목록에 없는 단어 감지용)
-  const recognizedTerms = new Set([
-    ...(aiResult?.instruments ?? []),
-    ...(aiResult?.services ?? []),
-  ].map((s) => s.toLowerCase()));
-
-  // AI가 인식 못한 의미 있는 토큰 (지역명·조사 제외) — 미등록 악기명 등
+  // dict/AI 모두 인식 못한 토큰 → raw 키워드로 추가 (미등록 악기명 등)
   const unrecognized = q
     .split(/\s+/)
     .filter((w) => w.length >= 2 && !recognizedTerms.has(w.toLowerCase()))
