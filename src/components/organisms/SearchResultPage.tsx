@@ -194,7 +194,8 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
 
     fetchResults(initialQuery, 1);
 
-    if (nearby) requestGeo();
+    // 모든 검색에서 위치 요청 — 거리순 정렬에 활용
+    requestGeo();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialQuery]);
 
@@ -236,7 +237,7 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
 
   // 근처 검색용 거리 계산 맵
   const distanceMap = new Map<number, number>();
-  if (isNearby && geoState === "ready" && userCoords) {
+  if (geoState === "ready" && userCoords) {
     for (const item of results) {
       if (item.lat && item.lng) {
         distanceMap.set(item.id, haversineKm(userCoords.lat, userCoords.lng, item.lat, item.lng));
@@ -283,8 +284,8 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
       return true;
     })
     .sort((a, b) => {
-      // 근처 검색이면 거리순 우선
-      if (isNearby && geoState === "ready") {
+      // 위치 정보가 있으면 거리순 우선 (가격 정렬 선택 시 제외)
+      if (geoState === "ready" && sort === "latest") {
         const da = distanceMap.get(a.id) ?? Infinity;
         const db = distanceMap.get(b.id) ?? Infinity;
         if (da !== db) return da - db;

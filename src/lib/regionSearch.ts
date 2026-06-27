@@ -20,6 +20,27 @@ export interface RegionResult {
   keywords: string[]; /* 필터링용 키워드*/
 }
 
+// 지오코딩 API 없이도 약칭 → 공식명 양방향 검색 가능하도록
+const REGION_FULL_NAMES: Record<string, string> = {
+  "서울": "서울특별시",
+  "인천": "인천광역시",
+  "부산": "부산광역시",
+  "대구": "대구광역시",
+  "광주": "광주광역시",
+  "대전": "대전광역시",
+  "울산": "울산광역시",
+  "세종": "세종특별자치시",
+  "경기": "경기도",
+  "강원": "강원특별자치도",
+  "충북": "충청북도",
+  "충남": "충청남도",
+  "전북": "전북특별자치도",
+  "전남": "전라남도",
+  "경북": "경상북도",
+  "경남": "경상남도",
+  "제주": "제주특별자치도",
+};
+
 function extractRegionCandidates(query: string): string[] {
   const candidates: string[] = [];
 
@@ -31,28 +52,19 @@ function extractRegionCandidates(query: string): string[] {
     candidates.push(match[1]); // "서", "인천"
   }
 
-  // 광역시/도 직접 감지
-  const knownRegions = [
-    "서울",
-    "인천",
-    "부산",
-    "대구",
-    "광주",
-    "대전",
-    "울산",
-    "세종",
-    "경기",
-    "강원",
-    "충북",
-    "충남",
-    "전북",
-    "전남",
-    "경북",
-    "경남",
-    "제주",
-  ];
+  // 광역시/도 직접 감지 — 약칭·공식명 모두 포함
+  const knownRegions = Object.keys(REGION_FULL_NAMES);
   for (const region of knownRegions) {
-    if (query.includes(region)) candidates.push(region);
+    if (query.includes(region)) {
+      candidates.push(region);
+      candidates.push(REGION_FULL_NAMES[region]);
+    }
+    // 공식명으로 검색한 경우 약칭도 추가 ("인천광역시" → "인천")
+    const fullName = REGION_FULL_NAMES[region];
+    if (query.includes(fullName)) {
+      candidates.push(region);
+      candidates.push(fullName);
+    }
   }
 
   return [...new Set(candidates)].filter((c) => c.length >= 2);
@@ -65,8 +77,8 @@ async function searchRegionFromNaver(
   keyword: string,
 ): Promise<RegionResult | null> {
   if (!NAVER_CLIENT_ID || !NAVER_CLIENT_SECRET) {
-    // API 키 없으면 키워드 그대로 사용
-    return { name: keyword, keywords: [keyword] };
+    const fullName = REGION_FULL_NAMES[keyword];
+    return { name: keyword, keywords: [...new Set([keyword, ...(fullName ? [fullName] : [])])] };
   }
 
   try {
@@ -105,7 +117,8 @@ async function searchRegionFromNaver(
       keywords: [...new Set(keywords)],
     };
   } catch {
-    return { name: keyword, keywords: [keyword] };
+    const fullName = REGION_FULL_NAMES[keyword];
+    return { name: keyword, keywords: [...new Set([keyword, ...(fullName ? [fullName] : [])])] };
   }
 }
 

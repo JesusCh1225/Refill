@@ -94,12 +94,15 @@ export default function MusicMapPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const matchesToken = useCallback((item: SearchResultItem, token: string) =>
-    item.title.toLowerCase().includes(token) ||
-    item.category.toLowerCase().includes(token) ||
-    item.keywords.some((kw) => kw.toLowerCase().includes(token)) ||
-    item.locationTags.some((lt) => lt.toLowerCase().includes(token)),
-  []);
+  const matchesToken = useCallback((item: SearchResultItem, token: string) => {
+    const t = token.toLowerCase();
+    return (
+      item.title.toLowerCase().includes(t) ||
+      item.category.toLowerCase().includes(t) ||
+      item.keywords.some((kw) => kw.toLowerCase().includes(t)) ||
+      item.locationTags.some((lt) => lt.toLowerCase().includes(t))
+    );
+  }, []);
 
   /* ── URL 필터 ── */
   useEffect(() => {
@@ -199,39 +202,114 @@ export default function MusicMapPage() {
     if (mapObjRef.current) renderMarkers(result, mapObjRef.current);
   };
 
+  /* ── 현재 뷰포트 bounds 내 아이템 필터 ── */
+  const filterByBounds = useCallback((items: SearchResultItem[]) => {
+    if (!mapObjRef.current) return items;
+    const bounds = mapObjRef.current.getBounds();
+    const inBounds = items.filter((item) => {
+      const coords = coordsRef.current[item.id];
+      if (!coords) return false;
+      return bounds.hasLatLng(new window.naver.maps.LatLng(coords.lat, coords.lng));
+    });
+    return inBounds.length > 0 ? inBounds : items;
+  }, []);
+
   /* ── 검색 ── */
-  const handleSearch = () => {
-    const q = searchInput.trim().toLowerCase();
+  const handleSearch = async () => {
+    const q = searchInput.trim();
     const base = applyChipFilter(allPosts, chipFilter);
-    const tokens = extractKeywords(q);
-    const result = tokens.length ? base.filter((item) => tokens.every((t) => matchesToken(item, t))) : base;
 
-    setFilteredItems(result);
-    filteredItemsRef.current = result;
-    setSelectedItem(null);
-    setPanelOpen(true);
+    // AI 파싱으로 오타 교정 + 키워드 정규화
+    let keywordFiltered: SearchResultItem[];
+    if (q) {
+      let instruments: string[] = [];
+      let services: string[] = [];
+      try {
+        const res = await fetch(`/api/search/parse?q=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        instruments = data.instruments ?? [];
+        services = data.services ?? [];
+      } catch { /* 실패 시 아래 폴백 사용 */ }
 
-    if (!mapObjRef.current) return;
+      if (instruments.length > 0 || services.length > 0) {
+        // 악기/서비스 각각 OR, 둘 사이는 AND
+        keywordFiltered = base.filter((item) => {
+          const matchInstr = instruments.length === 0 || instruments.some((kw) => matchesToken(item, kw));
+          const matchSvc = services.length === 0 || services.some((kw) => matchesToken(item, kw));
+          return matchInstr && matchSvc;
+        });
+      } else {
+        // AI가 악기/서비스를 인식 못한 경우: 원문 토큰으로 폴백
+        const tokens = extractKeywords(q.toLowerCase());
+        keywordFiltered = tokens.length ? base.filter((item) => tokens.every((t) => matchesToken(item, t))) : base;
+      }
+    } else {
+      keywordFiltered = base;
+    }
 
-    const regionKey = Object.keys(REGION_CENTERS).find((key) => tokens.includes(key) || q.includes(key));
+    if (!mapObjRef.current) {
+      setFilteredItems(keywordFiltered);
+      filteredItemsRef.current = keywordFiltered;
+      setSelectedItem(null);
+      setPanelOpen(true);
+      return;
+    }
+
+    // 지역 키워드가 포함된 경우: 해당 지역으로 지도 이동 후 전체 키워드 결과 표시
+    const regionKey = Object.keys(REGION_CENTERS).find((key) => q.toLowerCase().includes(key));
     if (regionKey) {
       const { lat, lng, zoom } = REGION_CENTERS[regionKey];
       mapObjRef.current.setCenter(new window.naver.maps.LatLng(lat, lng));
       mapObjRef.current.setZoom(zoom);
+      setFilteredItems(keywordFiltered);
+      filteredItemsRef.current = keywordFiltered;
+      setSelectedItem(null);
+      setPanelOpen(true);
+      renderMarkers(keywordFiltered, mapObjRef.current);
+      setShowAreaSearch(false);
       return;
     }
 
-    if (window.naver?.maps?.Service) {
+    // 지역 키워드 없는 경우: 현재 지도 뷰포트 내 결과만 표시
+    if (window.naver?.maps?.Service && q) {
+      // 주소처럼 보이면 지오코딩 시도 후 새 뷰포트 기준 필터
       window.naver.maps.Service.geocode({ query: searchInput.trim() }, (status: any, response: any) => {
         if (status === window.naver.maps.Service.Status.OK && response.v2.addresses.length > 0) {
           const { x, y } = response.v2.addresses[0];
           mapObjRef.current?.setCenter(new window.naver.maps.LatLng(parseFloat(y), parseFloat(x)));
           mapObjRef.current?.setZoom(14);
+          // 지도 이동 후 새 뷰포트로 필터
+          setTimeout(() => {
+            const result = filterByBounds(keywordFiltered);
+            setFilteredItems(result);
+            filteredItemsRef.current = result;
+            setSelectedItem(null);
+            setPanelOpen(true);
+            if (mapObjRef.current) renderMarkers(result, mapObjRef.current);
+            setShowAreaSearch(false);
+          }, 300);
+        } else {
+          // 지오코딩 실패: 현재 뷰포트 기준으로 표시
+          const result = filterByBounds(keywordFiltered);
+          setFilteredItems(result);
+          filteredItemsRef.current = result;
+          setSelectedItem(null);
+          setPanelOpen(true);
+          renderMarkers(result, mapObjRef.current!);
+          setShowAreaSearch(false);
         }
       });
-    } else {
-      renderMarkers(result, mapObjRef.current);
+      return;
     }
+
+    // 기본: 현재 뷰포트 기준 필터
+    const result = filterByBounds(keywordFiltered);
+    setFilteredItems(result);
+    filteredItemsRef.current = result;
+    setSelectedItem(null);
+    setPanelOpen(true);
+    renderMarkers(result, mapObjRef.current);
+    setShowAreaSearch(false);
   };
 
   const handleClear = () => {

@@ -63,6 +63,7 @@ export default function WritePostModal({
   const [entries, setEntries] = useState<CategoryEntry[]>(DEFAULT_ENTRIES);
   const [title, setTitle] = useState("");
   const [location, setLocation] = useState("");
+  const [jibunAddress, setJibunAddress] = useState("");
   const [priceType, setPriceType] = useState<string>("monthly");
   const [priceAmount, setPriceAmount] = useState("");
   const [iconMode, setIconMode] = useState<"emoji" | "image">("emoji");
@@ -79,6 +80,7 @@ export default function WritePostModal({
       setTitle(editData.title);
       setDescription(editData.description ?? "");
       setLocation(editData.location);
+      setJibunAddress("");
       setKeywords(editData.keywords ?? []);
       setEmoji(editData.imageEmoji ?? "🎵");
       setImageUrls(editData.imageUrls ?? []);
@@ -90,6 +92,7 @@ export default function WritePostModal({
       setEntries([{ id: "1", type: "lesson" as EntryType, subcat: "", direction: "offer" }]);
       setTitle("");
       setLocation("");
+      setJibunAddress("");
       setPriceType("monthly");
       setPriceAmount("");
       setEmoji("🎵");
@@ -117,7 +120,7 @@ export default function WritePostModal({
     ];
     // 첫 번째 엔트리의 direction을 대표 direction으로 사용
     const direction: PostDirection = entries[0]?.direction ?? "offer";
-    const locationTags = location.trim().split(/[\s,]+/).filter((p) => p.length >= 2);
+    const locationTags = `${location} ${jibunAddress}`.trim().split(/[\s,]+/).filter((p) => p.length >= 2);
 
     return {
       title: title.trim(),
@@ -200,11 +203,10 @@ export default function WritePostModal({
           <Field label="지역" required>
             <LocationSearch
               value={location}
-              onChange={setLocation}
-              onSelect={(place) => setLocation(place.roadAddress || place.address)}
+              onChange={(v) => { setLocation(v); setJibunAddress(""); }}
+              onSelect={(place) => { setLocation(place.roadAddress || place.address); setJibunAddress(place.address); }}
               placeholder="예: 상암동 투썸 플레이스, 마포구"
             />
-            <p className="text-[11px] text-text-placeholder mt-1">동·구 이름을 포함해야 검색에 노출돼요.</p>
           </Field>
 
           <Field label="가격" required>
