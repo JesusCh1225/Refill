@@ -71,6 +71,7 @@ export default function WritePostModal({
   const [description, setDescription] = useState("");
   const [keywords, setKeywords] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   useEffect(() => {
     if (!isOpen) return;
@@ -97,6 +98,7 @@ export default function WritePostModal({
       setDescription("");
       setKeywords([]);
     }
+    setSubmitError("");
   }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!isOpen) return null;
@@ -151,11 +153,14 @@ export default function WritePostModal({
           const updated: SearchResultItem = await res.json();
           onEditComplete?.(updated);
           onClose();
+        } else {
+          setSubmitError("저장에 실패했어요. 다시 시도해주세요.");
         }
       } finally {
         setSubmitting(false);
       }
     } else {
+      setSubmitError("");
       onSubmit(buildDraft());
       onClose();
     }
@@ -199,6 +204,7 @@ export default function WritePostModal({
               onSelect={(place) => setLocation(place.roadAddress || place.address)}
               placeholder="예: 상암동 투썸 플레이스, 마포구"
             />
+            <p className="text-[11px] text-text-placeholder mt-1">동·구 이름을 포함해야 검색에 노출돼요.</p>
           </Field>
 
           <Field label="가격" required>
@@ -257,7 +263,10 @@ export default function WritePostModal({
         </div>
 
         {/* 푸터 */}
-        <div className="px-6 pb-5 pt-3 border-t border-border-base shrink-0">
+        <div className="px-6 pb-5 pt-3 border-t border-border-base shrink-0 flex flex-col gap-2">
+          {submitError && (
+            <p className="text-[12px] text-red-500 text-center">{submitError}</p>
+          )}
           <button
             onClick={handleSubmit}
             disabled={!isValid || submitting}

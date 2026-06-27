@@ -47,14 +47,73 @@ function mostSpecificLocLabel(e: LocationEntry): string {
   return e.dong || e.gu || e.si || "";
 }
 
+function PageNumbers({ current, total, onChange }: { current: number; total: number; onChange: (p: number) => void }) {
+  if (total <= 1) return null;
+
+  // 화면 너비에 따라 current 주변 범위 결정 (CSS로는 못하므로 JS window 확인)
+  const spread = typeof window !== "undefined" && window.innerWidth < 480 ? 1 : 2;
+
+  const pages: (number | "...")[] = [];
+  if (total <= 7) {
+    for (let i = 1; i <= total; i++) pages.push(i);
+  } else {
+    pages.push(1);
+    if (current > spread + 2) pages.push("...");
+    for (let i = Math.max(2, current - spread); i <= Math.min(total - 1, current + spread); i++) pages.push(i);
+    if (current < total - spread - 1) pages.push("...");
+    pages.push(total);
+  }
+
+  return (
+    <div className="flex items-center justify-center gap-1 pt-6">
+      <button
+        disabled={current === 1}
+        onClick={() => onChange(current - 1)}
+        className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg text-[12px] sm:text-[13px] text-text-muted border border-border-base bg-white disabled:opacity-30 cursor-pointer hover:border-brand hover:text-brand transition-colors"
+      >
+        ‹
+      </button>
+      {pages.map((p, i) =>
+        p === "..." ? (
+          <span key={`e${i}`} className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center text-[12px] text-text-placeholder">…</span>
+        ) : (
+          <button
+            key={p}
+            onClick={() => onChange(p)}
+            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg text-[12px] sm:text-[13px] font-semibold border cursor-pointer transition-colors ${
+              p === current
+                ? "bg-brand text-white border-brand"
+                : "bg-white text-text-muted border-border-base hover:border-brand hover:text-brand"
+            }`}
+          >
+            {p}
+          </button>
+        )
+      )}
+      <button
+        disabled={current === total}
+        onClick={() => onChange(current + 1)}
+        className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg text-[12px] sm:text-[13px] text-text-muted border border-border-base bg-white disabled:opacity-30 cursor-pointer hover:border-brand hover:text-brand transition-colors"
+      >
+        ›
+      </button>
+    </div>
+  );
+}
+
 export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: SearchResultPageProps) {
   const router = useRouter();
   const { requireLogin, createPost } = useCreatePost();
   const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState<SearchResultItem[]>([]);
   const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [detectedDirection, setDetectedDirection] = useState<"OFFER" | "SEEK" | null>(null);
   const [loading, setLoading] = useState(true);
   const [writeOpen, setWriteOpen] = useState(false);
+
+  const [displayCount, setDisplayCount] = useState(20);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   const [mainCatId, setMainCatId] = useState("all");
   const [subCats, setSubCats] = useState<Set<string>>(new Set());
@@ -70,6 +129,7 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
   const [nearbyRadius, setNearbyRadius] = useState(NEARBY_RADIUS_KM);
 
   const queryRef = useRef(initialQuery);
+  const lastApiQueryRef = useRef("");
   const { isBookmarked, toggle: toggleBookmark } = useBookmarks();
 
   const handleSetQuery = (q: string) => { queryRef.current = q; setQuery(q); };
@@ -78,21 +138,26 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
     onBack(q);
   };
 
-  const fetchResults = (apiQuery: string) => {
+  const fetchResults = useCallback((apiQuery: string, pageNum = 1) => {
+    lastApiQueryRef.current = apiQuery;
     setLoading(true);
+    setDisplayCount(20);
+    setCurrentPage(pageNum);
     fetch("/api/search", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query: apiQuery }),
+      body: JSON.stringify({ query: apiQuery, page: pageNum }),
     })
       .then((r) => r.json())
       .then((data) => {
         setResults(Array.isArray(data.results) ? data.results : []);
         setSuggestions(Array.isArray(data.suggestions) ? data.suggestions : []);
+        setDetectedDirection(data.direction ?? null);
+        setTotalPages(data.totalPages ?? 1);
       })
       .catch(() => { setResults([]); setSuggestions([]); })
       .finally(() => setLoading(false));
-  };
+  }, []);
 
   const requestGeo = useCallback(() => {
     if (!navigator.geolocation) { setGeoState("denied"); return; }
@@ -127,7 +192,7 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
       queryRef.current = cleanedQuery;
     }
 
-    fetchResults(initialQuery);
+    fetchResults(initialQuery, 1);
 
     if (nearby) requestGeo();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -136,7 +201,12 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
   const handleReSearch = () => {
     const locVal = locationSel.map(mostSpecificLocLabel).filter(Boolean).join(" ");
     const combined = [queryRef.current.trim(), locVal].filter(Boolean).join(" ");
-    fetchResults(combined || initialQuery);
+    fetchResults(combined || initialQuery, 1);
+  };
+
+  const handlePageChange = (page: number) => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    fetchResults(lastApiQueryRef.current, page);
   };
 
   const handleWriteClick = () => {
@@ -233,6 +303,9 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
       }
       return 0;
     });
+
+  const displayed = filtered.slice(0, displayCount);
+  const hasMore = displayCount < filtered.length;
 
   const RADIUS_OPTIONS = [5, 10, 20, 30];
 
@@ -334,7 +407,7 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
                 : "다른 검색어를 사용하거나 지역 조건을 넓혀보세요."}
             </p>
             {suggestions.length > 0 && (
-              <div>
+              <div className="mb-6">
                 <p className="text-[14px] text-text-muted mb-3">이런 키워드로 검색해볼까요?</p>
                 <div className="flex flex-wrap justify-center gap-2">
                   {suggestions.map((s) => (
@@ -349,12 +422,33 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
                 </div>
               </div>
             )}
+            <div className="border border-dashed border-border-base rounded-2xl px-6 py-5 inline-block">
+              <p className="text-[14px] text-text-muted mb-3">이 지역 첫 번째 글을 올려보세요!</p>
+              <button
+                onClick={handleWriteClick}
+                className="px-5 py-2 rounded-full bg-brand text-white text-[13px] font-semibold border-none cursor-pointer hover:opacity-85 transition-opacity"
+              >
+                글쓰기
+              </button>
+            </div>
           </div>
         ) : (
           <>
-            <p className="text-[14px] text-text-muted mb-4">총 {filtered.length}개의 결과</p>
+            <div className="flex items-center gap-2 mb-4 flex-wrap">
+              <p className="text-[14px] text-text-muted">총 {filtered.length}개의 결과</p>
+              {sort !== "latest" && (
+                <span className="text-[12px] font-semibold px-2.5 py-1 rounded-full bg-surface-card text-text-muted border border-border-base">
+                  {sort === "price_low" ? "가격 낮은순" : "가격 높은순"}
+                </span>
+              )}
+              {detectedDirection && (
+                <span className="text-[12px] font-semibold px-2.5 py-1 rounded-full bg-brand-bg text-brand">
+                  {detectedDirection === "SEEK" ? "제공자 글 위주 검색" : "구하는 글 위주 검색"}
+                </span>
+              )}
+            </div>
             <div className="flex flex-col divide-y divide-border-header">
-              {filtered.map((item) => {
+              {displayed.map((item) => {
                 const catId = tagsAndDirToMainCatId(item.tags ?? [], item.direction ?? "offer");
                 const cat = MAIN_CATEGORIES.find((c) => c.id === catId);
                 const dist = distanceMap.get(item.id);
@@ -378,6 +472,23 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
                 );
               })}
             </div>
+
+            {/* 더보기 버튼 */}
+            {hasMore && (
+              <div className="flex justify-center pt-6">
+                <button
+                  onClick={() => setDisplayCount(filtered.length)}
+                  className="px-6 py-2.5 rounded-full border border-border-base bg-white text-[13px] font-semibold text-text-body cursor-pointer hover:border-brand hover:text-brand transition-colors"
+                >
+                  더보기 ({filtered.length - displayCount}개)
+                </button>
+              </div>
+            )}
+
+            {/* 페이지 번호 */}
+            {!hasMore && (
+              <PageNumbers current={currentPage} total={totalPages} onChange={handlePageChange} />
+            )}
           </>
         )}
       </div>

@@ -80,12 +80,20 @@ export default function PostDetailPage({
         <Header />
         <div className="flex flex-col items-center justify-center py-40 text-text-muted text-[15px]">
           <p>게시글을 찾을 수 없어요.</p>
-          <button
-            onClick={() => router.back()}
-            className="mt-6 px-5 py-2 rounded-full border border-border-base text-xs text-text-body hover:bg-surface-card transition-colors cursor-pointer bg-transparent"
-          >
-            돌아가기
-          </button>
+          <div className="flex gap-3 mt-6">
+            <button
+              onClick={() => window.history.length > 1 ? router.back() : router.push("/")}
+              className="px-5 py-2 rounded-full border border-border-base text-xs text-text-body hover:bg-surface-card transition-colors cursor-pointer bg-transparent"
+            >
+              돌아가기
+            </button>
+            <button
+              onClick={() => router.push("/")}
+              className="px-5 py-2 rounded-full bg-brand text-white text-xs font-semibold border-none cursor-pointer hover:opacity-85 transition-opacity"
+            >
+              홈으로
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -108,7 +116,7 @@ export default function PostDetailPage({
         {/* 뒤로가기 + 수정/삭제 */}
         <div className="flex items-center justify-between mb-6">
           <button
-            onClick={() => router.back()}
+            onClick={() => window.history.length > 1 ? router.back() : router.push("/")}
             className="flex items-center gap-1.5 text-xs text-text-muted hover:text-text-body transition-colors cursor-pointer bg-transparent border-none"
           >
             ← 목록으로

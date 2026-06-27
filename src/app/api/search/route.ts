@@ -31,19 +31,24 @@ async function getGeminiSuggestions(query: string): Promise<string[]> {
   }
 }
 
+const SEARCH_PAGE_SIZE = 50;
+
 export async function POST(req: NextRequest) {
-  const { query } = await req.json();
+  const { query, page = 1 } = await req.json();
+  const pageNum = Math.max(1, parseInt(String(page)) || 1);
   const trimmed = (query ?? "").trim();
 
   const where: any = { status: "PUBLISHED" };
   let keywords: string[] = [];
   let regionNames: string[] = [];
+  let detectedDirection: "OFFER" | "SEEK" | null = null;
 
   // 빈 쿼리: 위치 기반(근처) 검색용으로 최근 게시글을 폭넓게 가져옴
   if (trimmed) {
     const parsed = await parseSearchQuery(trimmed);
     keywords = parsed.keywords;
     regionNames = parsed.regions.map((r: any) => r.name);
+    detectedDirection = parsed.direction;
 
     // 지역 필터
     if (parsed.regions.length > 0) {
@@ -54,7 +59,6 @@ export async function POST(req: NextRequest) {
     }
 
     // 악기/서비스 키워드 필터
-    // parsed.keywords: 사전 매칭 결과, 아무것도 안 맞으면 원본 단어 폴백 (해시태그 직접 검색 등)
     if (parsed.keywords.length > 0) {
       where.OR = parsed.keywords.flatMap((kw: string) => [
         { title: { contains: kw } },
@@ -62,22 +66,35 @@ export async function POST(req: NextRequest) {
         { categories: { some: { category: { name: { contains: kw } } } } },
       ]);
     }
+
+    // 의도 방향 필터: 구하는 사람 → OFFER 게시글, 제공하는 사람 → SEEK 게시글
+    if (parsed.direction === "SEEK") where.direction = "OFFER";
+    else if (parsed.direction === "OFFER") where.direction = "SEEK";
   }
 
-  const results = await prisma.post.findMany({
-    where,
-    orderBy: { createdAt: "desc" },
-    take: trimmed ? 50 : 200,
-    select: POST_SELECT,
-  });
+  const [results, total] = await Promise.all([
+    prisma.post.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      take: trimmed ? SEARCH_PAGE_SIZE : 200,
+      skip: trimmed ? (pageNum - 1) * SEARCH_PAGE_SIZE : 0,
+      select: POST_SELECT,
+    }),
+    trimmed ? prisma.post.count({ where }) : Promise.resolve(0),
+  ]);
 
   const mapped = results.map(mapPost);
   const suggestions = trimmed && mapped.length === 0 ? await getGeminiSuggestions(trimmed) : [];
+  const totalPages = trimmed ? Math.max(1, Math.ceil(total / SEARCH_PAGE_SIZE)) : 1;
 
   return NextResponse.json({
     results: mapped,
+    total,
+    page: pageNum,
+    totalPages,
     suggestions,
     keywords,
     regions: regionNames,
+    direction: detectedDirection,
   });
 }

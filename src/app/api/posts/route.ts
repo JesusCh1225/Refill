@@ -75,9 +75,9 @@ export async function POST(req: NextRequest) {
 
     await Promise.all([
       syncPostCategories(postId, Array.isArray(tags) ? tags : []),
-      syncPostHashtags(postId, keywords),
-      syncPostLocationTags(postId, locationTags),
-      syncPostImages(postId, imageUrls),
+      syncPostHashtags(postId, Array.isArray(keywords) ? keywords : []),
+      syncPostLocationTags(postId, Array.isArray(locationTags) ? locationTags : []),
+      syncPostImages(postId, Array.isArray(imageUrls) ? imageUrls : []),
     ]);
 
     const created = await prisma.post.findUnique({

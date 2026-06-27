@@ -32,6 +32,7 @@ export default function MusicMapPage() {
   const { requireLogin } = useCreatePost();
   const mapRef = useRef<HTMLDivElement>(null);
   const coordsRef = useRef<CoordsMap>({});
+  const writeInProgressRef = useRef(false);
 
   const [allPosts, setAllPosts] = useState<SearchResultItem[]>([]);
   const [filteredItems, setFilteredItems] = useState<SearchResultItem[]>([]);
@@ -137,6 +138,9 @@ export default function MusicMapPage() {
 
   /* ── 새 글 등록 ── */
   const handlePostSubmit = (draft: PostDraft) => {
+    if (writeInProgressRef.current) return;
+    writeInProgressRef.current = true;
+
     const savePost = async (lat: number, lng: number) => {
       try {
         const res = await fetch("/api/posts", {
@@ -156,7 +160,10 @@ export default function MusicMapPage() {
           renderMarkers(updated, mapObjRef.current);
           mapObjRef.current.panTo(new window.naver.maps.LatLng(lat, lng));
         }
-      } catch {}
+      } catch {
+      } finally {
+        writeInProgressRef.current = false;
+      }
     };
 
     if (draft.lat && draft.lng) { savePost(draft.lat, draft.lng); return; }

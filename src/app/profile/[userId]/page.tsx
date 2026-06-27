@@ -57,6 +57,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userId
 
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [postTab, setPostTab] = useState<"all" | "lesson" | "band" | "trade">("all");
 
   // 리뷰 작성 폼
   const [reviewRating, setReviewRating] = useState(0);
@@ -135,6 +136,21 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userId
 
   const displayName = profile.nickname ?? profile.name;
   const isMyProfile = myUserId === profile.id;
+
+  const POST_TABS = [
+    { id: "all" as const, label: "전체" },
+    { id: "lesson" as const, label: "레슨" },
+    { id: "band" as const, label: "밴드" },
+    { id: "trade" as const, label: "거래" },
+  ];
+
+  const filteredPosts = profile.posts.filter((p) => {
+    if (postTab === "all") return true;
+    const names = p.categories.map((c) => c.category.name);
+    if (postTab === "lesson") return names.some((n) => n.includes("레슨"));
+    if (postTab === "band") return names.some((n) => n.includes("밴드") || n.includes("합주"));
+    return names.every((n) => !n.includes("레슨") && !n.includes("밴드") && !n.includes("합주"));
+  });
 
   return (
     <div className="min-h-screen bg-surface-page text-text-body">
@@ -216,12 +232,31 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userId
         {/* 게시글 목록 */}
         {profile.posts.length > 0 && (
           <div className="bg-white rounded-2xl border border-border-card px-5 py-5 sm:px-8 sm:py-6">
-            <h2 className="text-[15px] font-bold text-text-heading mb-4">
-              {displayName}님의 게시글
-              <span className="text-brand ml-1.5">{profile.posts.length}</span>
-            </h2>
+            <div className="flex flex-col gap-3 mb-4">
+              <h2 className="text-[15px] font-bold text-text-heading">
+                {displayName}님의 게시글
+                <span className="text-brand ml-1.5">{filteredPosts.length}</span>
+              </h2>
+              <div className="flex gap-1.5">
+                {POST_TABS.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setPostTab(tab.id)}
+                    className={`px-3 py-1 rounded-full text-[12px] font-semibold border cursor-pointer transition-colors ${
+                      postTab === tab.id
+                        ? "bg-brand text-white border-brand"
+                        : "bg-white text-text-muted border-border-base hover:border-brand"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className="flex flex-col divide-y divide-border-base">
-              {profile.posts.map((post) => (
+              {filteredPosts.length === 0 ? (
+                <p className="text-[13px] text-text-muted py-4">해당하는 게시글이 없어요.</p>
+              ) : filteredPosts.map((post) => (
                 <Link
                   key={post.id}
                   href={`/post/${post.id}`}
