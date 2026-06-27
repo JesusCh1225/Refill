@@ -3,6 +3,7 @@
 import { Suspense, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Header from "@/components/organisms/Header";
+import Footer from "@/components/organisms/Footer";
 import TitleSection from "@/components/organisms/TitleSection";
 import SearchResultPage from "@/components/organisms/SearchResultPage";
 import WritePostModal from "@/components/organisms/WritePostModal";
@@ -57,6 +58,7 @@ function HomePageContent() {
       </button>
 
       <WritePostModal isOpen={writeOpen} onClose={() => setWriteOpen(false)} onSubmit={handlePostSubmit} />
+      <Footer />
     </div>
   );
 }

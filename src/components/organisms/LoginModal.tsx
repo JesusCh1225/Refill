@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import SocialLoginButtons, { BUTTON_WIDTH } from "@/components/molecules/SocialLoginButtons";
 
 interface LoginModalProps {
@@ -42,7 +43,11 @@ export default function LoginModal({ onClose }: LoginModalProps) {
         <SocialLoginButtons callbackUrl={cb} />
 
         <p className="text-[11px] text-text-placeholder text-center leading-relaxed">
-          로그인 시 서비스 이용약관 및 개인정보 처리방침에 동의하게 됩니다.
+          로그인 시{" "}
+          <Link href="/terms" className="underline hover:text-text-muted" target="_blank">이용약관</Link>
+          {" "}및{" "}
+          <Link href="/privacy" className="underline hover:text-text-muted" target="_blank">개인정보처리방침</Link>
+          에 동의하게 됩니다.
         </p>
       </div>
     </div>
