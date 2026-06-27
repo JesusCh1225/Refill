@@ -226,7 +226,7 @@ export default function CommentSection({ postId, postAuthorId }: Props) {
 
                 {/* 대댓글 목록 */}
                 {(c.replies?.length ?? 0) > 0 && (
-                  <ul className="ml-6 flex flex-col gap-0 border-l-2 border-border-base pl-3 mt-1">
+                  <ul className="ml-3 sm:ml-6 flex flex-col gap-0 border-l-2 border-border-base pl-2 sm:pl-3 mt-1">
                     {c.replies!.map((r) => {
                       const rMine = myUserId !== undefined && r.authorId === myUserId;
                       const rPendingDelete = deletingId === r.id;
@@ -283,7 +283,7 @@ export default function CommentSection({ postId, postAuthorId }: Props) {
 
                 {/* 답글 입력 폼 */}
                 {isReplying && session && (
-                  <div className="ml-6 flex flex-col gap-2 border-l-2 border-brand-bg pl-3 mt-1">
+                  <div className="ml-3 sm:ml-6 flex flex-col gap-2 border-l-2 border-brand-bg pl-2 sm:pl-3 mt-1">
                     <div className="flex gap-2 items-end">
                       <textarea
                         autoFocus
