@@ -46,15 +46,13 @@ export default function NotificationsPage() {
     if (status === "unauthenticated") { router.replace("/"); return; }
     if (status !== "authenticated") return;
 
-    fetch("/api/notifications")
-      .then((r) => r.json())
-      .then((data) => {
-        setNotifications(data.notifications ?? []);
-        // 읽지 않은 알림이 있으면 자동으로 전체 읽음 처리 (뱃지 제거)
-        if ((data.unreadCount ?? 0) > 0) {
-          fetch("/api/notifications", { method: "PATCH" }).catch(() => {});
-        }
-      })
+    // PATCH(전체 읽음)와 GET(목록)을 병렬로 실행 — 둘 다 완료된 뒤에야 화면이 interactive해짐
+    // → 사용자가 다음 페이지로 이동할 때 Header가 DB를 재조회해도 unreadCount = 0 보장
+    Promise.all([
+      fetch("/api/notifications", { method: "PATCH" }),
+      fetch("/api/notifications").then((r) => r.json()),
+    ])
+      .then(([, data]) => setNotifications(data.notifications ?? []))
       .finally(() => setLoading(false));
   }, [status, router]);
 
