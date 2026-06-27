@@ -13,7 +13,8 @@ export interface CommentData {
 
 export function displayAuthor(c: CommentData): string {
   if (c.author) return c.author.nickname || c.author.name;
-  return c.guestName || "익명";
+  if (c.guestName) return c.guestName;
+  return "탈퇴한 회원";
 }
 
 export function isEdited(c: CommentData): boolean {
