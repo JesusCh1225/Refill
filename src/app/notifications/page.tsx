@@ -17,6 +17,7 @@ interface NotificationItem {
   commentId: number | null;
   actor: { id: number; name: string; nickname: string | null; avatarUrl: string | null };
   post: { title: string } | null;
+  comment: { content: string | null; isSecret: boolean } | null;
 }
 
 function timeAgo(iso: string) {
@@ -121,12 +122,19 @@ export default function NotificationsPage() {
                     />
                     <div className="flex-1 min-w-0">
                       <p className="text-[13px] text-text-body leading-snug">{notiMessage(n)}</p>
+                      {n.comment && (
+                        <p className="text-[12px] text-text-muted mt-1 truncate">
+                          {n.comment.isSecret
+                            ? "🔒 비밀 댓글입니다."
+                            : `"${n.comment.content?.slice(0, 60) ?? ""}${(n.comment.content?.length ?? 0) > 60 ? "…" : ""}"`}
+                        </p>
+                      )}
                       {n.post && (
-                        <p className="text-[12px] text-text-muted mt-0.5 truncate">
+                        <p className="text-[11px] text-text-placeholder mt-0.5 truncate">
                           {n.post.title}
                         </p>
                       )}
-                      <p className="text-[11px] text-text-placeholder mt-1">{timeAgo(n.createdAt)}</p>
+                      <p className="text-[11px] text-text-placeholder mt-0.5">{timeAgo(n.createdAt)}</p>
                     </div>
                   </button>
                 </li>

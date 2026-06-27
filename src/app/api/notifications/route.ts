@@ -11,6 +11,7 @@ const NOTIFICATION_SELECT = {
   commentId: true,
   actor: { select: { id: true, name: true, nickname: true, avatarUrl: true } },
   post: { select: { title: true } },
+  comment: { select: { content: true, isSecret: true } },
 } as const;
 
 // GET /api/notifications — 내 알림 목록
