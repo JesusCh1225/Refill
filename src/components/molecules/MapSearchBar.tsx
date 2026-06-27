@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { extractKeywords } from "@/lib/mapUtils";
+import { useSpeechRecognition } from "@/lib/useSpeechRecognition";
 
 interface MapSearchBarProps {
   value: string;
@@ -10,97 +9,14 @@ interface MapSearchBarProps {
   onClear: () => void;
 }
 
-type MicStatus = "idle" | "requesting" | "listening";
-
 export default function MapSearchBar({ value, onChange, onSearch, onClear }: MapSearchBarProps) {
-  const [micStatus, setMicStatus] = useState<MicStatus>("idle");
-  const [permBlocked, setPermBlocked] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
-  const recRef = useRef<any>(null);
-  const onChangeRef = useRef(onChange);
-  onChangeRef.current = onChange;
-
-  useEffect(() => () => { recRef.current?.stop(); }, []);
-
-  const showError = (msg: string) => {
-    setErrorMsg(msg);
-    setTimeout(() => setErrorMsg(""), 6000);
-  };
-
-  const startListening = () => {
-    if (micStatus !== "idle") return;
-
-    const SR = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition;
-    if (!SR) {
-      showError("이 브라우저는 음성 인식을 지원하지 않아요. Chrome을 사용해 주세요.");
-      return;
-    }
-
-    const rec = new SR();
-    rec.lang = "ko-KR";
-    rec.continuous = true;
-    rec.interimResults = true;
-
-    let accumulated = "";
-
-    rec.onstart = () => setMicStatus("listening");
-
-    rec.onresult = (e: any) => {
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        if (e.results[i].isFinal) accumulated += e.results[i][0].transcript;
-      }
-      let interim = "";
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        if (!e.results[i].isFinal) interim += e.results[i][0].transcript;
-      }
-      const live = (accumulated + interim).trim();
-      if (live) onChangeRef.current(live);
-    };
-
-    rec.onerror = (e: any) => {
-      console.error("[Mic] SpeechRecognition error:", e.error);
-      setMicStatus("idle");
-      if (recRef.current === rec) recRef.current = null;
-      if (e.error === "not-allowed" || e.error === "service-not-allowed") {
-        setPermBlocked(true);
-      } else if (e.error === "no-speech") {
-        showError("음성이 감지되지 않았어요.");
-      } else if (e.error !== "aborted") {
-        showError(`음성 인식 오류: ${e.error}`);
-      }
-    };
-
-    rec.onend = () => {
-      if (accumulated.trim()) {
-        const keywords = extractKeywords(accumulated.trim().toLowerCase());
-        onChangeRef.current(keywords.length > 0 ? keywords.join(" ") : accumulated.trim());
-      }
-      setMicStatus("idle");
-      if (recRef.current === rec) recRef.current = null;
-    };
-
-    recRef.current = rec;
-    try {
-      setMicStatus("requesting");
-      rec.start();
-    } catch (err: any) {
-      console.error("[Mic] rec.start() threw:", err);
-      setMicStatus("idle");
-      showError(`음성 인식 시작 실패: ${err?.message ?? err}`);
-    }
-  };
-
-  const stopListening = () => {
-    recRef.current?.stop();
-    recRef.current = null;
-    setMicStatus("idle");
-  };
+  const {
+    micStatus, permBlocked, errorMsg,
+    startListening, stopListening, clearPermBlocked,
+  } = useSpeechRecognition(onChange, { continuous: true });
 
   return (
-    <div
-      className="absolute z-10 top-4 left-4 right-4 md:right-auto flex flex-col gap-1.5"
-      style={{ maxWidth: "420px" }}
-    >
+    <div className="absolute z-10 top-4 left-4 right-4 md:right-auto flex flex-col gap-1.5" style={{ maxWidth: "420px" }}>
       <div className="flex items-center gap-2 bg-white rounded-full shadow-search px-4 border border-border-base" style={{ height: "48px" }}>
         <span className="text-sm font-bold text-brand shrink-0">✦</span>
         <input
@@ -116,13 +32,11 @@ export default function MapSearchBar({ value, onChange, onSearch, onClear }: Map
           className="flex-1 border-none outline-none text-xs text-text-body bg-transparent placeholder:text-text-placeholder"
         />
         {value && micStatus === "idle" && (
-          <button onClick={onClear} className="text-text-muted hover:text-text-body text-2xs border-none bg-transparent cursor-pointer shrink-0">
-            ✕
-          </button>
+          <button onClick={onClear} className="text-text-muted hover:text-text-body text-2xs border-none bg-transparent cursor-pointer shrink-0">✕</button>
         )}
 
         <button
-          onClick={micStatus === "listening" ? stopListening : startListening}
+          onClick={() => micStatus === "listening" ? stopListening() : startListening()}
           disabled={micStatus === "requesting"}
           title={micStatus === "listening" ? "음성 입력 중지" : "음성으로 검색"}
           className={`border-none cursor-pointer transition-all flex items-center justify-center rounded-full w-7 h-7 shrink-0 ${
@@ -144,10 +58,7 @@ export default function MapSearchBar({ value, onChange, onSearch, onClear }: Map
           )}
         </button>
 
-        <button
-          onClick={onSearch}
-          className="w-8 h-8 rounded-full bg-brand text-white text-xs flex items-center justify-center border-none cursor-pointer hover:opacity-80 transition-opacity shrink-0"
-        >
+        <button onClick={onSearch} className="w-8 h-8 rounded-full bg-brand text-white text-xs flex items-center justify-center border-none cursor-pointer hover:opacity-80 transition-opacity shrink-0">
           →
         </button>
       </div>
@@ -169,12 +80,9 @@ export default function MapSearchBar({ value, onChange, onSearch, onClear }: Map
                 <li>페이지 <strong>새로고침</strong> 후 재시도</li>
               </ol>
             </div>
-            <button onClick={() => setPermBlocked(false)} className="text-orange-400 hover:text-orange-700 border-none bg-transparent cursor-pointer shrink-0">✕</button>
+            <button onClick={clearPermBlocked} className="text-orange-400 hover:text-orange-700 border-none bg-transparent cursor-pointer shrink-0">✕</button>
           </div>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-2 w-full py-1.5 rounded-xl bg-orange-500 text-white text-[11px] font-semibold border-none cursor-pointer hover:bg-orange-600 transition-colors"
-          >
+          <button onClick={() => window.location.reload()} className="mt-2 w-full py-1.5 rounded-xl bg-orange-500 text-white text-[11px] font-semibold border-none cursor-pointer hover:bg-orange-600 transition-colors">
             새로고침
           </button>
         </div>

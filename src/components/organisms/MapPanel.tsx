@@ -1,7 +1,7 @@
 import { SearchResultItem } from "@/data/sampleMockResults";
 import { dirLabel } from "@/lib/dirLabel";
 import { haversineKm as distKm, fmtDist } from "@/lib/nearbySearch";
-import { tagChipCls } from "@/lib/tagStyles";
+import { tagChipCls, directionBadgeCls } from "@/lib/tagStyles";
 
 interface MapPanelProps {
   isOpen: boolean;
@@ -16,15 +16,8 @@ interface MapPanelProps {
 }
 
 export default function MapPanel({
-  isOpen,
-  items,
-  selectedItem,
-  userLat,
-  userLng,
-  onItemClick,
-  onBackToList,
-  onClose,
-  onDetailClick,
+  isOpen, items, selectedItem, userLat, userLng,
+  onItemClick, onBackToList, onClose, onDetailClick,
 }: MapPanelProps) {
   const hasLocation = userLat !== undefined && userLng !== undefined;
 
@@ -42,25 +35,15 @@ export default function MapPanel({
       <div className="flex items-center justify-between px-5 py-3.5 border-b border-border-header bg-white shrink-0">
         <div>
           <p className="text-[12px] text-text-muted">
-            {selectedItem
-              ? "선택한 장소"
-              : hasLocation
-              ? `내 주변 · ${items.length}개`
-              : `검색 결과 ${items.length}개`}
+            {selectedItem ? "선택한 장소" : hasLocation ? `내 주변 · ${items.length}개` : `검색 결과 ${items.length}개`}
           </p>
           {selectedItem && (
-            <button
-              onClick={onBackToList}
-              className="text-2xs text-brand border-none bg-transparent cursor-pointer hover:underline p-0 mt-0.5"
-            >
+            <button onClick={onBackToList} className="text-2xs text-brand border-none bg-transparent cursor-pointer hover:underline p-0 mt-0.5">
               ← 목록으로
             </button>
           )}
         </div>
-        <button
-          onClick={onClose}
-          className="w-8 h-8 flex items-center justify-center rounded-full text-text-muted hover:bg-surface-card border-none bg-transparent cursor-pointer text-md"
-        >
+        <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full text-text-muted hover:bg-surface-card border-none bg-transparent cursor-pointer text-md">
           ✕
         </button>
       </div>
@@ -70,7 +53,7 @@ export default function MapPanel({
         {selectedItem ? (
           /* ── 상세 뷰 ── */
           <div className="p-5 flex flex-col gap-4">
-            <div className="w-full h-32 rounded-card bg-surface-card flex items-center justify-center text-5xl overflow-hidden shrink-0">
+            <div className="w-full h-32 rounded-card bg-slate-100 flex items-center justify-center text-5xl overflow-hidden shrink-0">
               {selectedItem.imageUrl ? (
                 <img src={selectedItem.imageUrl} alt={selectedItem.title} className="w-full h-full object-cover" />
               ) : (
@@ -83,13 +66,7 @@ export default function MapPanel({
                 <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${tagChipCls(selectedItem.tags)}`}>
                   {selectedItem.category}
                 </span>
-                <span
-                  className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
-                  style={{
-                    color: selectedItem.direction === "seek" ? "#0ea5e9" : "#8F4BC6",
-                    background: selectedItem.direction === "seek" ? "#e0f2fe" : "#f3e8ff",
-                  }}
-                >
+                <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${directionBadgeCls(selectedItem.direction)}`}>
                   {dirLabel(selectedItem.tags, selectedItem.direction)}
                 </span>
               </div>
@@ -116,10 +93,7 @@ export default function MapPanel({
             {selectedItem.keywords.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
                 {selectedItem.keywords.map((kw) => (
-                  <span
-                    key={kw}
-                    className={`px-2 py-0.5 rounded-full border text-[10px] ${tagChipCls(selectedItem.tags)}`}
-                  >
+                  <span key={kw} className={`px-2 py-0.5 rounded-full border text-[10px] ${tagChipCls(selectedItem.tags)}`}>
                     #{kw}
                   </span>
                 ))}
@@ -141,17 +115,16 @@ export default function MapPanel({
           /* ── 목록 뷰 ── */
           <ul className="list-none m-0 p-0">
             {sortedItems.map((item) => {
-              const dist =
-                hasLocation && item.lat && item.lng
-                  ? distKm(userLat!, userLng!, item.lat, item.lng)
-                  : null;
+              const dist = hasLocation && item.lat && item.lng
+                ? distKm(userLat!, userLng!, item.lat, item.lng)
+                : null;
               return (
                 <li
                   key={item.id}
                   onClick={() => onItemClick(item)}
                   className="flex gap-3 px-4 py-4 border-b border-border-header cursor-pointer hover:bg-surface-card transition-colors"
                 >
-                  <div className="w-14 h-14 rounded-xl bg-[#f1f5f9] flex items-center justify-center text-2xl shrink-0 overflow-hidden">
+                  <div className="w-14 h-14 rounded-xl bg-slate-100 flex items-center justify-center text-2xl shrink-0 overflow-hidden">
                     {item.imageUrl ? (
                       <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
                     ) : (
@@ -163,13 +136,7 @@ export default function MapPanel({
                       <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${tagChipCls(item.tags)}`}>
                         {item.category}
                       </span>
-                      <span
-                        className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
-                        style={{
-                          color: item.direction === "seek" ? "#0ea5e9" : "#8F4BC6",
-                          background: item.direction === "seek" ? "#e0f2fe" : "#f3e8ff",
-                        }}
-                      >
+                      <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${directionBadgeCls(item.direction)}`}>
                         {dirLabel(item.tags, item.direction)}
                       </span>
                     </div>

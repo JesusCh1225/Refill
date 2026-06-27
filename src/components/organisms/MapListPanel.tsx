@@ -3,7 +3,7 @@
 import { SearchResultItem } from "@/data/sampleMockResults";
 import { dirLabel } from "@/lib/dirLabel";
 import { haversineKm as distKm, fmtDist } from "@/lib/nearbySearch";
-import { tagChipCls as chipCls } from "@/lib/tagStyles";
+import { tagChipCls as chipCls, directionBadgeCls } from "@/lib/tagStyles";
 
 interface Props {
   isOpen: boolean;
@@ -65,7 +65,7 @@ export default function MapListPanel({ isOpen, items, userLat, userLng, onItemCl
                   className="flex gap-3 px-4 py-3 border-b border-border-header cursor-pointer hover:bg-surface-card transition-colors"
                 >
                   {/* 썸네일 */}
-                  <div className="w-12 h-12 rounded-xl bg-[#f1f5f9] flex items-center justify-center text-2xl shrink-0 overflow-hidden">
+                  <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-2xl shrink-0 overflow-hidden">
                     {item.imageUrl ? (
                       <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
                     ) : (
@@ -79,13 +79,7 @@ export default function MapListPanel({ isOpen, items, userLat, userLng, onItemCl
                       <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${chipCls(item.tags)}`}>
                         {item.category}
                       </span>
-                      <span
-                        className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
-                        style={{
-                          color: item.direction === "seek" ? "#0ea5e9" : "#8F4BC6",
-                          background: item.direction === "seek" ? "#e0f2fe" : "#f3e8ff",
-                        }}
-                      >
+                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${directionBadgeCls(item.direction)}`}>
                         {dirLabel(item.tags, item.direction)}
                       </span>
                     </div>

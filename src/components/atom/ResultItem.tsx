@@ -1,5 +1,6 @@
 import BookmarkButton from "@/components/atom/BookmarkButton";
 import { dirLabel } from "@/lib/dirLabel";
+import { directionBadgeCls } from "@/lib/tagStyles";
 
 interface ResultItemProps {
   title: string;
@@ -19,30 +20,19 @@ interface ResultItemProps {
 }
 
 export default function ResultItem({
-  title,
-  category,
-  location,
-  timeAgo,
-  price,
-  imageEmoji,
-  imageUrl,
-  tags,
-  direction,
-  directionLabel,
-  distanceLabel,
-  bookmarked,
-  onBookmark,
-  onClick,
+  title, category, location, timeAgo, price,
+  imageEmoji, imageUrl, tags, direction, directionLabel,
+  distanceLabel, bookmarked, onBookmark, onClick,
 }: ResultItemProps) {
   const resolvedLabel = directionLabel ?? (direction && tags ? dirLabel(tags, direction) : undefined);
 
   return (
     <div
       onClick={onClick}
-      className="flex gap-4 p-4 rounded-2xl hover:bg-surface-card transition-colors cursor-pointer border border-transparent hover:border-border-card group"
+      className="flex gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl hover:bg-surface-card transition-colors cursor-pointer border border-transparent hover:border-border-card group"
     >
       {/* 썸네일 */}
-      <div className="w-20 h-20 sm:w-30 sm:h-30 shrink-0 rounded-xl bg-[#f1f5f9] flex items-center justify-center text-3xl sm:text-5xl overflow-hidden">
+      <div className="w-18 h-18 sm:w-24 sm:h-24 shrink-0 rounded-xl bg-slate-100 flex items-center justify-center text-2xl sm:text-4xl overflow-hidden">
         {imageUrl ? (
           <img src={imageUrl} alt={title} className="w-full h-full object-cover" />
         ) : (
@@ -51,31 +41,25 @@ export default function ResultItem({
       </div>
 
       {/* 내용 */}
-      <div className="flex flex-col justify-between flex-1 py-1 min-w-0">
+      <div className="flex flex-col justify-between flex-1 py-0.5 sm:py-1 min-w-0">
         <div>
           <div className="flex items-center gap-1.5 flex-wrap mb-1">
-            <span className="text-[12px] font-semibold text-brand bg-brand-bg px-2 py-0.5 rounded-full shrink-0">
+            <span className="text-[11px] sm:text-[12px] font-semibold text-brand bg-brand-bg px-2 py-0.5 rounded-full shrink-0">
               {category}
             </span>
-            {resolvedLabel && (
-              <span
-                className="text-[11px] font-semibold px-1.5 py-0.5 rounded-full shrink-0"
-                style={{
-                  color: direction === "seek" ? "#0ea5e9" : "#8F4BC6",
-                  background: direction === "seek" ? "#e0f2fe" : "#f3e8ff",
-                }}
-              >
+            {resolvedLabel && direction && (
+              <span className={`text-[10px] sm:text-[11px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${directionBadgeCls(direction)}`}>
                 {resolvedLabel}
               </span>
             )}
           </div>
-          <h3 className="text-[16px] font-semibold text-text-heading leading-snug group-hover:text-brand transition-colors truncate">
+          <h3 className="text-[14px] sm:text-[16px] font-semibold text-text-heading leading-snug group-hover:text-brand transition-colors truncate">
             {title}
           </h3>
         </div>
         <div>
-          <p className="text-[18px] sm:text-[21px] font-bold text-text-heading">{price}</p>
-          <p className="text-[13px] text-text-muted mt-0.5">
+          <p className="text-[16px] sm:text-[19px] font-bold text-text-heading">{price}</p>
+          <p className="text-[12px] sm:text-[13px] text-text-muted mt-0.5">
             {location} · {timeAgo}
             {distanceLabel && (
               <span className="ml-1.5 font-semibold text-brand">📍 {distanceLabel}</span>

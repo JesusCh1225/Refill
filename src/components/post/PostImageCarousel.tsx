@@ -12,7 +12,7 @@ export default function PostImageCarousel({ imageUrls, imageEmoji }: Props) {
 
   if (!imageUrls?.length) {
     return (
-      <div className="w-full h-44 sm:h-56 bg-[#f1f5f9] flex items-center justify-center text-7xl sm:text-8xl">
+      <div className="w-full h-44 sm:h-56 bg-slate-100 flex items-center justify-center text-7xl sm:text-8xl">
         {imageEmoji}
       </div>
     );
@@ -22,7 +22,7 @@ export default function PostImageCarousel({ imageUrls, imageEmoji }: Props) {
   const next = () => setIdx((i) => (i + 1) % imageUrls.length);
 
   return (
-    <div className="relative w-full h-56 sm:h-72 bg-[#f1f5f9] overflow-hidden">
+    <div className="relative w-full h-56 sm:h-72 bg-slate-100 overflow-hidden">
       <img src={imageUrls[idx]} alt={`이미지 ${idx + 1}`} className="w-full h-full object-cover" />
       {imageUrls.length > 1 && (
         <>

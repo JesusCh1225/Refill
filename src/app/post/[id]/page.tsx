@@ -16,16 +16,7 @@ import PostImageCarousel from "@/components/post/PostImageCarousel";
 import CommentSection from "@/components/post/CommentSection";
 import { useBookmarks } from "@/lib/useBookmarks";
 import { dirLabel } from "@/lib/dirLabel";
-
-function tagChipClass(tags: string[]) {
-  if (tags.includes("lesson"))
-    return "bg-violet-50 text-violet-600 border-violet-200 hover:border-violet-400 hover:text-violet-700";
-  if (tags.includes("band"))
-    return "bg-teal-50 text-teal-600 border-teal-200 hover:border-teal-400 hover:text-teal-700";
-  if (tags.includes("instrument") || tags.includes("equipment"))
-    return "bg-amber-50 text-amber-600 border-amber-200 hover:border-amber-400 hover:text-amber-700";
-  return "bg-surface-card text-text-muted border-border-base hover:border-brand hover:text-brand";
-}
+import { tagLinkCls, directionBadgeCls } from "@/lib/tagStyles";
 
 export default function PostDetailPage({
   params,
@@ -156,13 +147,7 @@ export default function PostDetailPage({
                     {item.category}
                   </span>
                   {item.direction && (
-                    <span
-                      className="inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                      style={{
-                        color: item.direction === "offer" ? "#8F4BC6" : "#0ea5e9",
-                        background: item.direction === "offer" ? "#f3e8ff" : "#e0f2fe",
-                      }}
-                    >
+                    <span className={`inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full ${directionBadgeCls(item.direction)}`}>
                       {dirLabel(item.tags, item.direction)}
                     </span>
                   )}
@@ -208,7 +193,7 @@ export default function PostDetailPage({
                     <Link
                       key={kw}
                       href={`/musicmap?q=${encodeURIComponent(kw)}`}
-                      className={`px-3 py-1 rounded-full text-[11px] border transition-colors ${tagChipClass(item.tags)}`}
+                      className={`px-3 py-1 rounded-full text-[11px] border transition-colors ${tagLinkCls(item.tags)}`}
                     >
                       #{kw}
                     </Link>

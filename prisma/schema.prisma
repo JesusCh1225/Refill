@@ -156,6 +156,8 @@ model PostImage {
   order  Int    @default(0)
 
   post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
 }
 
 // ── 게시글 지역 태그 (검색용) ──────────────────────────────────────────────
@@ -187,6 +189,9 @@ model Comment {
   author  User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
   parent  Comment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies Comment[] @relation("CommentReplies")
+
+  @@index([postId])
+  @@index([parentId])
 }
 
 // ── 좋아요 ────────────────────────────────────────────────────────────────
@@ -252,4 +257,6 @@ model Message {
   sender   User  @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
   receiver User  @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
   post     Post? @relation(fields: [postId], references: [id])
+
+  @@index([receiverId, isRead])
 }
