@@ -62,8 +62,6 @@ export default function LocationPicker({ value, onChange }: Props) {
   const isDongChecked = (gu: string, dong: string) => draft.some((d) => d.si === activeSi && d.gu === gu && d.dong === dong);
   const guPartialCount = (gu: string) => draft.filter((d) => d.si === activeSi && d.gu === gu && d.dong).length;
 
-  const toggleClearAll = () => setDraft([]);
-
   const toggleWholeSi = () => {
     if (isWholeSiChecked) {
       setDraft(draft.filter((d) => !(d.si === activeSi && !d.gu)));
@@ -177,15 +175,6 @@ export default function LocationPicker({ value, onChange }: Props) {
 
             {/* 구/군 컬럼 */}
             <ul className="list-none m-0 p-0 overflow-y-auto border-r border-border-header shrink-0" style={{ width: focusedGu ? "33%" : "50%", scrollbarWidth: "thin" }}>
-              <li>
-                <button
-                  onClick={toggleClearAll}
-                  className="w-full text-left px-3.5 py-3 text-[13px] text-text-body border-none bg-transparent cursor-pointer hover:bg-surface-card border-b border-border-header flex items-center gap-2"
-                >
-                  <Check checked={draft.length === 0} />
-                  전체
-                </button>
-              </li>
               <li>
                 <button
                   onClick={toggleWholeSi}
