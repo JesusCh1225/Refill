@@ -54,7 +54,11 @@
       "Bash(curl -s \"http://localhost:3000/?q=%EB%A0%88%EC%8A%A8\" -o /dev/null -w \"%{http_code}\\\\n\" -D -)",
       "Bash(node scripts/finalSmoke.mjs)",
       "Bash(git add *)",
-      "Bash(node scripts/checkBookCat.mjs)"
+      "Bash(node scripts/checkBookCat.mjs)",
+      "Bash(vercel --version)",
+      "PowerShell(vercel --version 2>&1)",
+      "PowerShell(npm install -g vercel 2>&1)",
+      "PowerShell(vercel --version)"
     ]
   }
 }

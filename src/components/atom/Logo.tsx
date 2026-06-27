@@ -1,4 +1,6 @@
 import Link from "next/link";
+import Image from "next/image";
+import logoImg from "@/styles/refill_01.png";
 
 interface LogoProps {
   onClick?: () => void;
@@ -6,23 +8,8 @@ interface LogoProps {
 
 export default function Logo({ onClick }: LogoProps) {
   return (
-    <Link
-      href={"/"}
-      className="flex flex-col leading-none cursor-pointer"
-      onClick={onClick}
-    >
-      <strong
-        className="text-[22px] font-black tracking-widest"
-        style={{ color: "var(--color-brand)" }}
-      >
-        REFILL
-      </strong>
-      <span
-        className="text-[10px] tracking-wide"
-        style={{ color: "var(--color-text-muted)" }}
-      >
-        음악을 채우다.
-      </span>
+    <Link href="/" className="flex items-center cursor-pointer" onClick={onClick}>
+      <Image src={logoImg} alt="REFILL" height={36} style={{ width: "auto" }} />
     </Link>
   );
 }
