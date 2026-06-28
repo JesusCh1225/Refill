@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import InfoField from "@/components/atom/InfoField";
+import EditableField from "@/components/atom/EditableField";
 
 const PROVIDER_LABEL: Record<string, string> = { kakao: "카카오", naver: "네이버" };
 
@@ -50,22 +50,6 @@ export default function InfoTab({
 }: Props) {
   const savedNickname = profile.nickname ?? profile.name;
 
-  const [bioInput, setBioInput] = useState(profile.bio ?? "");
-  const [contactInput, setContactInput] = useState(profile.contact ?? "");
-  const [songInput, setSongInput] = useState(profile.representativeSong ?? "");
-  const [bioSaving, setBioSaving] = useState(false);
-  const [contactSaving, setContactSaving] = useState(false);
-  const [songSaving, setSongSaving] = useState(false);
-
-  const save = async (
-    field: "bio" | "contact" | "representativeSong",
-    value: string,
-    setSaving: (v: boolean) => void,
-  ) => {
-    setSaving(true);
-    try { await onProfileFieldSave(field, value); } finally { setSaving(false); }
-  };
-
   return (
     <div className="bg-white rounded-2xl border border-border-card px-4 py-5 sm:px-8 sm:py-7 flex flex-col gap-6">
       {/* 프로필 사진 */}
@@ -89,97 +73,45 @@ export default function InfoTab({
 
       <hr className="border-border-base" />
 
-      {/* 소개글 */}
-      <section className="flex flex-col gap-3">
-        <div>
-          <h2 className="text-[14px] font-bold text-text-heading">소개글</h2>
-          <p className="text-[12px] text-text-muted mt-0.5">다른 사용자에게 보여지는 자기소개입니다.</p>
-        </div>
-        <textarea
-          value={bioInput}
-          onChange={(e) => setBioInput(e.target.value)}
-          maxLength={500}
-          rows={4}
-          placeholder="음악 경력, 레슨 스타일, 관심 장르 등을 자유롭게 소개해 주세요."
-          className="w-full px-3 py-2 rounded-lg border border-border-base text-[13px] text-text-body placeholder:text-text-placeholder focus:outline-none focus:border-brand transition-colors resize-none"
-        />
-        <div className="flex items-center justify-between">
-          <p className="text-[11px] text-text-placeholder">{bioInput.length}/500</p>
-          <button
-            onClick={() => save("bio", bioInput, setBioSaving)}
-            disabled={bioSaving || bioInput === (profile.bio ?? "")}
-            className="px-4 h-8 rounded-lg bg-brand text-white text-[12px] font-semibold border-none cursor-pointer hover:opacity-85 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            {bioSaving ? "저장중…" : "저장"}
-          </button>
-        </div>
-      </section>
+      <EditableField
+        title="소개글"
+        description="다른 사용자에게 보여지는 자기소개입니다."
+        type="textarea"
+        initialValue={profile.bio ?? ""}
+        placeholder="음악 경력, 레슨 스타일, 관심 장르 등을 자유롭게 소개해 주세요."
+        maxLength={500}
+        rows={4}
+        onSave={(v) => onProfileFieldSave("bio", v)}
+      />
 
       <hr className="border-border-base" />
 
-      {/* 연락처 */}
-      <section className="flex flex-col gap-3">
-        <div>
-          <h2 className="text-[14px] font-bold text-text-heading">연락처</h2>
-          <p className="text-[12px] text-text-muted mt-0.5">인스타그램, 카카오 오픈채팅, 전화번호 등을 입력하세요.</p>
-        </div>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={contactInput}
-            onChange={(e) => setContactInput(e.target.value)}
-            maxLength={200}
-            placeholder="예: 인스타 @my_account / 카카오 오픈채팅 링크"
-            className="flex-1 h-10 px-3 rounded-lg border border-border-base text-[13px] text-text-body placeholder:text-text-placeholder focus:outline-none focus:border-brand transition-colors"
-          />
-          <button
-            onClick={() => save("contact", contactInput, setContactSaving)}
-            disabled={contactSaving || contactInput === (profile.contact ?? "")}
-            className="px-4 h-10 rounded-lg bg-brand text-white text-[12px] font-semibold border-none cursor-pointer hover:opacity-85 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
-          >
-            {contactSaving ? "저장중…" : "저장"}
-          </button>
-        </div>
-      </section>
+      <EditableField
+        title="연락처"
+        description="인스타그램, 카카오 오픈채팅, 전화번호 등을 입력하세요."
+        type="text"
+        initialValue={profile.contact ?? ""}
+        placeholder="예: 인스타 @my_account / 카카오 오픈채팅 링크"
+        maxLength={200}
+        onSave={(v) => onProfileFieldSave("contact", v)}
+      />
 
       <hr className="border-border-base" />
 
-      {/* 대표 음원 */}
-      <section className="flex flex-col gap-3">
-        <div>
-          <h2 className="text-[14px] font-bold text-text-heading">대표 음원</h2>
-          <p className="text-[12px] text-text-muted mt-0.5">
-            SoundCloud, YouTube, Spotify 등의 링크를 입력하면 프로필에 표시돼요.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <input
-            type="url"
-            value={songInput}
-            onChange={(e) => setSongInput(e.target.value)}
-            maxLength={500}
-            placeholder="https://soundcloud.com/..."
-            className="flex-1 h-10 px-3 rounded-lg border border-border-base text-[13px] text-text-body placeholder:text-text-placeholder focus:outline-none focus:border-brand transition-colors"
-          />
-          <button
-            onClick={() => save("representativeSong", songInput, setSongSaving)}
-            disabled={songSaving || songInput === (profile.representativeSong ?? "")}
-            className="px-4 h-10 rounded-lg bg-brand text-white text-[12px] font-semibold border-none cursor-pointer hover:opacity-85 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
-          >
-            {songSaving ? "저장중…" : "저장"}
-          </button>
-        </div>
-        {songInput && (
-          <a
-            href={songInput}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[12px] text-brand hover:underline truncate"
-          >
-            🎵 {songInput}
+      <EditableField
+        title="대표 음원"
+        description="SoundCloud, YouTube, Spotify 등의 링크를 입력하면 프로필에 표시돼요."
+        type="url"
+        initialValue={profile.representativeSong ?? ""}
+        placeholder="https://soundcloud.com/..."
+        maxLength={500}
+        onSave={(v) => onProfileFieldSave("representativeSong", v)}
+        extra={(v) => v ? (
+          <a href={v} target="_blank" rel="noopener noreferrer" className="text-[12px] text-brand hover:underline truncate">
+            🎵 {v}
           </a>
-        )}
-      </section>
+        ) : null}
+      />
 
       <hr className="border-border-base" />
 

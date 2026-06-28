@@ -4,7 +4,9 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@/components/organisms/Header";
 import Spinner from "@/components/atom/Spinner";
+import PageNumbers from "@/components/atom/PageNumbers";
 import SearchFilterBar, { type SortOption } from "@/components/organisms/SearchFilterBar";
+import NearbySearchBanner, { type GeoState } from "@/components/organisms/NearbySearchBanner";
 import ResultItem from "@/components/atom/ResultItem";
 import SearchBar from "@/components/molecules/SearchBar";
 import WritePostModal from "@/components/organisms/WritePostModal";
@@ -15,13 +17,7 @@ import { useBookmarks } from "@/lib/useBookmarks";
 import { useCreatePost } from "@/hooks/useCreatePost";
 import { wordVariants } from "@/lib/textMatching";
 import { parseLocationFromQuery } from "@/lib/locationParser";
-import {
-  isNearbyQuery,
-  stripNearbyKeywords,
-  haversineKm,
-  fmtDist,
-  NEARBY_RADIUS_KM,
-} from "@/lib/nearbySearch";
+import { isNearbyQuery, stripNearbyKeywords, haversineKm, fmtDist, NEARBY_RADIUS_KM } from "@/lib/nearbySearch";
 import type { LocationEntry } from "@/components/molecules/LocationPicker";
 
 interface SearchResultPageProps {
@@ -30,9 +26,6 @@ interface SearchResultPageProps {
   onLogoClick: () => void;
 }
 
-type GeoState = "idle" | "requesting" | "ready" | "denied";
-
-// 선택 항목 하나를 "단어별 변형(AND 조건) 그룹" 배열로 분해 (예: "수원시 장안구" -> [["수원시","수원"], ["장안구"]])
 function entryTermGroups(e: LocationEntry): string[][] {
   const parts = e.dong ? [e.si, e.gu, e.dong] : e.gu ? [e.si, e.gu] : e.si ? [e.si] : [];
   return parts.filter(Boolean).flatMap((p) => p.split(" ")).map(wordVariants);
@@ -42,63 +35,8 @@ function entryMatches(combinedLower: string, e: LocationEntry): boolean {
   return entryTermGroups(e).every((variants) => variants.some((v) => combinedLower.includes(v.toLowerCase())));
 }
 
-// 재검색 시 API에 붙일 가장 구체적인 지역명 (동 > 구 > 시)
 function mostSpecificLocLabel(e: LocationEntry): string {
   return e.dong || e.gu || e.si || "";
-}
-
-function PageNumbers({ current, total, onChange }: { current: number; total: number; onChange: (p: number) => void }) {
-  if (total <= 1) return null;
-
-  // 화면 너비에 따라 current 주변 범위 결정 (CSS로는 못하므로 JS window 확인)
-  const spread = typeof window !== "undefined" && window.innerWidth < 480 ? 1 : 2;
-
-  const pages: (number | "...")[] = [];
-  if (total <= 7) {
-    for (let i = 1; i <= total; i++) pages.push(i);
-  } else {
-    pages.push(1);
-    if (current > spread + 2) pages.push("...");
-    for (let i = Math.max(2, current - spread); i <= Math.min(total - 1, current + spread); i++) pages.push(i);
-    if (current < total - spread - 1) pages.push("...");
-    pages.push(total);
-  }
-
-  return (
-    <div className="flex items-center justify-center gap-1 pt-6">
-      <button
-        disabled={current === 1}
-        onClick={() => onChange(current - 1)}
-        className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg text-[12px] sm:text-[13px] text-text-muted border border-border-base bg-white disabled:opacity-30 cursor-pointer hover:border-brand hover:text-brand transition-colors"
-      >
-        ‹
-      </button>
-      {pages.map((p, i) =>
-        p === "..." ? (
-          <span key={`e${i}`} className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center text-[12px] text-text-placeholder">…</span>
-        ) : (
-          <button
-            key={p}
-            onClick={() => onChange(p)}
-            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg text-[12px] sm:text-[13px] font-semibold border cursor-pointer transition-colors ${
-              p === current
-                ? "bg-brand text-white border-brand"
-                : "bg-white text-text-muted border-border-base hover:border-brand hover:text-brand"
-            }`}
-          >
-            {p}
-          </button>
-        )
-      )}
-      <button
-        disabled={current === total}
-        onClick={() => onChange(current + 1)}
-        className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg text-[12px] sm:text-[13px] text-text-muted border border-border-base bg-white disabled:opacity-30 cursor-pointer hover:border-brand hover:text-brand transition-colors"
-      >
-        ›
-      </button>
-    </div>
-  );
 }
 
 export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: SearchResultPageProps) {
@@ -110,19 +48,15 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
   const [detectedDirection, setDetectedDirection] = useState<"OFFER" | "SEEK" | null>(null);
   const [loading, setLoading] = useState(true);
   const [writeOpen, setWriteOpen] = useState(false);
-
   const [displayCount, setDisplayCount] = useState(20);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-
   const [mainCatId, setMainCatId] = useState("all");
   const [subCats, setSubCats] = useState<Set<string>>(new Set());
   const [locationSel, setLocationSel] = useState<LocationEntry[]>([]);
   const [sort, setSort] = useState<SortOption>("latest");
   const [priceRange, setPriceRange] = useState<[number, number]>([0, SLIDER_MAX]);
   const [showSlider, setShowSlider] = useState(false);
-
-  // 근처 검색 상태
   const [isNearby, setIsNearby] = useState(false);
   const [geoState, setGeoState] = useState<GeoState>("idle");
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
@@ -133,10 +67,7 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
   const { isBookmarked, toggle: toggleBookmark } = useBookmarks();
 
   const handleSetQuery = (q: string) => { queryRef.current = q; setQuery(q); };
-  const handleSearch = (voiceQuery?: string) => {
-    const q = voiceQuery ?? queryRef.current;
-    onBack(q);
-  };
+  const handleSearch = (voiceQuery?: string) => onBack(voiceQuery ?? queryRef.current);
 
   const fetchResults = useCallback((apiQuery: string, pageNum = 1) => {
     lastApiQueryRef.current = apiQuery;
@@ -163,25 +94,17 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
     if (!navigator.geolocation) { setGeoState("denied"); return; }
     setGeoState("requesting");
     navigator.geolocation.getCurrentPosition(
-      ({ coords }) => {
-        setUserCoords({ lat: coords.latitude, lng: coords.longitude });
-        setGeoState("ready");
-      },
+      ({ coords }) => { setUserCoords({ lat: coords.latitude, lng: coords.longitude }); setGeoState("ready"); },
       () => setGeoState("denied"),
       { timeout: 8000 },
     );
   }, []);
 
-  // 초기 로드
   useEffect(() => {
-    // 검색어 없이 검색하면 현재 위치 기준 근처 게시글을 보여줌
     const isEmptyQuery = initialQuery.trim() === "";
     const nearby = isNearbyQuery(initialQuery) || isEmptyQuery;
     setIsNearby(nearby);
-
-    // 근처 검색이면 "근처/주변" 키워드 제거 후 쿼리 정제
     const cleanedQuery = nearby ? stripNearbyKeywords(initialQuery) : initialQuery;
-
     const parsed = cleanedQuery.trim() ? parseLocationFromQuery(cleanedQuery) : null;
     if (parsed) {
       setLocationSel([{ si: parsed.si, gu: parsed.gu, dong: parsed.dong }]);
@@ -191,10 +114,7 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
       setQuery(cleanedQuery);
       queryRef.current = cleanedQuery;
     }
-
     fetchResults(initialQuery, 1);
-
-    // 모든 검색에서 위치 요청 — 거리순 정렬에 활용
     requestGeo();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialQuery]);
@@ -205,43 +125,23 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
     fetchResults(combined || initialQuery, 1);
   };
 
-  const handlePageChange = (page: number) => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    fetchResults(lastApiQueryRef.current, page);
-  };
-
-  const handleWriteClick = () => {
-    if (requireLogin()) setWriteOpen(true);
-  };
-
-  // 검색 화면에서 작성한 글은 바로 상세 화면으로 이동
+  const handleWriteClick = () => { if (requireLogin()) setWriteOpen(true); };
   const handlePostSubmit = async (draft: PostDraft) => {
     const newPost = await createPost(draft);
     if (newPost) router.push(`/post/${newPost.id}`);
   };
 
-  const toggleSubCat = (id: string) => {
-    setSubCats((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  };
+  const toggleSubCat = (id: string) =>
+    setSubCats((prev) => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; });
 
-  const handleMainCatChange = (id: string) => {
-    setMainCatId(id);
-    setSubCats(new Set());
-  };
-
+  const handleMainCatChange = (id: string) => { setMainCatId(id); setSubCats(new Set()); };
   const selectedCat = MAIN_CATEGORIES.find((c) => c.id === mainCatId);
 
-  // 근처 검색용 거리 계산 맵
+  // 거리 계산
   const distanceMap = new Map<number, number>();
   if (geoState === "ready" && userCoords) {
     for (const item of results) {
-      if (item.lat && item.lng) {
-        distanceMap.set(item.id, haversineKm(userCoords.lat, userCoords.lng, item.lat, item.lng));
-      }
+      if (item.lat && item.lng) distanceMap.set(item.id, haversineKm(userCoords.lat, userCoords.lng, item.lat, item.lng));
     }
   }
 
@@ -251,56 +151,36 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
         if (selectedCat.tag && !item.tags.includes(selectedCat.tag)) return false;
         if (selectedCat.direction && item.direction !== selectedCat.direction) return false;
       }
-
-      if (subCats.size > 0) {
-        const hasSubCat = [...subCats].some((s) => item.tags.includes(s));
-        if (!hasSubCat) return false;
-      }
-
+      if (subCats.size > 0 && ![...subCats].some((s) => item.tags.includes(s))) return false;
       if (locationSel.length > 0) {
         const combined = [item.location, ...item.locationTags].join(" ").toLowerCase();
         if (!locationSel.some((e) => entryMatches(combined, e))) return false;
       }
-
-      // 근처 검색: 반경 이내만 통과
       if (isNearby && geoState === "ready" && userCoords) {
         const dist = distanceMap.get(item.id);
         if (dist === undefined || dist > nearbyRadius) return false;
       }
-
       const [lo, hi] = priceRange;
       if (!(lo === 0 && hi === SLIDER_MAX)) {
         const amount = parsePrice(item.price);
-        if (lo === NEGOTIABLE_PRICE && hi === NEGOTIABLE_PRICE) {
-          if (amount !== NEGOTIABLE_PRICE) return false;
-        } else if (amount === NEGOTIABLE_PRICE) {
-          return false; // 협의 게시글은 숫자 가격 필터에서 제외
-        } else {
-          if (lo === 0 && hi === 0) { if (amount !== 0) return false; }
-          else if (amount < lo || (hi < SLIDER_MAX && amount > hi)) return false;
-        }
+        if (lo === NEGOTIABLE_PRICE && hi === NEGOTIABLE_PRICE) { if (amount !== NEGOTIABLE_PRICE) return false; }
+        else if (amount === NEGOTIABLE_PRICE) return false;
+        else if (lo === 0 && hi === 0) { if (amount !== 0) return false; }
+        else if (amount < lo || (hi < SLIDER_MAX && amount > hi)) return false;
       }
-
       return true;
     })
     .sort((a, b) => {
-      // 위치 정보가 있으면 거리순 우선 (가격 정렬 선택 시 제외)
       if (geoState === "ready" && sort === "latest") {
         const da = distanceMap.get(a.id) ?? Infinity;
         const db = distanceMap.get(b.id) ?? Infinity;
         if (da !== db) return da - db;
       }
-      if (sort === "price_low") {
+      if (sort === "price_low" || sort === "price_high") {
         const pa = parsePrice(a.price); const pb = parsePrice(b.price);
         if (pa === -1 && pb === -1) return 0;
         if (pa === -1) return 1; if (pb === -1) return -1;
-        return pa - pb;
-      }
-      if (sort === "price_high") {
-        const pa = parsePrice(a.price); const pb = parsePrice(b.price);
-        if (pa === -1 && pb === -1) return 0;
-        if (pa === -1) return 1; if (pb === -1) return -1;
-        return pb - pa;
+        return sort === "price_low" ? pa - pb : pb - pa;
       }
       return 0;
     });
@@ -308,13 +188,10 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
   const displayed = filtered.slice(0, displayCount);
   const hasMore = displayCount < filtered.length;
 
-  const RADIUS_OPTIONS = [5, 10, 20, 30];
-
   return (
     <div className="min-h-screen bg-surface-page text-text-body">
       <Header onLogoClick={onLogoClick} />
 
-      {/* 검색바 */}
       <div className="border-b border-border-header bg-white">
         <div className="mx-auto px-3 sm:px-6 py-4" style={{ maxWidth: "var(--max-w-hero)" }}>
           <SearchBar value={query} onChange={handleSetQuery} onSearch={handleSearch} />
@@ -322,83 +199,30 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
       </div>
 
       <SearchFilterBar
-        mainCatId={mainCatId}
-        onMainCatChange={handleMainCatChange}
-        subCats={subCats}
-        onToggleSubCat={toggleSubCat}
-        locationSel={locationSel}
-        onLocationChange={setLocationSel}
-        sort={sort}
-        onSortChange={setSort}
-        priceRange={priceRange}
-        onPriceRangeChange={setPriceRange}
-        showSlider={showSlider}
-        onToggleSlider={() => setShowSlider((v) => !v)}
+        mainCatId={mainCatId} onMainCatChange={handleMainCatChange}
+        subCats={subCats} onToggleSubCat={toggleSubCat}
+        locationSel={locationSel} onLocationChange={setLocationSel}
+        sort={sort} onSortChange={setSort}
+        priceRange={priceRange} onPriceRangeChange={setPriceRange}
+        showSlider={showSlider} onToggleSlider={() => setShowSlider((v) => !v)}
         onReSearch={handleReSearch}
       />
 
-      {/* 결과 */}
       <div className="mx-auto px-3 sm:px-6 py-6 sm:py-8 pb-16" style={{ maxWidth: "var(--max-w-hero)" }}>
         <h2 className="text-[19px] sm:text-[23px] font-bold text-text-heading tracking-tight mb-4">
-          {initialQuery.trim() ? (
-            <>&ldquo;{initialQuery}&rdquo; 검색 결과</>
-          ) : (
-            "내 주변 게시글"
-          )}
+          {initialQuery.trim() ? <>&ldquo;{initialQuery}&rdquo; 검색 결과</> : "내 주변 게시글"}
         </h2>
 
-        {/* 근처 검색 상태 배너 */}
         {isNearby && (
-          <div className="mb-4 rounded-2xl border border-border-base bg-white px-4 py-3 flex flex-col gap-2">
-            {geoState === "requesting" && (
-              <div className="flex items-center gap-2 text-[13px] text-text-muted">
-                <span className="w-3 h-3 rounded-full border-2 border-brand border-t-transparent animate-spin shrink-0" />
-                현재 위치를 확인하는 중...
-              </div>
-            )}
-            {geoState === "ready" && userCoords && (
-              <>
-                <div className="flex items-center gap-2 text-[13px] font-semibold text-brand">
-                  <span>📍</span>
-                  <span>현재 위치 기준 {nearbyRadius}km 이내</span>
-                </div>
-                <div className="flex gap-1.5 flex-wrap">
-                  {RADIUS_OPTIONS.map((r) => (
-                    <button
-                      key={r}
-                      onClick={() => setNearbyRadius(r)}
-                      className={`h-7 px-3 rounded-full text-[12px] font-semibold border cursor-pointer transition-colors ${
-                        nearbyRadius === r
-                          ? "bg-brand text-white border-brand"
-                          : "bg-white text-text-muted border-border-base hover:border-brand"
-                      }`}
-                    >
-                      {r}km
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-            {geoState === "denied" && (
-              <div className="flex items-center gap-2">
-                <span className="text-[13px] text-text-muted">
-                  ⚠️ 위치 권한이 없어 근처 검색을 할 수 없어요.
-                </span>
-                <button
-                  onClick={requestGeo}
-                  className="text-[12px] text-brand font-semibold border-none bg-transparent cursor-pointer hover:underline shrink-0"
-                >
-                  다시 시도
-                </button>
-              </div>
-            )}
-          </div>
+          <NearbySearchBanner
+            geoState={geoState} userCoords={userCoords}
+            nearbyRadius={nearbyRadius} onRadiusChange={setNearbyRadius}
+            onRetry={requestGeo}
+          />
         )}
 
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <Spinner size="lg" />
-          </div>
+          <div className="flex items-center justify-center py-20"><Spinner size="lg" /></div>
         ) : filtered.length === 0 ? (
           <div className="py-16 text-center">
             <p className="text-text-muted text-[15px] mb-2">검색 결과가 없어요.</p>
@@ -412,41 +236,22 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
                 <p className="text-[14px] text-text-muted mb-3">이런 키워드로 검색해볼까요?</p>
                 <div className="flex flex-wrap justify-center gap-2">
                   {suggestions.map((s) => (
-                    <button
-                      key={s}
-                      onClick={() => onBack(s)}
-                      className="px-3 py-1.5 rounded-full text-[14px] font-semibold bg-brand-bg text-brand border border-brand cursor-pointer hover:bg-brand hover:text-white transition-colors"
-                    >
-                      {s}
-                    </button>
+                    <button key={s} onClick={() => onBack(s)} className="px-3 py-1.5 rounded-full text-[14px] font-semibold bg-brand-bg text-brand border border-brand cursor-pointer hover:bg-brand hover:text-white transition-colors">{s}</button>
                   ))}
                 </div>
               </div>
             )}
             <div className="border border-dashed border-border-base rounded-2xl px-6 py-5 inline-block">
               <p className="text-[14px] text-text-muted mb-3">이 지역 첫 번째 글을 올려보세요!</p>
-              <button
-                onClick={handleWriteClick}
-                className="px-5 py-2 rounded-full bg-brand text-white text-[13px] font-semibold border-none cursor-pointer hover:opacity-85 transition-opacity"
-              >
-                글쓰기
-              </button>
+              <button onClick={handleWriteClick} className="px-5 py-2 rounded-full bg-brand text-white text-[13px] font-semibold border-none cursor-pointer hover:opacity-85 transition-opacity">글쓰기</button>
             </div>
           </div>
         ) : (
           <>
             <div className="flex items-center gap-2 mb-4 flex-wrap">
               <p className="text-[14px] text-text-muted">총 {filtered.length}개의 결과</p>
-              {sort !== "latest" && (
-                <span className="text-[12px] font-semibold px-2.5 py-1 rounded-full bg-surface-card text-text-muted border border-border-base">
-                  {sort === "price_low" ? "가격 낮은순" : "가격 높은순"}
-                </span>
-              )}
-              {detectedDirection && (
-                <span className="text-[12px] font-semibold px-2.5 py-1 rounded-full bg-brand-bg text-brand">
-                  {detectedDirection === "SEEK" ? "제공자 글 위주 검색" : "구하는 글 위주 검색"}
-                </span>
-              )}
+              {sort !== "latest" && <span className="text-[12px] font-semibold px-2.5 py-1 rounded-full bg-surface-card text-text-muted border border-border-base">{sort === "price_low" ? "가격 낮은순" : "가격 높은순"}</span>}
+              {detectedDirection && <span className="text-[12px] font-semibold px-2.5 py-1 rounded-full bg-brand-bg text-brand">{detectedDirection === "SEEK" ? "제공자 글 위주 검색" : "구하는 글 위주 검색"}</span>}
             </div>
             <div className="flex flex-col divide-y divide-border-header">
               {displayed.map((item) => {
@@ -456,49 +261,30 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
                 return (
                   <ResultItem
                     key={item.id}
-                    title={item.title}
-                    category={item.category}
-                    location={item.location}
-                    timeAgo={item.timeAgo}
-                    price={item.price}
-                    imageEmoji={item.imageEmoji}
-                    imageUrl={item.imageUrl}
-                    direction={item.direction}
+                    title={item.title} category={item.category} location={item.location}
+                    timeAgo={item.timeAgo} price={item.price} imageEmoji={item.imageEmoji}
+                    imageUrl={item.imageUrl} direction={item.direction}
                     directionLabel={cat ? `${cat.emoji} ${cat.label}` : undefined}
                     distanceLabel={dist !== undefined ? fmtDist(dist) : undefined}
-                    bookmarked={isBookmarked(item.id)}
-                    onBookmark={() => toggleBookmark(item.id)}
+                    bookmarked={isBookmarked(item.id)} onBookmark={() => toggleBookmark(item.id)}
                     onClick={() => router.push(`/post/${item.id}`)}
                   />
                 );
               })}
             </div>
-
-            {/* 더보기 버튼 */}
             {hasMore && (
               <div className="flex justify-center pt-6">
-                <button
-                  onClick={() => setDisplayCount(filtered.length)}
-                  className="px-6 py-2.5 rounded-full border border-border-base bg-white text-[13px] font-semibold text-text-body cursor-pointer hover:border-brand hover:text-brand transition-colors"
-                >
+                <button onClick={() => setDisplayCount(filtered.length)} className="px-6 py-2.5 rounded-full border border-border-base bg-white text-[13px] font-semibold text-text-body cursor-pointer hover:border-brand hover:text-brand transition-colors">
                   더보기 ({filtered.length - displayCount}개)
                 </button>
               </div>
             )}
-
-            {/* 페이지 번호 */}
-            {!hasMore && (
-              <PageNumbers current={currentPage} total={totalPages} onChange={handlePageChange} />
-            )}
+            {!hasMore && <PageNumbers current={currentPage} total={totalPages} onChange={(page) => { window.scrollTo({ top: 0, behavior: "smooth" }); fetchResults(lastApiQueryRef.current, page); }} />}
           </>
         )}
       </div>
 
-      <button
-        onClick={handleWriteClick}
-        className="fixed bottom-6 right-6 z-10 flex items-center gap-2 bg-brand text-white text-xs font-semibold px-4 rounded-full border-none cursor-pointer hover:opacity-85 transition-opacity shadow-search"
-        style={{ height: "44px" }}
-      >
+      <button onClick={handleWriteClick} className="fixed bottom-6 right-6 z-10 flex items-center gap-2 bg-brand text-white text-xs font-semibold px-4 rounded-full border-none cursor-pointer hover:opacity-85 transition-opacity shadow-search" style={{ height: "44px" }}>
         ✦ 글쓰기
       </button>
 

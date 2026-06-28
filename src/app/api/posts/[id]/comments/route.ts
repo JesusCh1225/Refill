@@ -126,11 +126,13 @@ export async function POST(
       if (r.authorId && r.authorId !== userId) recipientIds.add(r.authorId);
     }
 
-    for (const recipientId of recipientIds) {
-      await prisma.notification.create({
-        data: { userId: recipientId, actorId: userId, type: "REPLY", postId, commentId },
-      });
-    }
+    await Promise.all(
+      Array.from(recipientIds).map((recipientId) =>
+        prisma.notification.create({
+          data: { userId: recipientId, actorId: userId, type: "REPLY", postId, commentId },
+        }),
+      ),
+    );
   } else if (post.authorId !== userId) {
     await prisma.notification.create({
       data: { userId: post.authorId, actorId: userId, type: "COMMENT", postId, commentId },
