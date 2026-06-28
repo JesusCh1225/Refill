@@ -14,9 +14,43 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const BASE_URL = "https://refill-blush.vercel.app";
+
 export const metadata: Metadata = {
-  title: "리필-당신을 채우는 즐거움",
-  description: "",
+  metadataBase: new URL(BASE_URL),
+  title: {
+    default: "Refill | 음악 레슨·교류 플랫폼",
+    template: "%s | Refill",
+  },
+  description: "악기 레슨 선생님 찾기, 세션 구인, 합주 모집까지 — 음악인을 위한 교류 공간 Refill",
+  keywords: ["음악 레슨", "악기 레슨", "음악 선생님", "세션", "합주", "음악 교류", "Refill"],
+  authors: [{ name: "Refill" }],
+  openGraph: {
+    type: "website",
+    locale: "ko_KR",
+    url: BASE_URL,
+    siteName: "Refill",
+    title: "Refill | 음악 레슨·교류 플랫폼",
+    description: "악기 레슨 선생님 찾기, 세션 구인, 합주 모집까지 — 음악인을 위한 교류 공간",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 862,
+        height: 335,
+        alt: "Refill",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Refill | 음악 레슨·교류 플랫폼",
+    description: "악기 레슨 선생님 찾기, 세션 구인, 합주 모집까지 — 음악인을 위한 교류 공간",
+    images: ["/og-image.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 // 모바일 핀치줌(브라우저 네이티브 확대)을 막아 지도 마커가 함께 늘어나 보이는 문제를 방지
@@ -34,7 +68,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="ko"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-surface-page text-text-body">
