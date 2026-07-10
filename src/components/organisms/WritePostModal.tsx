@@ -228,7 +228,10 @@ export default function WritePostModal({
                 <RpInput
                   type="text"
                   value={priceAmount}
-                  onChange={(e) => setPriceAmount(e.target.value.replace(/[^0-9]/g, ""))}
+                  onChange={(e) => {
+                    const v = e.target.value.replace(/[^0-9]/g, "");
+                    if (v === "" || Number(v) <= 1_000_000_000) setPriceAmount(v);
+                  }}
                   placeholder="금액을 입력하세요"
                   className="flex-1"
                 />
