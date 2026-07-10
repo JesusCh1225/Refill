@@ -61,11 +61,13 @@ export default function CategorySelector({ entries, onChange }: Props) {
 
   const remove = (id: string) => onChange(entries.filter((e) => e.id !== id));
 
-  const add = () =>
+  const add = () => {
+    if (entries.length >= 3) return;
     onChange([
       ...entries,
       { id: String(Date.now()), type: "lesson", subcat: "", direction: "offer" },
     ]);
+  };
 
   return (
     <div className="flex flex-col gap-2.5">
@@ -170,13 +172,15 @@ export default function CategorySelector({ entries, onChange }: Props) {
       })}
 
       {/* 추가 버튼 */}
-      <button
-        type="button"
-        onClick={add}
-        className="w-full h-9 rounded-xl border-2 border-dashed border-border-base text-[13px] font-semibold text-text-muted cursor-pointer bg-transparent hover:border-brand hover:text-brand transition-colors"
-      >
-        ＋ 카테고리 추가
-      </button>
+      {entries.length < 3 && (
+        <button
+          type="button"
+          onClick={add}
+          className="w-full h-9 rounded-xl border-2 border-dashed border-border-base text-[13px] font-semibold text-text-muted cursor-pointer bg-transparent hover:border-brand hover:text-brand transition-colors"
+        >
+          ＋ 카테고리 추가
+        </button>
+      )}
     </div>
   );
 }
