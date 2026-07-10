@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 
 interface Props {
@@ -19,11 +19,18 @@ function Lightbox({
 }) {
   const [idx, setIdx] = useState(startIdx);
   const [scale, setScale] = useState(1);
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+  const [dragging, setDragging] = useState(false);
+  const dragRef = useRef<{ startX: number; startY: number; originX: number; originY: number } | null>(null);
+  const hasDraggedRef = useRef(false);
 
-  const prev = () => { setIdx((i) => (i - 1 + imageUrls.length) % imageUrls.length); setScale(1); };
-  const next = () => { setIdx((i) => (i + 1) % imageUrls.length); setScale(1); };
+  const resetTransform = () => { setPos({ x: 0, y: 0 }); };
+
+  const changeIdx = (next: number) => { setIdx(next); setScale(1); resetTransform(); };
+  const prev = () => changeIdx((idx - 1 + imageUrls.length) % imageUrls.length);
+  const next = () => changeIdx((idx + 1) % imageUrls.length);
   const zoomIn = () => setScale((s) => Math.min(s + 0.5, 4));
-  const zoomOut = () => setScale((s) => Math.max(s - 0.5, 1));
+  const zoomOut = () => { setScale((s) => { const ns = Math.max(s - 0.5, 1); if (ns === 1) resetTransform(); return ns; }); };
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -37,10 +44,35 @@ function Lightbox({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idx]);
 
+  const onMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    hasDraggedRef.current = false;
+    dragRef.current = { startX: e.clientX, startY: e.clientY, originX: pos.x, originY: pos.y };
+    setDragging(true);
+  };
+
+  const onMouseMove = (e: React.MouseEvent) => {
+    if (!dragRef.current) return;
+    const dx = e.clientX - dragRef.current.startX;
+    const dy = e.clientY - dragRef.current.startY;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) hasDraggedRef.current = true;
+    setPos({ x: dragRef.current.originX + dx, y: dragRef.current.originY + dy });
+  };
+
+  const onMouseUp = () => { dragRef.current = null; setDragging(false); };
+
+  const handleOverlayClick = () => {
+    if (!hasDraggedRef.current) onClose();
+  };
+
   return createPortal(
     <div
       className="fixed inset-0 z-9999 bg-black/90 flex items-center justify-center"
-      onClick={onClose}
+      onClick={handleOverlayClick}
+      onMouseMove={onMouseMove}
+      onMouseUp={onMouseUp}
+      onMouseLeave={onMouseUp}
+      style={{ cursor: dragging ? "grabbing" : "default" }}
     >
       {/* 상단 우측 컨트롤 */}
       <div className="absolute top-3 right-3 flex items-center gap-1 z-10" onClick={(e) => e.stopPropagation()}>
@@ -62,34 +94,29 @@ function Lightbox({
       </div>
 
       {/* 이미지 */}
-      <div className="w-full h-full flex items-center justify-center overflow-auto" onClick={(e) => e.stopPropagation()}>
-        <img
-          src={imageUrls[idx]}
-          alt={`이미지 ${idx + 1}`}
-          style={{ transform: `scale(${scale})`, transformOrigin: "center", transition: "transform 0.2s" }}
-          className="max-w-[90vw] max-h-[90vh] object-contain select-none"
-          onClick={(e) => e.stopPropagation()}
-        />
-      </div>
+      <img
+        src={imageUrls[idx]}
+        alt={`이미지 ${idx + 1}`}
+        style={{
+          transform: `translate(${pos.x}px, ${pos.y}px) scale(${scale})`,
+          transformOrigin: "center",
+          transition: dragging ? "none" : "transform 0.2s",
+          cursor: dragging ? "grabbing" : "grab",
+        }}
+        className="max-w-[90vw] max-h-[90vh] object-contain select-none"
+        onMouseDown={onMouseDown}
+        onClick={(e) => e.stopPropagation()}
+        draggable={false}
+      />
 
       {/* 좌우 화살표 */}
       {imageUrls.length > 1 && (
         <>
-          <button
-            onClick={(e) => { e.stopPropagation(); prev(); }}
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 text-white border-none cursor-pointer flex items-center justify-center text-xl hover:bg-white/25 transition-colors"
-          >‹</button>
-          <button
-            onClick={(e) => { e.stopPropagation(); next(); }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 text-white border-none cursor-pointer flex items-center justify-center text-xl hover:bg-white/25 transition-colors"
-          >›</button>
+          <button onClick={(e) => { e.stopPropagation(); prev(); }} className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 text-white border-none cursor-pointer flex items-center justify-center text-xl hover:bg-white/25 transition-colors">‹</button>
+          <button onClick={(e) => { e.stopPropagation(); next(); }} className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 text-white border-none cursor-pointer flex items-center justify-center text-xl hover:bg-white/25 transition-colors">›</button>
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
             {imageUrls.map((_, i) => (
-              <button
-                key={i}
-                onClick={(e) => { e.stopPropagation(); setIdx(i); setScale(1); }}
-                className={`w-1.5 h-1.5 rounded-full border-none cursor-pointer transition-all ${i === idx ? "bg-white scale-125" : "bg-white/40"}`}
-              />
+              <button key={i} onClick={(e) => { e.stopPropagation(); changeIdx(i); }} className={`w-1.5 h-1.5 rounded-full border-none cursor-pointer transition-all ${i === idx ? "bg-white scale-125" : "bg-white/40"}`} />
             ))}
           </div>
         </>
