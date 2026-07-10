@@ -18,7 +18,12 @@ export async function POST(req: NextRequest) {
 
   const ext = EXT_BY_MIME[file.type] ?? "jpg";
   const filename = `posts/${crypto.randomUUID()}.${ext}`;
-  const blob = await put(filename, file, { access: "public" });
 
-  return NextResponse.json({ url: blob.url });
+  try {
+    const blob = await put(filename, file, { access: "public" });
+    return NextResponse.json({ url: blob.url });
+  } catch (err) {
+    console.error("[post-image upload error]", err);
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
 }
