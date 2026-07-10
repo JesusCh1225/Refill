@@ -6,7 +6,7 @@ import { useSession, signOut } from "next-auth/react";
 import Header from "@/components/organisms/Header";
 import Spinner from "@/components/atom/Spinner";
 import ProfileHeader from "@/components/profile/ProfileHeader";
-import AvatarUploadModal from "@/components/profile/AvatarUploadModal";
+import AvatarCropModal from "@/components/profile/AvatarCropModal";
 import InfoTab from "@/components/profile/InfoTab";
 import PostsTab from "@/components/profile/PostsTab";
 import BookmarksTab from "@/components/profile/BookmarksTab";
@@ -48,8 +48,7 @@ export default function ProfilePage() {
   const [postDeleteLoading, setPostDeleteLoading] = useState(false);
 
   // 아바타
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarSrc, setAvatarSrc] = useState<string | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
 
@@ -119,28 +118,25 @@ export default function ProfilePage() {
     if (!file) return;
     if (!file.type.startsWith("image/")) { setAvatarError("이미지 파일만 선택할 수 있어요."); return; }
     if (file.size > 5 * 1024 * 1024) { setAvatarError("파일 크기는 5MB 이하여야 해요."); return; }
-    setAvatarFile(file);
-    setAvatarPreview(URL.createObjectURL(file));
+    setAvatarSrc(URL.createObjectURL(file));
     e.target.value = "";
   };
 
-  const handleAvatarUpload = async () => {
-    if (!avatarFile || avatarUploading) return;
+  const handleAvatarUpload = async (blob: Blob) => {
+    if (avatarUploading) return;
     setAvatarUploading(true);
     setAvatarError(null);
     try {
       const fd = new FormData();
-      fd.append("image", avatarFile);
+      fd.append("image", blob, "avatar.jpg");
       const res = await fetch("/api/upload/avatar", { method: "POST", body: fd });
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        setAvatarError(err.error === "too large" ? "파일 크기는 5MB 이하여야 해요." : "업로드에 실패했어요. 다시 시도해 주세요.");
+        setAvatarError("업로드에 실패했어요. 다시 시도해 주세요.");
         return;
       }
       const { url } = await res.json();
       setProfile((p) => p ? { ...p, avatarUrl: url } : p);
-      setAvatarPreview(null);
-      setAvatarFile(null);
+      setAvatarSrc(null);
     } finally {
       setAvatarUploading(false);
     }
@@ -157,7 +153,7 @@ export default function ProfilePage() {
     }
   };
 
-  const cancelPreview = () => { setAvatarPreview(null); setAvatarFile(null); setAvatarError(null); };
+  const cancelPreview = () => { setAvatarSrc(null); setAvatarError(null); };
 
   const handlePostDelete = async (postId: number) => {
     if (postDeleteLoading) return;
@@ -187,12 +183,12 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-surface-page">
       <Header />
 
-      {avatarPreview && (
-        <AvatarUploadModal
-          preview={avatarPreview}
+      {avatarSrc && (
+        <AvatarCropModal
+          imageSrc={avatarSrc}
           uploading={avatarUploading}
           error={avatarError}
-          onConfirm={handleAvatarUpload}
+          onSave={handleAvatarUpload}
           onCancel={cancelPreview}
         />
       )}
