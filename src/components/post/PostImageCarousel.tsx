@@ -22,8 +22,8 @@ export default function PostImageCarousel({ imageUrls, imageEmoji }: Props) {
   const next = () => setIdx((i) => (i + 1) % imageUrls.length);
 
   return (
-    <div className="relative w-full h-56 sm:h-72 bg-slate-100 overflow-hidden">
-      <img src={imageUrls[idx]} alt={`이미지 ${idx + 1}`} className="w-full h-full object-cover" />
+    <div className="relative w-full bg-slate-900 overflow-hidden flex items-center justify-center">
+      <img src={imageUrls[idx]} alt={`이미지 ${idx + 1}`} className="w-full max-h-130 object-contain" />
       {imageUrls.length > 1 && (
         <>
           <button
