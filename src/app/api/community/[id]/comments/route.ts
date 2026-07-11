@@ -39,13 +39,17 @@ export async function POST(
   const { content, parentId } = await req.json();
   if (!content?.trim()) return NextResponse.json({ error: "empty" }, { status: 400 });
 
-  const comment = await prisma.communityComment.create({
+  const created = await prisma.communityComment.create({
     data: {
       content: content.trim(),
       authorId: userId,
       postId,
       parentId: parentId ?? null,
     },
+  });
+
+  const comment = await prisma.communityComment.findUnique({
+    where: { id: created.id },
     include: {
       author: { select: { id: true, nickname: true, name: true, avatarUrl: true } },
       replies: { include: { author: { select: { id: true, nickname: true, name: true, avatarUrl: true } } } },

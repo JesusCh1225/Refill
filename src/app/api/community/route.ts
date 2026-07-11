@@ -47,13 +47,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "invalid" }, { status: 400 });
     }
 
-    const post = await prisma.communityPost.create({
+    const created = await prisma.communityPost.create({
       data: {
         title: title.trim().slice(0, 200),
         category,
         content,
         authorId: userId,
       },
+    });
+
+    const post = await prisma.communityPost.findUnique({
+      where: { id: created.id },
       include: {
         author: { select: { id: true, nickname: true, name: true, avatarUrl: true } },
       },
