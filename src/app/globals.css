@@ -86,84 +86,6 @@
   }
 }
 
-/* Map panel — mobile: bottom sheet / desktop (md+): right side panel */
-.map-panel-responsive {
-  position: absolute;
-  background: white;
-  z-index: 20;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  top: auto;
-  max-height: 72vh;
-  border-radius: 20px 20px 0 0;
-  box-shadow: 0 -4px 32px rgba(15, 23, 42, 0.12);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  transform: translateY(0);
-}
-.map-panel-responsive.panel-closed {
-  transform: translateY(100%);
-}
-@media (min-width: 768px) {
-  .map-panel-responsive {
-    top: 0;
-    right: 0;
-    bottom: auto;
-    left: auto;
-    height: 100%;
-    max-height: none;
-    width: 360px;
-    border-radius: 0;
-    box-shadow: -4px 0 32px rgba(15, 23, 42, 0.08);
-    transform: translateX(0);
-  }
-  .map-panel-responsive.panel-closed {
-    transform: translateX(100%);
-  }
-}
-
-/* Map list panel — mobile: bottom sheet / desktop: left side panel */
-.map-list-panel {
-  position: absolute;
-  background: white;
-  z-index: 20;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  top: auto;
-  max-height: 72vh;
-  border-radius: 20px 20px 0 0;
-  box-shadow: 0 -4px 32px rgba(15, 23, 42, 0.12);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  transform: translateY(0);
-}
-.map-list-panel.panel-closed {
-  transform: translateY(100%);
-}
-@media (min-width: 768px) {
-  .map-list-panel {
-    top: 0;
-    left: 0;
-    bottom: auto;
-    right: auto;
-    height: 100%;
-    max-height: none;
-    width: 340px;
-    border-radius: 0;
-    box-shadow: 4px 0 32px rgba(15, 23, 42, 0.08);
-    transform: translateX(0);
-  }
-  .map-list-panel.panel-closed {
-    transform: translateX(-100%);
-  }
-}
-
 html, body {
   background: var(--color-surface-page, #fbfcff);
   color: var(--color-text-body, #1f2937);
@@ -253,25 +175,4 @@ html, body {
   font-display: swap;
 }
 
-/* ── 커뮤니티 에디터 본문 스타일 ─────────────────────────────────────────── */
-.community-content ul { list-style-type: disc; padding-left: 1.5rem; margin: 0.5rem 0; }
-.community-content ol { list-style-type: decimal; padding-left: 1.5rem; margin: 0.5rem 0; }
-.community-content blockquote { border-left: 3px solid #8f4bc6; padding-left: 1rem; color: #667085; margin: 0.75rem 0; }
-.community-content pre { background: #1e1e1e; color: #d4d4d4; padding: 1rem; border-radius: 8px; overflow-x: auto; font-size: 13px; margin: 0.75rem 0; }
-.community-content code { background: #f3e8ff; color: #8f4bc6; padding: 0.1em 0.4em; border-radius: 4px; font-size: 0.9em; }
-.community-content pre code { background: none; color: inherit; padding: 0; }
-.community-content a { color: #8f4bc6; text-decoration: underline; }
-.community-content p { margin: 0.25rem 0; }
-.community-content h1, .community-content h2, .community-content h3 { font-weight: 700; margin: 0.75rem 0 0.25rem; }
-.community-content h1 { font-size: 1.5rem; }
-.community-content h2 { font-size: 1.25rem; }
-.community-content h3 { font-size: 1.1rem; }
 
-/* Tiptap placeholder */
-.ProseMirror p.is-editor-empty:first-child::before {
-  content: attr(data-placeholder);
-  float: left;
-  color: #a6adbb;
-  pointer-events: none;
-  height: 0;
-}

@@ -1,5 +1,6 @@
 "use client";
 
+import "@/styles/community.css";
 import { useEditor, EditorContent, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";

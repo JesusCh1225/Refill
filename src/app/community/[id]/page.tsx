@@ -1,5 +1,6 @@
 "use client";
 
+import "@/styles/community.css";
 import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";

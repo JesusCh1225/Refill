@@ -1,3 +1,4 @@
+import "@/styles/map.css";
 import { SearchResultItem } from "@/data/sampleMockResults";
 import { dirLabel } from "@/lib/dirLabel";
 import { haversineKm as distKm, fmtDist } from "@/lib/nearbySearch";
