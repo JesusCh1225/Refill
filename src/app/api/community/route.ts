@@ -38,25 +38,30 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const userId = await getSessionUserId();
-  if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  try {
+    const userId = await getSessionUserId();
+    if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const { title, category, content } = await req.json();
-  if (!title?.trim() || !content?.trim() || !["자유", "문의"].includes(category)) {
-    return NextResponse.json({ error: "invalid" }, { status: 400 });
+    const { title, category, content } = await req.json();
+    if (!title?.trim() || !content?.trim() || !["자유", "문의"].includes(category)) {
+      return NextResponse.json({ error: "invalid" }, { status: 400 });
+    }
+
+    const post = await prisma.communityPost.create({
+      data: {
+        title: title.trim().slice(0, 200),
+        category,
+        content,
+        authorId: userId,
+      },
+      include: {
+        author: { select: { id: true, nickname: true, name: true, avatarUrl: true } },
+      },
+    });
+
+    return NextResponse.json(post, { status: 201 });
+  } catch (err) {
+    console.error("[POST /api/community]", err);
+    return NextResponse.json({ error: "internal" }, { status: 500 });
   }
-
-  const post = await prisma.communityPost.create({
-    data: {
-      title: title.trim().slice(0, 200),
-      category,
-      content,
-      authorId: userId,
-    },
-    include: {
-      author: { select: { id: true, nickname: true, name: true, avatarUrl: true } },
-    },
-  });
-
-  return NextResponse.json(post, { status: 201 });
 }
