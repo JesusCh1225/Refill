@@ -1,6 +1,19 @@
 import SocialLoginButtons, { BUTTON_WIDTH } from "@/components/molecules/SocialLoginButtons";
 
-export default function LoginPage() {
+interface Props {
+  searchParams: Promise<{ error?: string; callbackUrl?: string }>;
+}
+
+function errorMessage(error: string | undefined): string | null {
+  if (!error) return null;
+  if (error === "OAuthCallback" || error === "AccessDenied") return "로그인이 취소됐어요.";
+  return "로그인 중 오류가 발생했어요. 다시 시도해 주세요.";
+}
+
+export default async function LoginPage({ searchParams }: Props) {
+  const { error, callbackUrl } = await searchParams;
+  const message = errorMessage(error);
+
   return (
     <div className="min-h-screen bg-surface-page flex items-center justify-center px-4">
       <div
@@ -17,7 +30,13 @@ export default function LoginPage() {
           <p className="text-[13px] text-text-muted mt-1">소셜 계정으로 간편하게 시작하세요</p>
         </div>
 
-        <SocialLoginButtons callbackUrl="/" />
+        {message && (
+          <p className="text-[13px] text-text-muted bg-surface-card border border-border-base rounded-xl px-4 py-2.5 w-full text-center">
+            {message}
+          </p>
+        )}
+
+        <SocialLoginButtons callbackUrl={callbackUrl ?? "/"} />
 
         <p className="text-[11px] text-text-placeholder text-center mt-1 leading-relaxed">
           로그인 시 서비스 이용약관 및 개인정보 처리방침에 동의하게 됩니다.
