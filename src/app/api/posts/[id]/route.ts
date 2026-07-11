@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { POST_SELECT, mapPost, PRICE_TYPE_MAP } from "@/lib/postMapper";
 import { syncPostCategories, syncPostHashtags, syncPostLocationTags, syncPostImages } from "@/lib/postRelations";
 import { getSessionUserId } from "@/lib/auth";
+import { isAdminSession } from "@/lib/admin";
 
 // GET /api/posts/[id]
 export async function GET(
@@ -25,12 +26,12 @@ export async function GET(
   return NextResponse.json(mapPost(post));
 }
 
-// DELETE /api/posts/[id] — 작성자만 삭제 가능 (soft delete)
+// DELETE /api/posts/[id] — 작성자 또는 관리자 삭제 가능 (soft delete)
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const userId = await getSessionUserId();
+  const [userId, admin] = await Promise.all([getSessionUserId(), isAdminSession()]);
   if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const postId = Number((await params).id);
@@ -41,7 +42,7 @@ export async function DELETE(
     select: { authorId: true },
   });
   if (!post) return NextResponse.json({ error: "not found" }, { status: 404 });
-  if (post.authorId !== userId) return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  if (post.authorId !== userId && !admin) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
   await prisma.post.update({ where: { id: postId }, data: { status: "DELETED" } });
 
