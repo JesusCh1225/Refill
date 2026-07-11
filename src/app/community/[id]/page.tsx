@@ -109,13 +109,21 @@ export default function CommunityDetailPage({ params }: { params: Promise<{ id: 
               </span>
             </div>
             {myId === post.author.id && (
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="text-[12px] text-red-400 hover:text-red-600 border-none bg-transparent cursor-pointer disabled:opacity-50"
-              >
-                {deleting ? "삭제 중…" : "삭제"}
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => router.push(`/community/${post.id}/edit`)}
+                  className="text-[12px] text-text-muted hover:text-brand border-none bg-transparent cursor-pointer"
+                >
+                  수정
+                </button>
+                <button
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="text-[12px] text-red-400 hover:text-red-600 border-none bg-transparent cursor-pointer disabled:opacity-50"
+                >
+                  {deleting ? "삭제 중…" : "삭제"}
+                </button>
+              </div>
             )}
           </div>
 

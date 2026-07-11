@@ -12,7 +12,6 @@ import Image from "@tiptap/extension-image";
 import { Extension } from "@tiptap/core";
 import { useCallback, useRef } from "react";
 
-// 커스텀 FontSize 익스텐션
 const FontSize = Extension.create({
   name: "fontSize",
   addOptions() { return { types: ["textStyle"] }; },
@@ -36,6 +35,18 @@ const FontSize = Extension.create({
   },
 });
 
+// 모듈 레벨 상수 — 매 렌더마다 새 인스턴스 생성을 막아 Tiptap 중복 경고 방지
+const EXTENSIONS = [
+  StarterKit,
+  Underline,
+  TextStyle,
+  Color,
+  FontSize,
+  TextAlign.configure({ types: ["heading", "paragraph"] }),
+  Link.configure({ openOnClick: false, HTMLAttributes: { class: "text-brand underline" } }),
+  Image.configure({ HTMLAttributes: { class: "max-w-full rounded-lg my-2" } }),
+];
+
 const FONT_SIZES = ["12px", "14px", "16px", "18px", "20px", "24px", "32px"];
 const COLORS = ["#000000", "#e03131", "#2f9e44", "#1971c2", "#7048e8", "#f08c00", "#666666", "#ffffff"];
 
@@ -49,16 +60,7 @@ export default function CommunityEditor({ content, onChange, placeholder }: Prop
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const editor = useEditor({
-    extensions: [
-      StarterKit,
-      Underline,
-      TextStyle,
-      Color,
-      FontSize,
-      TextAlign.configure({ types: ["heading", "paragraph"] }),
-      Link.configure({ openOnClick: false, HTMLAttributes: { class: "text-brand underline" } }),
-      Image.configure({ HTMLAttributes: { class: "max-w-full rounded-lg my-2" } }),
-    ],
+    extensions: EXTENSIONS,
     content,
     onUpdate: ({ editor }) => onChange(editor.getHTML()),
     editorProps: {
@@ -119,7 +121,6 @@ function Toolbar({ editor, onImageClick, onLinkClick }: { editor: Editor; onImag
 
   return (
     <div className="flex flex-wrap items-center gap-0.5 px-2 py-2 border-b border-border-base bg-surface-card">
-      {/* 폰트 크기 */}
       <select
         value={editor.getAttributes("textStyle").fontSize ?? "16px"}
         onChange={(e) => (editor.chain().focus() as any).setFontSize(e.target.value).run()}
@@ -130,7 +131,6 @@ function Toolbar({ editor, onImageClick, onLinkClick }: { editor: Editor; onImag
 
       <Divider />
 
-      {/* 서식 */}
       {btn(editor.isActive("bold"), () => editor.chain().focus().toggleBold().run(), "B", "굵게")}
       {btn(editor.isActive("italic"), () => editor.chain().focus().toggleItalic().run(), "I", "기울게")}
       {btn(editor.isActive("underline"), () => editor.chain().focus().toggleUnderline().run(), "U", "밑줄")}
@@ -138,26 +138,22 @@ function Toolbar({ editor, onImageClick, onLinkClick }: { editor: Editor; onImag
 
       <Divider />
 
-      {/* 정렬 */}
       {btn(editor.isActive({ textAlign: "left" }), () => editor.chain().focus().setTextAlign("left").run(), "≡", "왼쪽 정렬")}
       {btn(editor.isActive({ textAlign: "center" }), () => editor.chain().focus().setTextAlign("center").run(), "≡̄", "가운데 정렬")}
       {btn(editor.isActive({ textAlign: "right" }), () => editor.chain().focus().setTextAlign("right").run(), "≡→", "오른쪽 정렬")}
 
       <Divider />
 
-      {/* 목록 */}
       {btn(editor.isActive("bulletList"), () => editor.chain().focus().toggleBulletList().run(), "•—", "글머리 기호")}
       {btn(editor.isActive("orderedList"), () => editor.chain().focus().toggleOrderedList().run(), "1—", "번호 목록")}
 
       <Divider />
 
-      {/* 블록 */}
       {btn(editor.isActive("blockquote"), () => editor.chain().focus().toggleBlockquote().run(), "❝", "인용구")}
       {btn(editor.isActive("codeBlock"), () => editor.chain().focus().toggleCodeBlock().run(), "</>", "코드 블록")}
 
       <Divider />
 
-      {/* 링크 */}
       <button
         type="button"
         title="링크 삽입"
@@ -169,7 +165,6 @@ function Toolbar({ editor, onImageClick, onLinkClick }: { editor: Editor; onImag
         🔗
       </button>
 
-      {/* 이미지 */}
       <button
         type="button"
         title="이미지 삽입"
@@ -181,10 +176,9 @@ function Toolbar({ editor, onImageClick, onLinkClick }: { editor: Editor; onImag
 
       <Divider />
 
-      {/* 색상 */}
       <div className="flex items-center gap-0.5">
         {COLORS.map((c) => {
-          const active = editor.getAttributes("textStyle").color === c;
+          const active = editor.isActive("textStyle", { color: c });
           return (
             <button
               key={c}
@@ -209,7 +203,6 @@ function Toolbar({ editor, onImageClick, onLinkClick }: { editor: Editor; onImag
 
       <Divider />
 
-      {/* 실행취소/다시실행 */}
       {btn(false, () => editor.chain().focus().undo().run(), "↩", "실행취소")}
       {btn(false, () => editor.chain().focus().redo().run(), "↪", "다시실행")}
     </div>

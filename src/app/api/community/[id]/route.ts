@@ -28,6 +28,35 @@ export async function GET(
   });
 }
 
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const userId = await getSessionUserId();
+  if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+  const id = Number((await params).id);
+  const post = await prisma.communityPost.findUnique({ where: { id }, select: { authorId: true } });
+  if (!post) return NextResponse.json({ error: "not found" }, { status: 404 });
+  if (post.authorId !== userId) return NextResponse.json({ error: "forbidden" }, { status: 403 });
+
+  const { title, category, content } = await req.json();
+  if (!title?.trim() || !content?.trim() || !["자유", "문의"].includes(category)) {
+    return NextResponse.json({ error: "invalid" }, { status: 400 });
+  }
+
+  await prisma.communityPost.update({
+    where: { id },
+    data: {
+      title: title.trim().slice(0, 200),
+      category,
+      content,
+    },
+  });
+
+  return NextResponse.json({ ok: true });
+}
+
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
