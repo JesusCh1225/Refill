@@ -1,16 +1,17 @@
 "use client";
 
-import Image from "next/image";
+// import Image from "next/image";
 import { signIn } from "next-auth/react";
-import kakaoBtn from "@/styles/kakao_login_medium_wide.png";
+// import kakaoBtn from "@/styles/kakao_login_medium_wide.png";
 import GoogleIcon from "@/components/atom/GoogleIcon";
 
-export const BUTTON_WIDTH = kakaoBtn.width;
+export const BUTTON_WIDTH = 300;
 const BTN_H = 45;
 
 export default function SocialLoginButtons({ callbackUrl = "/" }: { callbackUrl?: string }) {
   return (
     <div className="flex flex-col gap-3 w-full items-center">
+      {/* 카카오/네이버: 사업자 등록 전까지 비노출 (코드 유지)
       <button
         onClick={() => signIn("kakao", { callbackUrl })}
         className="cursor-pointer border-none bg-transparent p-0 w-full"
@@ -41,6 +42,7 @@ export default function SocialLoginButtons({ callbackUrl = "/" }: { callbackUrl?
         </span>
         <span style={{ width: BTN_H }} />
       </button>
+      */}
 
       <button
         onClick={() => signIn("google", { callbackUrl })}
