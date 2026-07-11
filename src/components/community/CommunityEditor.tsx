@@ -10,8 +10,6 @@ import TextAlign from "@tiptap/extension-text-align";
 import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
 import { Extension } from "@tiptap/core";
-import NextImage from "next/image";
-import imageIcon from "@/styles/image_icon.png";
 import { useCallback, useRef } from "react";
 
 // 커스텀 FontSize 익스텐션
@@ -178,7 +176,7 @@ function Toolbar({ editor, onImageClick, onLinkClick }: { editor: Editor; onImag
         onClick={onImageClick}
         className="px-2 py-1 rounded border-none cursor-pointer bg-transparent hover:bg-surface-card transition-colors flex items-center justify-center"
       >
-        <NextImage src={imageIcon} alt="이미지 삽입" width={16} height={16} />
+        <img src="/image_icon.png" alt="이미지 삽입" width={16} height={16} />
       </button>
 
       <Divider />
