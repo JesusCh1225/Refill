@@ -37,6 +37,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const { status, update } = useSession();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const avatarSyncedRef = useRef(false);
   const [tab, setTab] = useState<Tab>("info");
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [nicknameInput, setNicknameInput] = useState("");
@@ -57,6 +58,13 @@ export default function ProfilePage() {
     if (status === "unauthenticated") router.replace("/");
   }, [status, router]);
 
+  // 프로필 아바타를 세션에 한 번만 동기화 (헤더 반영)
+  useEffect(() => {
+    if (!profile || avatarSyncedRef.current) return;
+    avatarSyncedRef.current = true;
+    update({ image: profile.avatarUrl });
+  }, [profile?.avatarUrl]);
+
   useEffect(() => {
     if (status !== "authenticated") return;
     fetch("/api/profile")
@@ -64,8 +72,6 @@ export default function ProfilePage() {
       .then((data: UserProfile) => {
         setProfile(data);
         setNicknameInput(data.nickname ?? data.name);
-        // 세션 이미지와 DB 아바타 동기화 (헤더 반영)
-        update({ image: data.avatarUrl });
       })
       .catch(() => {});
     fetch("/api/profile/posts")
