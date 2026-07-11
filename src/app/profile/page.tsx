@@ -11,6 +11,7 @@ import InfoTab from "@/components/profile/InfoTab";
 import PostsTab from "@/components/profile/PostsTab";
 import BookmarksTab from "@/components/profile/BookmarksTab";
 import type { SearchResultItem } from "@/data/sampleMockResults";
+import { ACCEPT_IMAGE, ALLOWED_IMAGE_TYPES } from "@/lib/uploadValidator";
 
 type Tab = "info" | "posts" | "bookmarks";
 
@@ -128,7 +129,7 @@ export default function ProfilePage() {
     setAvatarError(null);
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith("image/")) { setAvatarError("이미지 파일만 선택할 수 있어요."); return; }
+    if (!ALLOWED_IMAGE_TYPES.has(file.type)) { setAvatarError("JPG, PNG, WEBP 파일만 선택할 수 있어요."); return; }
     if (file.size > 5 * 1024 * 1024) { setAvatarError("파일 크기는 5MB 이하여야 해요."); return; }
     setAvatarSrc(URL.createObjectURL(file));
     e.target.value = "";
@@ -208,7 +209,7 @@ export default function ProfilePage() {
         />
       )}
 
-      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+      <input ref={fileInputRef} type="file" accept={ACCEPT_IMAGE} className="hidden" onChange={handleFileChange} />
 
       <div className="mx-auto px-3 sm:px-6 pt-5 sm:pt-8 pb-20" style={{ maxWidth: "720px" }}>
         <ProfileHeader profile={profile} onAvatarClick={triggerAvatarChange} />

@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { EMOJIS } from "@/data/postOptions";
 import Spinner from "@/components/atom/Spinner";
+import { ACCEPT_IMAGE, ALLOWED_IMAGE_TYPES } from "@/lib/uploadValidator";
 
 interface ImagePickerProps {
   mode: "emoji" | "image";
@@ -37,7 +38,7 @@ export default function ImagePicker({
 
     const newUrls: string[] = [];
     for (const file of toUpload) {
-      if (!file.type.startsWith("image/")) { setError("이미지 파일만 선택할 수 있어요."); continue; }
+      if (!ALLOWED_IMAGE_TYPES.has(file.type)) { setError("JPG, PNG, WEBP 파일만 선택할 수 있어요."); continue; }
       if (file.size > 10 * 1024 * 1024) { setError("파일 크기는 10MB 이하여야 해요."); continue; }
 
       const fd = new FormData();
@@ -97,7 +98,7 @@ export default function ImagePicker({
       {/* 이미지 업로드 */}
       {mode === "image" && (
         <div className="flex flex-col gap-2">
-          <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleFileChange} className="hidden" />
+          <input ref={fileInputRef} type="file" accept={ACCEPT_IMAGE} multiple onChange={handleFileChange} className="hidden" />
 
           {/* 이미지 그리드 */}
           {imageUrls.length > 0 && (
