@@ -11,7 +11,7 @@ import LoginModal from "@/components/organisms/LoginModal";
 
 const NAV_LINKS = [
   { href: "/musicmap", label: "음악맵", disabled: false },
-  { href: "/community", label: "커뮤니티", disabled: true },
+  { href: "/community", label: "커뮤니티", disabled: false },
 ];
 
 interface HeaderProps {
