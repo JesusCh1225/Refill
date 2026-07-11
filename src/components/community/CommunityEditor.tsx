@@ -10,6 +10,8 @@ import TextAlign from "@tiptap/extension-text-align";
 import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
 import { Extension } from "@tiptap/core";
+import NextImage from "next/image";
+import imageIcon from "@/styles/image_icon.png";
 import { useCallback, useRef } from "react";
 
 // 커스텀 FontSize 익스텐션
@@ -174,25 +176,37 @@ function Toolbar({ editor, onImageClick, onLinkClick }: { editor: Editor; onImag
         type="button"
         title="이미지 삽입"
         onClick={onImageClick}
-        className="px-2 py-1 rounded text-[13px] border-none cursor-pointer bg-transparent text-text-body hover:bg-surface-card transition-colors"
+        className="px-2 py-1 rounded border-none cursor-pointer bg-transparent hover:bg-surface-card transition-colors flex items-center justify-center"
       >
-        🖼
+        <NextImage src={imageIcon} alt="이미지 삽입" width={16} height={16} />
       </button>
 
       <Divider />
 
       {/* 색상 */}
       <div className="flex items-center gap-0.5">
-        {COLORS.map((c) => (
-          <button
-            key={c}
-            type="button"
-            title={c}
-            onClick={() => editor.chain().focus().setColor(c).run()}
-            className="w-5 h-5 rounded-full border border-border-base cursor-pointer p-0 shrink-0"
-            style={{ background: c }}
-          />
-        ))}
+        {COLORS.map((c) => {
+          const active = editor.getAttributes("textStyle").color === c;
+          return (
+            <button
+              key={c}
+              type="button"
+              title={c}
+              onClick={() => editor.chain().focus().setColor(c).run()}
+              className="relative w-5 h-5 rounded-full border border-border-base cursor-pointer p-0 shrink-0 flex items-center justify-center"
+              style={{ background: c }}
+            >
+              {active && (
+                <span
+                  className="text-[10px] font-bold leading-none select-none"
+                  style={{ color: c === "#ffffff" ? "#1f2937" : "#ffffff" }}
+                >
+                  ✓
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       <Divider />
