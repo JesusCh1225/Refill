@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useSession } from "next-auth/react";
+import Link from "next/link";
 import Avatar from "@/components/atom/Avatar";
 
 interface Author { id: number; nickname: string | null; name: string; avatarUrl: string | null; }
@@ -153,10 +154,12 @@ function CommentRow({ comment, myId, onReply, onDelete }: {
   const name = comment.author.nickname ?? comment.author.name;
   return (
     <div className="flex gap-3">
-      <Avatar src={comment.author.avatarUrl} name={name} className="w-7 h-7 shrink-0 mt-0.5" textClassName="text-[10px]" />
+      <Link href={`/profile/${comment.author.id}`} className="shrink-0 mt-0.5 hover:opacity-75 transition-opacity">
+        <Avatar src={comment.author.avatarUrl} name={name} className="w-7 h-7" textClassName="text-[10px]" />
+      </Link>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-0.5">
-          <span className="text-[13px] font-semibold text-text-heading">{name}</span>
+          <Link href={`/profile/${comment.author.id}`} className="text-[13px] font-semibold text-text-heading hover:text-brand transition-colors">{name}</Link>
           <span className="text-[11px] text-text-placeholder">{new Date(comment.createdAt).toLocaleDateString("ko-KR")}</span>
         </div>
         <p className="text-[13px] text-text-body leading-relaxed whitespace-pre-wrap">{comment.content}</p>

@@ -10,7 +10,7 @@ import TextAlign from "@tiptap/extension-text-align";
 import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
 import { Extension } from "@tiptap/core";
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 
 const FontSize = Extension.create({
   name: "fontSize",
@@ -58,11 +58,20 @@ interface Props {
 
 export default function CommunityEditor({ content, onChange, placeholder }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [activeColor, setActiveColor] = useState<string | null>(null);
 
   const editor = useEditor({
     extensions: EXTENSIONS,
     content,
     onUpdate: ({ editor }) => onChange(editor.getHTML()),
+    onTransaction: ({ editor }) => {
+      const markColor = editor.getAttributes("textStyle").color ?? null;
+      const storedColor =
+        (editor.view.state.storedMarks as any)
+          ?.find((m: any) => m.type.name === "textStyle")
+          ?.attrs?.color ?? null;
+      setActiveColor(markColor ?? storedColor ?? null);
+    },
     editorProps: {
       attributes: {
         class: "min-h-[320px] px-4 py-3 focus:outline-none text-[14px] text-text-body leading-relaxed",
@@ -97,14 +106,26 @@ export default function CommunityEditor({ content, onChange, placeholder }: Prop
 
   return (
     <div className="border border-border-base rounded-xl overflow-hidden">
-      <Toolbar editor={editor} onImageClick={() => fileInputRef.current?.click()} onLinkClick={setLink} />
+      <Toolbar
+        editor={editor}
+        activeColor={activeColor}
+        onColorClick={(c) => { editor.chain().focus().setColor(c).run(); setActiveColor(c); }}
+        onImageClick={() => fileInputRef.current?.click()}
+        onLinkClick={setLink}
+      />
       <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleImageUpload} />
       <EditorContent editor={editor} />
     </div>
   );
 }
 
-function Toolbar({ editor, onImageClick, onLinkClick }: { editor: Editor; onImageClick: () => void; onLinkClick: () => void }) {
+function Toolbar({ editor, activeColor, onColorClick, onImageClick, onLinkClick }: {
+  editor: Editor;
+  activeColor: string | null;
+  onColorClick: (c: string) => void;
+  onImageClick: () => void;
+  onLinkClick: () => void;
+}) {
   const btn = (active: boolean, onClick: () => void, label: string, title?: string) => (
     <button
       key={label}
@@ -177,28 +198,25 @@ function Toolbar({ editor, onImageClick, onLinkClick }: { editor: Editor; onImag
       <Divider />
 
       <div className="flex items-center gap-0.5">
-        {COLORS.map((c) => {
-          const active = editor.isActive("textStyle", { color: c });
-          return (
-            <button
-              key={c}
-              type="button"
-              title={c}
-              onClick={() => editor.chain().focus().setColor(c).run()}
-              className="relative w-5 h-5 rounded-full border border-border-base cursor-pointer p-0 shrink-0 flex items-center justify-center"
-              style={{ background: c }}
-            >
-              {active && (
-                <span
-                  className="text-[10px] font-bold leading-none select-none"
-                  style={{ color: c === "#ffffff" ? "#1f2937" : "#ffffff" }}
-                >
-                  ✓
-                </span>
-              )}
-            </button>
-          );
-        })}
+        {COLORS.map((c) => (
+          <button
+            key={c}
+            type="button"
+            title={c}
+            onClick={() => onColorClick(c)}
+            className="relative w-5 h-5 rounded-full border border-border-base cursor-pointer p-0 shrink-0 flex items-center justify-center"
+            style={{ background: c }}
+          >
+            {activeColor === c && (
+              <span
+                className="text-[10px] font-bold leading-none select-none"
+                style={{ color: c === "#ffffff" ? "#1f2937" : "#ffffff" }}
+              >
+                ✓
+              </span>
+            )}
+          </button>
+        ))}
       </div>
 
       <Divider />

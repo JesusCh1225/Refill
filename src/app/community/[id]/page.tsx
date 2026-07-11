@@ -102,8 +102,10 @@ export default function CommunityDetailPage({ params }: { params: Promise<{ id: 
           {/* 작성자 정보 */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2">
-              <Avatar src={post.author.avatarUrl} name={displayName} className="w-7 h-7" textClassName="text-[10px]" />
-              <span className="text-[13px] font-semibold text-text-body">{displayName}</span>
+              <Link href={`/profile/${post.author.id}`} className="flex items-center gap-2 hover:opacity-75 transition-opacity">
+                <Avatar src={post.author.avatarUrl} name={displayName} className="w-7 h-7" textClassName="text-[10px]" />
+                <span className="text-[13px] font-semibold text-text-body">{displayName}</span>
+              </Link>
               <span className="text-[12px] text-text-muted">
                 {new Date(post.createdAt).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" })}
               </span>

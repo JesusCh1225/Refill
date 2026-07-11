@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUserId } from "@/lib/auth";
+import { isAdminSession } from "@/lib/admin";
 
 export async function GET(
   _req: NextRequest,
@@ -61,13 +62,13 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const userId = await getSessionUserId();
+  const [userId, admin] = await Promise.all([getSessionUserId(), isAdminSession()]);
   if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const id = Number((await params).id);
   const post = await prisma.communityPost.findUnique({ where: { id }, select: { authorId: true } });
   if (!post) return NextResponse.json({ error: "not found" }, { status: 404 });
-  if (post.authorId !== userId) return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  if (post.authorId !== userId && !admin) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
   await prisma.communityPost.delete({ where: { id } });
   return NextResponse.json({ ok: true });
