@@ -36,9 +36,13 @@ export async function GET(req: NextRequest) {
   }
 
   // community (default)
+  const category = searchParams.get("category") ?? "";
+  const where = category ? { category } : {};
+
   const [total, posts] = await Promise.all([
-    prisma.communityPost.count(),
+    prisma.communityPost.count({ where }),
     prisma.communityPost.findMany({
+      where,
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,

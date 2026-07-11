@@ -107,22 +107,36 @@ function PostsTab() {
   );
 }
 
+type CategoryFilter = "" | "자유" | "문의";
+const CATEGORY_FILTERS: { value: CategoryFilter; label: string }[] = [
+  { value: "", label: "전체" },
+  { value: "자유", label: "자유" },
+  { value: "문의", label: "문의" },
+];
+
 function CommunityPostsList() {
   const [posts, setPosts] = useState<CommunityPostItem[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [category, setCategory] = useState<CategoryFilter>("");
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<number | null>(null);
 
-  const load = useCallback(async (p: number) => {
+  const load = useCallback(async (p: number, cat: CategoryFilter) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/posts?type=community&page=${p}`);
+      const q = cat ? `&category=${encodeURIComponent(cat)}` : "";
+      const res = await fetch(`/api/admin/posts?type=community&page=${p}${q}`);
       if (res.ok) { const d = await res.json(); setPosts(d.posts); setTotal(d.total); }
     } finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { load(page); }, [page, load]);
+  useEffect(() => { load(page, category); }, [page, category, load]);
+
+  const handleCategory = (cat: CategoryFilter) => {
+    setCategory(cat);
+    setPage(1);
+  };
 
   const del = async (id: number, title: string) => {
     if (!confirm(`"${title}" 게시글을 삭제할까요?`)) return;
@@ -133,10 +147,29 @@ function CommunityPostsList() {
     setDeleting(null);
   };
 
-  if (loading) return <div className="flex justify-center py-16"><Spinner /></div>;
-
   return (
     <div>
+      {/* 카테고리 필터 */}
+      <div className="flex gap-1 mb-4 bg-surface-card rounded-xl p-1 w-fit">
+        {CATEGORY_FILTERS.map((f) => (
+          <button
+            key={f.value}
+            onClick={() => handleCategory(f.value)}
+            className={`px-4 py-1.5 rounded-lg text-[13px] font-semibold border-none cursor-pointer transition-colors ${
+              category === f.value
+                ? "bg-white text-text-heading shadow-sm"
+                : "bg-transparent text-text-muted hover:text-text-body"
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-16"><Spinner /></div>
+      ) : (
+      <>
       <p className="text-[13px] text-text-muted mb-3">전체 {total}개</p>
       {posts.length === 0 ? (
         <p className="text-center text-text-muted py-16 text-[14px]">게시글이 없어요.</p>
@@ -169,7 +202,9 @@ function CommunityPostsList() {
           ))}
         </div>
       )}
-      <Pagination page={page} totalPages={Math.ceil(total / 20)} onChange={(p) => { setPage(p); load(p); }} />
+      </>
+      )}
+      <Pagination page={page} totalPages={Math.ceil(total / 20)} onChange={(p) => { setPage(p); load(p, category); }} />
     </div>
   );
 }

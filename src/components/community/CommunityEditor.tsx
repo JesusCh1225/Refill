@@ -74,7 +74,7 @@ export default function CommunityEditor({ content, onChange, placeholder }: Prop
     },
     editorProps: {
       attributes: {
-        class: "min-h-[320px] px-4 py-3 focus:outline-none text-[14px] text-text-body leading-relaxed",
+        class: "min-h-[320px] px-4 py-3 focus:outline-none text-[14px] text-text-body leading-relaxed community-content",
         ...(placeholder ? { "data-placeholder": placeholder } : {}),
       },
     },
