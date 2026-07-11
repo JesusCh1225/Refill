@@ -59,11 +59,11 @@ export default function ProfilePage() {
     if (status === "unauthenticated") router.replace("/");
   }, [status, router]);
 
-  // 프로필 아바타를 세션에 한 번만 동기화 (헤더 반영)
+  // 커스텀 아바타가 있을 때만 세션에 동기화 (없으면 OAuth 사진 그대로 유지)
   useEffect(() => {
     if (!profile || avatarSyncedRef.current) return;
     avatarSyncedRef.current = true;
-    update({ image: profile.avatarUrl });
+    if (profile.avatarUrl) update({ image: profile.avatarUrl });
   }, [profile?.avatarUrl]);
 
   useEffect(() => {
