@@ -34,6 +34,9 @@ model User {
   notifications        Notification[] @relation("NotificationsReceived")
   actedNotifications   Notification[] @relation("NotificationsSent")
   reports              Report[]
+  communityPosts       CommunityPost[]
+  communityComments    CommunityComment[]
+  communityLikes       CommunityLike[]
 }
 
 // ── OAuth 계정 연동 ──────────────────────────────────────────────────────
@@ -285,6 +288,53 @@ model Notification {
 
   @@index([userId, isRead])
   @@index([userId, createdAt])
+}
+
+// ── 커뮤니티 게시글 ───────────────────────────────────────────────────────
+
+model CommunityPost {
+  id        Int      @id @default(autoincrement())
+  title     String   @db.VarChar(200)
+  category  String   @db.VarChar(20)  // "자유" | "문의"
+  content   String   @db.Text
+  authorId  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  author   User               @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments CommunityComment[]
+  likes    CommunityLike[]
+
+  @@index([createdAt])
+  @@index([category])
+  @@index([authorId])
+}
+
+model CommunityComment {
+  id        Int      @id @default(autoincrement())
+  content   String   @db.Text
+  authorId  Int
+  postId    Int
+  parentId  Int?
+  createdAt DateTime @default(now())
+
+  author  User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  post    CommunityPost     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parent  CommunityComment?  @relation("CommunityReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies CommunityComment[] @relation("CommunityReplies")
+
+  @@index([postId])
+}
+
+model CommunityLike {
+  userId    Int
+  postId    Int
+  createdAt DateTime @default(now())
+
+  user User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([userId, postId])
 }
 
 // ── 신고 ──────────────────────────────────────────────────────────────────
