@@ -61,7 +61,12 @@ export default function ProfilePage() {
     if (status !== "authenticated") return;
     fetch("/api/profile")
       .then((r) => r.json())
-      .then((data: UserProfile) => { setProfile(data); setNicknameInput(data.nickname ?? data.name); })
+      .then((data: UserProfile) => {
+        setProfile(data);
+        setNicknameInput(data.nickname ?? data.name);
+        // 세션 이미지와 DB 아바타 동기화 (헤더 반영)
+        update({ image: data.avatarUrl });
+      })
       .catch(() => {});
     fetch("/api/profile/posts")
       .then((r) => r.json())

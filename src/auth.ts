@@ -76,7 +76,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
 
     async jwt({ token, user, trigger, session }) {
-      if (user?.id) token.userId = parseInt(user.id);
+      if (user?.id) {
+        token.userId = parseInt(user.id);
+        // 커스텀 아바타가 있으면 OAuth 프로필 이미지 대신 사용
+        const dbUser = await prisma.user.findUnique({
+          where: { id: parseInt(user.id) },
+          select: { avatarUrl: true },
+        });
+        if (dbUser?.avatarUrl) token.picture = dbUser.avatarUrl;
+      }
       if (trigger === "update" && "image" in (session ?? {})) {
         token.picture = (session as any).image ?? null;
       }
