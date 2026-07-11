@@ -38,6 +38,7 @@ export async function POST(
 
   const { content, parentId } = await req.json();
   if (!content?.trim()) return NextResponse.json({ error: "empty" }, { status: 400 });
+  if (content.trim().length > 2000) return NextResponse.json({ error: "too long" }, { status: 400 });
 
   const created = await prisma.communityComment.create({
     data: {

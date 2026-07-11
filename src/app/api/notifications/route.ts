@@ -51,8 +51,7 @@ export async function GET() {
     return NextResponse.json({ notifications: result, unreadCount });
   } catch (err: unknown) {
     console.error("[GET /api/notifications]", err);
-    const msg = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return NextResponse.json({ error: "internal server error" }, { status: 500 });
   }
 }
 
@@ -67,7 +66,6 @@ export async function PATCH() {
     return NextResponse.json({ ok: true });
   } catch (err: unknown) {
     console.error("[PATCH /api/notifications]", err);
-    const msg = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return NextResponse.json({ error: "internal server error" }, { status: 500 });
   }
 }

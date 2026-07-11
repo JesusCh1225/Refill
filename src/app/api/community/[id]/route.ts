@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUserId } from "@/lib/auth";
 import { isAdminSession } from "@/lib/admin";
+import { sanitizePostContent } from "@/lib/sanitize";
+
+const MAX_CONTENT_LENGTH = 50_000;
 
 export async function GET(
   _req: NextRequest,
@@ -45,13 +48,18 @@ export async function PATCH(
   if (!title?.trim() || !content?.trim() || !["자유", "문의"].includes(category)) {
     return NextResponse.json({ error: "invalid" }, { status: 400 });
   }
+  if (content.length > MAX_CONTENT_LENGTH) {
+    return NextResponse.json({ error: "content too long" }, { status: 400 });
+  }
+
+  const clean = sanitizePostContent(content);
 
   await prisma.communityPost.update({
     where: { id },
     data: {
       title: title.trim().slice(0, 200),
       category,
-      content,
+      content: clean,
     },
   });
 

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUserId } from "@/lib/auth";
+import { sanitizePostContent } from "@/lib/sanitize";
+
+const MAX_CONTENT_LENGTH = 50_000;
 
 const PAGE_SIZE = 10;
 
@@ -46,12 +49,17 @@ export async function POST(req: NextRequest) {
     if (!title?.trim() || !content?.trim() || !["자유", "문의"].includes(category)) {
       return NextResponse.json({ error: "invalid" }, { status: 400 });
     }
+    if (content.length > MAX_CONTENT_LENGTH) {
+      return NextResponse.json({ error: "content too long" }, { status: 400 });
+    }
+
+    const clean = sanitizePostContent(content);
 
     const created = await prisma.communityPost.create({
       data: {
         title: title.trim().slice(0, 200),
         category,
-        content,
+        content: clean,
         authorId: userId,
       },
     });

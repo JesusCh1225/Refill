@@ -97,21 +97,28 @@ export default function CommunityComments({ postId, initial }: Props) {
               </div>
             ))}
             {replyingTo === c.id && session && (
-              <div className="ml-8 mt-2 flex gap-2">
-                <input
-                  value={replyText}
-                  onChange={(e) => setReplyText(e.target.value)}
-                  placeholder="답글 입력"
-                  className="flex-1 h-9 px-3 rounded-lg border border-border-base text-[13px] focus:outline-none focus:border-brand"
-                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submitReply(c.id); } }}
-                />
-                <button
-                  onClick={() => submitReply(c.id)}
-                  disabled={replySaving || !replyText.trim()}
-                  className="px-3 h-9 rounded-lg bg-brand text-white text-[12px] font-semibold border-none cursor-pointer disabled:opacity-40"
-                >
-                  {replySaving ? "…" : "등록"}
-                </button>
+              <div className="ml-8 mt-2 flex flex-col gap-1">
+                <div className="flex gap-2">
+                  <input
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value.slice(0, 2000))}
+                    placeholder="답글 입력"
+                    className={`flex-1 h-9 px-3 rounded-lg border text-[13px] focus:outline-none transition-colors ${
+                      replyText.length > 1800 ? "border-amber-400 focus:border-amber-500" : "border-border-base focus:border-brand"
+                    }`}
+                    onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submitReply(c.id); } }}
+                  />
+                  <button
+                    onClick={() => submitReply(c.id)}
+                    disabled={replySaving || !replyText.trim() || replyText.length > 2000}
+                    className="px-3 h-9 rounded-lg bg-brand text-white text-[12px] font-semibold border-none cursor-pointer disabled:opacity-40"
+                  >
+                    {replySaving ? "…" : "등록"}
+                  </button>
+                </div>
+                {replyText.length > 1800 && (
+                  <p className="text-right text-[11px] text-amber-500">{replyText.length} / 2,000자</p>
+                )}
               </div>
             )}
           </div>
@@ -123,20 +130,31 @@ export default function CommunityComments({ postId, initial }: Props) {
 
       {/* 댓글 입력 */}
       {session ? (
-        <form onSubmit={submit} className="flex gap-2">
-          <input
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="댓글을 입력하세요"
-            className="flex-1 h-10 px-3 rounded-xl border border-border-base text-[13px] focus:outline-none focus:border-brand transition-colors"
-          />
-          <button
-            type="submit"
-            disabled={submitting || !text.trim()}
-            className="px-4 h-10 rounded-xl bg-brand text-white text-[13px] font-semibold border-none cursor-pointer hover:opacity-85 transition-opacity disabled:opacity-40"
-          >
-            {submitting ? "…" : "등록"}
-          </button>
+        <form onSubmit={submit} className="flex flex-col gap-1.5">
+          <div className="flex gap-2">
+            <input
+              value={text}
+              onChange={(e) => setText(e.target.value.slice(0, 2000))}
+              placeholder="댓글을 입력하세요"
+              className={`flex-1 h-10 px-3 rounded-xl border text-[13px] focus:outline-none transition-colors ${
+                text.length > 1800 ? "border-amber-400 focus:border-amber-500" : "border-border-base focus:border-brand"
+              }`}
+            />
+            <button
+              type="submit"
+              disabled={submitting || !text.trim() || text.length > 2000}
+              className="px-4 h-10 rounded-xl bg-brand text-white text-[13px] font-semibold border-none cursor-pointer hover:opacity-85 transition-opacity disabled:opacity-40"
+            >
+              {submitting ? "…" : "등록"}
+            </button>
+          </div>
+          {text.length > 0 && (
+            <p className={`text-right text-[11px] ${text.length > 1800 ? "text-amber-500" : "text-text-placeholder"}`}>
+              {text.length > 1800 && text.length <= 2000 && <span className="mr-1">거의 다 찼어요.</span>}
+              {text.length > 2000 && <span className="mr-1 text-red-500">글자 수를 초과했어요.</span>}
+              {text.length} / 2,000자
+            </p>
+          )}
         </form>
       ) : (
         <p className="text-[13px] text-text-muted text-center py-3">댓글을 작성하려면 로그인이 필요해요.</p>

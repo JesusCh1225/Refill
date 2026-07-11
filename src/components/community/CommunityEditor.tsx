@@ -59,11 +59,16 @@ interface Props {
 export default function CommunityEditor({ content, onChange, placeholder }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeColor, setActiveColor] = useState<string | null>(null);
+  const [textLength, setTextLength] = useState(0);
+  const MAX_TEXT = 10_000;
 
   const editor = useEditor({
     extensions: EXTENSIONS,
     content,
-    onUpdate: ({ editor }) => onChange(editor.getHTML()),
+    onUpdate: ({ editor }) => {
+      setTextLength(editor.getText().length);
+      onChange(editor.getHTML());
+    },
     onTransaction: ({ editor }) => {
       const markColor = editor.getAttributes("textStyle").color ?? null;
       const storedColor =
@@ -115,6 +120,16 @@ export default function CommunityEditor({ content, onChange, placeholder }: Prop
       />
       <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleImageUpload} />
       <EditorContent editor={editor} />
+      <div className={`px-4 py-1.5 border-t border-border-base flex items-center justify-end gap-2 text-[11px] ${
+        textLength > MAX_TEXT
+          ? "bg-red-50 text-red-500 font-semibold"
+          : textLength > MAX_TEXT * 0.85
+          ? "text-amber-500"
+          : "text-text-placeholder"
+      }`}>
+        {textLength > MAX_TEXT && <span>글자 수를 초과했어요.</span>}
+        <span>{textLength.toLocaleString()} / {MAX_TEXT.toLocaleString()}자</span>
+      </div>
     </div>
   );
 }

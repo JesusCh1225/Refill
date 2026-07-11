@@ -6,6 +6,8 @@ import { POST_SELECT, mapPost } from "@/lib/postMapper";
 async function getGeminiSuggestions(query: string): Promise<string[]> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return [];
+  // 프롬프트 인젝션 방어: 따옴표·역슬래시 제거, 100자 제한
+  const safeQuery = query.replace(/["'\\]/g, "").trim().slice(0, 100);
   try {
     const res = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
@@ -15,7 +17,7 @@ async function getGeminiSuggestions(query: string): Promise<string[]> {
         body: JSON.stringify({
           contents: [{
             parts: [{
-              text: `음악 레슨·밴드합주·악기거래 플랫폼에서 사용자가 "${query}"로 검색했는데 결과가 없었습니다. 관련된 검색 키워드 3~5개를 추천해주세요. 키워드만 콤마로 구분해서 답해주세요. 예: 드럼 레슨,드럼 강습,타악기 레슨`,
+              text: `음악 레슨·밴드합주·악기거래 플랫폼에서 사용자가 [${safeQuery}](으)로 검색했는데 결과가 없었습니다. 관련된 검색 키워드 3~5개를 추천해주세요. 키워드만 콤마로 구분해서 답해주세요. 예: 드럼 레슨,드럼 강습,타악기 레슨`,
             }],
           }],
           generationConfig: { temperature: 0.3, maxOutputTokens: 80 },

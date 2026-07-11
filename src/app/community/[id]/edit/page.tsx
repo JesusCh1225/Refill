@@ -39,6 +39,7 @@ export default function CommunityEditPage({ params }: { params: Promise<{ id: st
   const handleSubmit = async () => {
     if (!title.trim()) { setError("제목을 입력해 주세요."); return; }
     if (!content || content === "<p></p>") { setError("내용을 입력해 주세요."); return; }
+    if (content.replace(/<[^>]*>/g, "").length > 10_000) { setError("내용이 너무 길어요. 10,000자 이하로 작성해 주세요."); return; }
     setSaving(true);
     setError("");
     try {

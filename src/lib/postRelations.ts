@@ -9,7 +9,7 @@ import { prisma } from "@/lib/prisma";
 export async function syncPostCategories(postId: number, slugs: string[]) {
   if (!Array.isArray(slugs) || slugs.length === 0) return;
   const categories = await prisma.category.findMany({
-    where: { slug: { in: slugs } },
+    where: { slug: { in: slugs.slice(0, 20) } },
     select: { id: true },
   });
   await Promise.all(
@@ -18,7 +18,14 @@ export async function syncPostCategories(postId: number, slugs: string[]) {
 }
 
 export async function syncPostHashtags(postId: number, names: string[]) {
-  const trimmed = [...new Set((Array.isArray(names) ? names : []).map((n) => n?.trim()).filter(Boolean))] as string[];
+  const trimmed = [
+    ...new Set(
+      (Array.isArray(names) ? names : [])
+        .slice(0, 10)                        // 최대 10개
+        .map((n) => n?.trim().slice(0, 50))  // 각 50자 제한
+        .filter(Boolean),
+    ),
+  ] as string[];
   if (trimmed.length === 0) return;
 
   const existing = await prisma.hashtag.findMany({
@@ -39,7 +46,10 @@ export async function syncPostHashtags(postId: number, names: string[]) {
 }
 
 export async function syncPostLocationTags(postId: number, tags: string[]) {
-  const trimmed = (Array.isArray(tags) ? tags : []).map((t) => t?.trim()).filter(Boolean) as string[];
+  const trimmed = (Array.isArray(tags) ? tags : [])
+    .slice(0, 5)  // 최대 5개
+    .map((t) => t?.trim())
+    .filter(Boolean) as string[];
   if (trimmed.length === 0) return;
   await Promise.all(
     trimmed.map((tag) => prisma.postLocationTag.create({ data: { postId, tag: tag.slice(0, 50) } })),
@@ -47,7 +57,11 @@ export async function syncPostLocationTags(postId: number, tags: string[]) {
 }
 
 export async function syncPostImages(postId: number, urls: string[]) {
-  const list = (Array.isArray(urls) ? urls : []).filter(Boolean);
+  const list = (Array.isArray(urls) ? urls : [])
+    .slice(0, 10)  // 최대 10장
+    .filter((url): url is string =>
+      typeof url === "string" && url.startsWith("https://"),  // https:// 만 허용
+    );
   if (list.length === 0) return;
   await Promise.all(
     list.map((url, i) => prisma.postImage.create({ data: { postId, url, order: i } })),

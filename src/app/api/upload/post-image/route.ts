@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { put } from "@vercel/blob";
 import { getSessionUserId } from "@/lib/auth";
-import { EXT_BY_MIME, validateImageFile } from "@/lib/uploadValidator";
+import { EXT_BY_MIME, validateImageFile, validateMagicBytes } from "@/lib/uploadValidator";
 
 const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
 
@@ -16,6 +16,10 @@ export async function POST(req: NextRequest) {
   const validationError = validateImageFile(file, MAX_SIZE);
   if (validationError) return NextResponse.json({ error: validationError }, { status: 400 });
 
+  if (!(await validateMagicBytes(file))) {
+    return NextResponse.json({ error: "JPG, PNG, WEBP 파일만 업로드할 수 있어요." }, { status: 400 });
+  }
+
   const ext = EXT_BY_MIME[file.type] ?? "jpg";
   const filename = `posts/${crypto.randomUUID()}.${ext}`;
 
@@ -24,6 +28,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ url: blob.url });
   } catch (err) {
     console.error("[post-image upload error]", err);
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    return NextResponse.json({ error: "업로드에 실패했어요." }, { status: 500 });
   }
 }

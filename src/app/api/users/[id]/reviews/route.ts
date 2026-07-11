@@ -46,7 +46,9 @@ export async function POST(
 
   const body = await req.json();
   const rating = Number(body.rating);
-  const content = (body.content ?? "").trim() || null;
+  const rawContent = (body.content ?? "").trim();
+  if (rawContent.length > 1000) return NextResponse.json({ error: "too long" }, { status: 400 });
+  const content = rawContent || null;
   const postId = body.postId ? Number(body.postId) : null;
 
   if (!rating || rating < 1 || rating > 5) {
