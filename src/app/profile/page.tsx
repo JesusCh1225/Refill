@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import Header from "@/components/organisms/Header";
@@ -35,7 +35,8 @@ const TABS: { id: Tab; label: string }[] = [
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { status } = useSession();
+  const { status, update } = useSession();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [tab, setTab] = useState<Tab>("info");
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [nicknameInput, setNicknameInput] = useState("");
@@ -136,6 +137,7 @@ export default function ProfilePage() {
       }
       const { url } = await res.json();
       setProfile((p) => p ? { ...p, avatarUrl: url } : p);
+      await update({ image: url });
       setAvatarSrc(null);
     } finally {
       setAvatarUploading(false);
@@ -148,12 +150,14 @@ export default function ProfilePage() {
     try {
       await fetch("/api/upload/avatar", { method: "DELETE" });
       setProfile((p) => p ? { ...p, avatarUrl: null } : p);
+      await update({ image: null });
     } finally {
       setAvatarUploading(false);
     }
   };
 
   const cancelPreview = () => { setAvatarSrc(null); setAvatarError(null); };
+  const triggerAvatarChange = () => { setAvatarError(null); fileInputRef.current?.click(); };;
 
   const handlePostDelete = async (postId: number) => {
     if (postDeleteLoading) return;
@@ -193,8 +197,10 @@ export default function ProfilePage() {
         />
       )}
 
+      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+
       <div className="mx-auto px-3 sm:px-6 pt-5 sm:pt-8 pb-20" style={{ maxWidth: "720px" }}>
-        <ProfileHeader profile={profile} onFileChange={handleFileChange} />
+        <ProfileHeader profile={profile} onAvatarClick={triggerAvatarChange} />
 
         {/* 탭 */}
         <div className="flex gap-1 mb-6 bg-white rounded-2xl border border-border-card p-1.5">
@@ -220,6 +226,7 @@ export default function ProfilePage() {
             nicknameSaving={saving}
             avatarUploading={avatarUploading}
             hasCustomAvatar={hasCustomAvatar}
+            onAvatarClick={triggerAvatarChange}
             onAvatarReset={handleAvatarReset}
             showDeleteConfirm={showDeleteConfirm}
             onShowDeleteConfirm={setShowDeleteConfirm}

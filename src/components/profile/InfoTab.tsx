@@ -2,6 +2,7 @@
 
 import InfoField from "@/components/atom/InfoField";
 import EditableField from "@/components/atom/EditableField";
+import Avatar from "@/components/atom/Avatar";
 
 const PROVIDER_LABEL: Record<string, string> = { kakao: "카카오", naver: "네이버" };
 
@@ -25,6 +26,7 @@ interface Props {
   nicknameSaving: boolean;
   avatarUploading: boolean;
   hasCustomAvatar: boolean;
+  onAvatarClick: () => void;
   onAvatarReset: () => void;
   showDeleteConfirm: boolean;
   onShowDeleteConfirm: (v: boolean) => void;
@@ -41,6 +43,7 @@ export default function InfoTab({
   nicknameSaving,
   avatarUploading,
   hasCustomAvatar,
+  onAvatarClick,
   onAvatarReset,
   showDeleteConfirm,
   onShowDeleteConfirm,
@@ -49,26 +52,68 @@ export default function InfoTab({
   onProfileFieldSave,
 }: Props) {
   const savedNickname = profile.nickname ?? profile.name;
+  const displayName = profile.nickname ?? profile.name;
 
   return (
     <div className="bg-white rounded-2xl border border-border-card px-4 py-5 sm:px-8 sm:py-7 flex flex-col gap-6">
-      {/* 프로필 사진 */}
-      <section className="flex flex-col gap-3">
-        <div>
-          <h2 className="text-[14px] font-bold text-text-heading">프로필 사진</h2>
-          <p className="text-[12px] text-text-muted mt-0.5">
-            상단 사진을 클릭하면 새 사진을 등록할 수 있어요. (JPG, PNG, WEBP · 최대 5MB)
-          </p>
+
+      {/* 프로필 사진 + 닉네임 — 최상단 */}
+      <section className="flex items-start gap-4 sm:gap-5">
+        {/* 아바타 */}
+        <div className="flex flex-col items-center gap-2 shrink-0">
+          <div className="relative group">
+            <button
+              type="button"
+              onClick={onAvatarClick}
+              disabled={avatarUploading}
+              className="block rounded-full overflow-hidden w-20 h-20 cursor-pointer border-none p-0 bg-transparent disabled:opacity-60 disabled:cursor-not-allowed"
+              title="사진 변경"
+            >
+              <Avatar src={profile.avatarUrl} name={displayName} className="w-20 h-20" textClassName="text-3xl" />
+              <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                  <circle cx="12" cy="13" r="4" />
+                </svg>
+              </div>
+            </button>
+          </div>
+          {hasCustomAvatar && (
+            <button
+              onClick={onAvatarReset}
+              disabled={avatarUploading}
+              className="text-[11px] text-text-muted underline underline-offset-2 bg-transparent border-none cursor-pointer hover:text-text-body transition-colors disabled:opacity-50 whitespace-nowrap"
+            >
+              {avatarUploading ? "처리 중…" : "기본으로 되돌리기"}
+            </button>
+          )}
         </div>
-        {hasCustomAvatar && (
-          <button
-            onClick={onAvatarReset}
-            disabled={avatarUploading}
-            className="self-start px-4 h-9 rounded-lg border border-border-base text-text-muted text-[12px] font-semibold bg-transparent cursor-pointer hover:bg-surface-card transition-colors disabled:opacity-50"
-          >
-            {avatarUploading ? "처리 중…" : "기본 사진으로 되돌리기"}
-          </button>
-        )}
+
+        {/* 닉네임 */}
+        <div className="flex-1 min-w-0 flex flex-col gap-2 pt-1">
+          <div>
+            <h2 className="text-[14px] font-bold text-text-heading">닉네임</h2>
+            <p className="text-[12px] text-text-muted mt-0.5">게시글과 댓글에 표시되는 이름입니다.</p>
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={nicknameInput}
+              onChange={(e) => onNicknameChange(e.target.value)}
+              maxLength={20}
+              placeholder="닉네임 입력"
+              className="flex-1 min-w-0 h-10 px-3 rounded-lg border border-border-base text-[13px] text-text-body placeholder:text-text-placeholder focus:outline-none focus:border-brand transition-colors"
+            />
+            <button
+              onClick={onNicknameSave}
+              disabled={!nicknameInput.trim() || nicknameInput === savedNickname || nicknameSaving}
+              className="px-4 h-10 rounded-lg bg-brand text-white text-[13px] font-semibold border-none cursor-pointer hover:opacity-85 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+            >
+              {nicknameSaving ? "저장중…" : "저장"}
+            </button>
+          </div>
+          <p className="text-right text-[11px] text-text-placeholder">{nicknameInput.length}/20</p>
+        </div>
       </section>
 
       <hr className="border-border-base" />
@@ -133,34 +178,6 @@ export default function InfoTab({
             </div>
           </div>
         </div>
-      </section>
-
-      <hr className="border-border-base" />
-
-      {/* 닉네임 */}
-      <section className="flex flex-col gap-3">
-        <div>
-          <h2 className="text-[14px] font-bold text-text-heading">닉네임</h2>
-          <p className="text-[12px] text-text-muted mt-0.5">게시글과 댓글에 표시되는 이름입니다.</p>
-        </div>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={nicknameInput}
-            onChange={(e) => onNicknameChange(e.target.value)}
-            maxLength={20}
-            placeholder="닉네임 입력"
-            className="flex-1 h-10 px-3 rounded-lg border border-border-base text-[13px] text-text-body placeholder:text-text-placeholder focus:outline-none focus:border-brand transition-colors"
-          />
-          <button
-            onClick={onNicknameSave}
-            disabled={!nicknameInput.trim() || nicknameInput === savedNickname || nicknameSaving}
-            className="px-5 h-10 rounded-lg bg-brand text-white text-[13px] font-semibold border-none cursor-pointer hover:opacity-85 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
-          >
-            {nicknameSaving ? "저장중…" : "저장"}
-          </button>
-        </div>
-        <p className="text-right text-[11px] text-text-placeholder">{nicknameInput.length}/20</p>
       </section>
 
       <hr className="border-border-base" />

@@ -1,6 +1,5 @@
 "use client";
 
-import { useRef } from "react";
 import Avatar from "@/components/atom/Avatar";
 
 const PROVIDER_LABEL: Record<string, string> = { kakao: "카카오", naver: "네이버" };
@@ -15,20 +14,18 @@ interface UserProfile {
 
 interface Props {
   profile: UserProfile;
-  onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onAvatarClick: () => void;
 }
 
-export default function ProfileHeader({ profile, onFileChange }: Props) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
+export default function ProfileHeader({ profile, onAvatarClick }: Props) {
   const displayName = profile.nickname || profile.name;
 
   return (
     <div className="bg-white rounded-2xl border border-border-card px-4 py-5 sm:px-8 sm:py-7 flex items-center gap-4 sm:gap-5 mb-6">
       <div className="relative group shrink-0">
-        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onFileChange} />
         <button
           type="button"
-          onClick={() => fileInputRef.current?.click()}
+          onClick={onAvatarClick}
           className="block rounded-full overflow-hidden w-16 h-16 cursor-pointer border-none p-0 bg-transparent"
           title="프로필 사진 변경"
         >
