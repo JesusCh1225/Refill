@@ -27,12 +27,21 @@ function BellIcon() {
   );
 }
 
+function ChatIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+    </svg>
+  );
+}
+
 export default function Header({ onLogoClick }: HeaderProps) {
   const { data: session, status } = useSession();
   const loading = status === "loading";
   const [loginOpen, setLoginOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadMessages, setUnreadMessages] = useState(0);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -47,8 +56,23 @@ export default function Header({ onLogoClick }: HeaderProps) {
     };
 
     fetchCount();
-    // 60초마다 폴링 — 같은 페이지에 머물 때도 새 알림 뱃지 표시
     const timer = setInterval(fetchCount, 60_000);
+    return () => clearInterval(timer);
+  }, [session, pathname]);
+
+  useEffect(() => {
+    if (!session) { setUnreadMessages(0); return; }
+    if (pathname.startsWith("/messages")) { setUnreadMessages(0); return; }
+
+    const fetchMsgCount = () => {
+      fetch("/api/messages/unread")
+        .then((r) => r.ok ? r.json() : null)
+        .then((data) => { if (data) setUnreadMessages(data.count); })
+        .catch(() => {});
+    };
+
+    fetchMsgCount();
+    const timer = setInterval(fetchMsgCount, 30_000);
     return () => clearInterval(timer);
   }, [session, pathname]);
 
@@ -87,6 +111,14 @@ export default function Header({ onLogoClick }: HeaderProps) {
             <div className="w-8 h-8 rounded-full bg-brand-bg animate-pulse" />
           ) : session ? (
             <div className="flex items-center gap-3">
+              <Link href="/messages" className="relative text-text-muted hover:text-text-body transition-colors">
+                <ChatIcon />
+                {unreadMessages > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-4 h-4 px-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center leading-none">
+                    {unreadMessages > 99 ? "99+" : unreadMessages}
+                  </span>
+                )}
+              </Link>
               <Link href="/notifications" className="relative text-text-muted hover:text-text-body transition-colors">
                 <BellIcon />
                 {unreadCount > 0 && (
@@ -133,6 +165,14 @@ export default function Header({ onLogoClick }: HeaderProps) {
             <div className="w-8 h-8 rounded-full bg-brand-bg animate-pulse" />
           ) : session ? (
             <div className="flex items-center gap-2">
+              <Link href="/messages" className="relative text-text-muted hover:text-text-body transition-colors">
+                <ChatIcon />
+                {unreadMessages > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-4 h-4 px-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center leading-none">
+                    {unreadMessages > 99 ? "99+" : unreadMessages}
+                  </span>
+                )}
+              </Link>
               <Link href="/notifications" className="relative text-text-muted hover:text-text-body transition-colors">
                 <BellIcon />
                 {unreadCount > 0 && (

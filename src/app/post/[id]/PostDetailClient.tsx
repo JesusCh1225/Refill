@@ -17,6 +17,7 @@ import CommentSection from "@/components/post/CommentSection";
 import { useBookmarks } from "@/lib/useBookmarks";
 import { dirLabel } from "@/lib/dirLabel";
 import { tagLinkCls, directionBadgeCls } from "@/lib/tagStyles";
+import ChatButton from "@/components/atom/ChatButton";
 
 export default function PostDetailClient({
   params,
@@ -210,7 +211,10 @@ export default function PostDetailClient({
               {item.author && item.authorId && (
                 <div className="flex items-center gap-4">
                   <span className="text-[12px] font-semibold text-text-muted w-14 shrink-0">작성자</span>
-                  <AuthorLink authorId={item.authorId} name={item.author} className="text-[14px] text-text-body font-medium" />
+                  <div className="flex items-center gap-2 flex-1">
+                    <AuthorLink authorId={item.authorId} name={item.author} className="text-[14px] text-text-body font-medium" />
+                    <ChatButton userId={item.authorId} />
+                  </div>
                 </div>
               )}
             </div>

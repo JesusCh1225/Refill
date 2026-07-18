@@ -1,10 +1,90 @@
 "use client";
 
+import { useState } from "react";
 import InfoField from "@/components/atom/InfoField";
 import EditableField from "@/components/atom/EditableField";
 import Avatar from "@/components/atom/Avatar";
 
 const PROVIDER_LABEL: Record<string, string> = { kakao: "카카오", naver: "네이버" };
+
+function parseList(json: string | null): string[] {
+  if (!json) return [];
+  try { return JSON.parse(json) as string[]; } catch { return []; }
+}
+
+interface ListFieldProps {
+  title: string;
+  description: string;
+  placeholder: string;
+  initialJson: string | null;
+  onSave: (json: string) => Promise<void>;
+}
+
+function ListField({ title, description, placeholder, initialJson, onSave }: ListFieldProps) {
+  const [items, setItems] = useState<string[]>(() => parseList(initialJson));
+  const [saving, setSaving] = useState(false);
+  const initial = parseList(initialJson);
+  const isDirty = JSON.stringify(items) !== JSON.stringify(initial);
+
+  const update = (idx: number, val: string) =>
+    setItems((prev) => prev.map((it, i) => (i === idx ? val : it)));
+  const remove = (idx: number) =>
+    setItems((prev) => prev.filter((_, i) => i !== idx));
+  const add = () => setItems((prev) => [...prev, ""]);
+  const handleSave = async () => {
+    setSaving(true);
+    const cleaned = items.filter((it) => it.trim());
+    try { await onSave(JSON.stringify(cleaned)); setItems(cleaned); } finally { setSaving(false); }
+  };
+
+  return (
+    <section className="flex flex-col gap-3">
+      <div>
+        <h2 className="text-[14px] font-bold text-text-heading">{title}</h2>
+        <p className="text-[12px] text-text-muted mt-0.5">{description}</p>
+      </div>
+      <div className="flex flex-col gap-2">
+        {items.map((it, i) => (
+          <div key={i} className="flex gap-2">
+            <input
+              type="text"
+              value={it}
+              onChange={(e) => update(i, e.target.value)}
+              placeholder={placeholder}
+              maxLength={200}
+              className="flex-1 h-9 px-3 rounded-lg border border-border-base text-[13px] text-text-body placeholder:text-text-placeholder focus:outline-none focus:border-brand transition-colors"
+            />
+            <button
+              type="button"
+              onClick={() => remove(i)}
+              className="w-9 h-9 rounded-lg border border-border-base text-text-muted text-[14px] bg-transparent cursor-pointer hover:border-red-300 hover:text-red-400 transition-colors shrink-0"
+            >
+              ✕
+            </button>
+          </div>
+        ))}
+        {items.length < 20 && (
+          <button
+            type="button"
+            onClick={add}
+            className="self-start px-3 h-8 rounded-lg border border-dashed border-border-base text-[12px] text-text-muted bg-transparent cursor-pointer hover:border-brand hover:text-brand transition-colors"
+          >
+            + 항목 추가
+          </button>
+        )}
+      </div>
+      <div className="flex justify-end">
+        <button
+          onClick={handleSave}
+          disabled={saving || !isDirty}
+          className="px-4 h-9 rounded-lg bg-brand text-white text-[12px] font-semibold border-none cursor-pointer hover:opacity-85 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {saving ? "저장중…" : "저장"}
+        </button>
+      </div>
+    </section>
+  );
+}
 
 interface UserProfile {
   name: string;
@@ -14,6 +94,8 @@ interface UserProfile {
   bio: string | null;
   contact: string | null;
   representativeSong: string | null;
+  licenses: string | null;
+  career: string | null;
   createdAt: string;
   oauthAccounts: { provider: string }[];
 }
@@ -32,7 +114,7 @@ interface Props {
   onShowDeleteConfirm: (v: boolean) => void;
   onDeleteAccount: () => void;
   deleting: boolean;
-  onProfileFieldSave: (field: "bio" | "contact" | "representativeSong", value: string) => Promise<void>;
+  onProfileFieldSave: (field: "bio" | "contact" | "representativeSong" | "licenses" | "career", value: string) => Promise<void>;
 }
 
 export default function InfoTab({
@@ -156,6 +238,26 @@ export default function InfoTab({
             🎵 {v}
           </a>
         ) : null}
+      />
+
+      <hr className="border-border-base" />
+
+      <ListField
+        title="보유 라이센스 / 자격증"
+        description="공식 자격증, 수료증, 학위 등을 입력하세요."
+        placeholder="예: 기타 강사 자격증 (한국음악협회, 2022)"
+        initialJson={profile.licenses}
+        onSave={(v) => onProfileFieldSave("licenses", v)}
+      />
+
+      <hr className="border-border-base" />
+
+      <ListField
+        title="경력 / 활동 이력"
+        description="연주 경력, 레슨 경력, 밴드 활동 등을 입력하세요."
+        placeholder="예: 홍대 OO밴드 기타리스트 (2019-2022)"
+        initialJson={profile.career}
+        onSave={(v) => onProfileFieldSave("career", v)}
       />
 
       <hr className="border-border-base" />

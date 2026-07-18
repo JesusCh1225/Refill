@@ -19,6 +19,8 @@ model User {
   bio                String?  @db.Text
   contact            String?  @db.VarChar(200)
   representativeSong String?  @db.VarChar(500)
+  licenses           String?  @db.Text
+  career             String?  @db.Text
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 

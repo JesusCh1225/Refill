@@ -44,6 +44,8 @@ export async function GET() {
       bio: true,
       contact: true,
       representativeSong: true,
+      licenses: true,
+      career: true,
       createdAt: true,
       oauthAccounts: { select: { provider: true } },
     },
@@ -77,6 +79,12 @@ export async function PATCH(req: NextRequest) {
   if ("representativeSong" in body) {
     data.representativeSong = body.representativeSong ? String(body.representativeSong).slice(0, 500) : null;
   }
+  if ("licenses" in body) {
+    data.licenses = body.licenses ? String(body.licenses).slice(0, 5000) : null;
+  }
+  if ("career" in body) {
+    data.career = body.career ? String(body.career).slice(0, 5000) : null;
+  }
 
   if (Object.keys(data).length === 0) {
     return NextResponse.json({ error: "nothing to update" }, { status: 400 });
@@ -85,7 +93,7 @@ export async function PATCH(req: NextRequest) {
   const user = await prisma.user.update({
     where: { id: userId },
     data,
-    select: { id: true, name: true, email: true, nickname: true, bio: true, contact: true, representativeSong: true },
+    select: { id: true, name: true, email: true, nickname: true, bio: true, contact: true, representativeSong: true, licenses: true, career: true },
   });
 
   return NextResponse.json(user);

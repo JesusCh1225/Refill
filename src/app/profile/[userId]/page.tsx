@@ -8,6 +8,7 @@ import Header from "@/components/organisms/Header";
 import Avatar from "@/components/atom/Avatar";
 import AuthorLink from "@/components/atom/AuthorLink";
 import Spinner from "@/components/atom/Spinner";
+import ChatButton from "@/components/atom/ChatButton";
 import { StarRating, InteractiveStars } from "@/components/atom/StarRating";
 
 interface PublicPost {
@@ -38,11 +39,18 @@ interface PublicProfile {
   bio: string | null;
   contact: string | null;
   representativeSong: string | null;
+  licenses: string | null;
+  career: string | null;
   createdAt: string;
   posts: PublicPost[];
   reviewsReceived: ReviewItem[];
   avgRating: number | null;
   reviewCount: number;
+}
+
+function parseList(json: string | null): string[] {
+  if (!json) return [];
+  try { return JSON.parse(json) as string[]; } catch { return []; }
 }
 
 function formatDate(iso: string) {
@@ -196,7 +204,10 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userId
             </div>
 
             <div className="flex-1 min-w-0">
-              <p className="text-[20px] font-bold text-text-heading">{displayName}</p>
+              <div className="flex items-center gap-2.5">
+                <p className="text-[20px] font-bold text-text-heading">{displayName}</p>
+                {!isMyProfile && <ChatButton userId={profile.id} />}
+              </div>
               <p className="text-[12px] text-text-muted mt-0.5">
                 가입일 {formatDate(profile.createdAt)}
               </p>
@@ -247,6 +258,36 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userId
               >
                 🎵 {profile.representativeSong}
               </a>
+            </div>
+          )}
+
+          {/* 보유 라이센스 */}
+          {parseList(profile.licenses).length > 0 && (
+            <div className="flex flex-col gap-1.5 border-t border-border-base pt-4">
+              <span className="text-[13px] font-semibold text-text-muted">보유 라이센스 / 자격증</span>
+              <ul className="flex flex-col gap-1">
+                {parseList(profile.licenses).map((item, i) => (
+                  <li key={i} className="flex items-start gap-1.5 text-[13px] text-text-body">
+                    <span className="text-text-placeholder mt-0.5 shrink-0">•</span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* 경력 / 활동 이력 */}
+          {parseList(profile.career).length > 0 && (
+            <div className="flex flex-col gap-1.5 border-t border-border-base pt-4">
+              <span className="text-[13px] font-semibold text-text-muted">경력 / 활동 이력</span>
+              <ul className="flex flex-col gap-1">
+                {parseList(profile.career).map((item, i) => (
+                  <li key={i} className="flex items-start gap-1.5 text-[13px] text-text-body">
+                    <span className="text-text-placeholder mt-0.5 shrink-0">•</span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
         </div>

@@ -22,6 +22,18 @@ interface WritePostModalProps {
 
 const ALL_SUBCAT_IDS = ["guitar", "drum", "piano", "vocal", "wind", "string", "dj", "equipment"];
 
+function trimAddressToDong(address: string): string {
+  const tokens = address.trim().split(/\s+/);
+  let lastDongIdx = -1;
+  for (let i = tokens.length - 1; i >= 0; i--) {
+    if (/[동읍면리]$/.test(tokens[i])) { lastDongIdx = i; break; }
+  }
+  if (lastDongIdx === -1) return address;
+  let start = 0;
+  while (start < lastDongIdx && /(?:특별시|광역시|특별자치시|특별자치도|도|시)$/.test(tokens[start])) start++;
+  return tokens.slice(start, lastDongIdx + 1).join(" ");
+}
+
 // tags + direction → CategoryEntry[] 역변환 (수정 모드 초기화용)
 function tagsToEntries(tags: string[], direction: PostDirection): CategoryEntry[] {
   const entries: CategoryEntry[] = [];
@@ -124,7 +136,7 @@ export default function WritePostModal({
 
     return {
       title: title.trim(),
-      location: location.trim(),
+      location: trimAddressToDong(location.trim()),
       locationTags: [...new Set(locationTags)],
       priceType,
       priceAmount,

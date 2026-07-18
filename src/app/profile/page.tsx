@@ -24,6 +24,8 @@ interface UserProfile {
   bio: string | null;
   contact: string | null;
   representativeSong: string | null;
+  licenses: string | null;
+  career: string | null;
   createdAt: string;
   oauthAccounts: { provider: string }[];
 }
@@ -101,7 +103,7 @@ export default function ProfilePage() {
   };
 
   const handleProfileFieldSave = async (
-    field: "bio" | "contact" | "representativeSong",
+    field: "bio" | "contact" | "representativeSong" | "licenses" | "career",
     value: string,
   ) => {
     if (!profile) return;

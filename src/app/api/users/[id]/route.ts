@@ -19,6 +19,8 @@ export async function GET(
         bio: true,
         contact: true,
         representativeSong: true,
+        licenses: true,
+        career: true,
         createdAt: true,
         posts: {
           where: { status: "PUBLISHED" },
