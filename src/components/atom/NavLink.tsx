@@ -9,6 +9,7 @@ export default function NavLink({ href, children }: NavLinkProps) {
   return (
     <Link
       href={href}
+      prefetch={false}
       className="text-text-body no-underline hover:text-brand transition-colors text-xs"
     >
       {children}

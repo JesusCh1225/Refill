@@ -55,40 +55,16 @@ export async function POST(
     return NextResponse.json({ error: "rating must be 1–5" }, { status: 400 });
   }
 
-  // 소통 여부 확인: 댓글 또는 채팅 이력 중 하나라도 있으면 허용
-  const [commentInteraction, messageInteraction] = await Promise.all([
-    prisma.comment.findFirst({
-      where: { authorId: reviewerId, post: { authorId: revieweeId } },
-      select: { id: true },
-    }),
-    prisma.message.findFirst({
-      where: {
-        OR: [
-          { senderId: reviewerId, receiverId: revieweeId },
-          { senderId: revieweeId, receiverId: reviewerId },
-        ],
-      },
-      select: { id: true },
-    }),
-  ]);
-
-  if (!commentInteraction && !messageInteraction) {
-    return NextResponse.json(
-      { error: "직접 소통한 이력이 없는 사용자에게는 리뷰를 남길 수 없어요." },
-      { status: 403 },
-    );
-  }
-
-  // 중복 확인 (같은 postId 기준)
-  const existing = await prisma.review.findFirst({
-    where: { reviewerId, revieweeId, postId },
-    select: { id: true },
-  });
-  if (existing) {
-    return NextResponse.json({ error: "이미 리뷰를 남겼어요." }, { status: 409 });
-  }
-
   try {
+    // 중복 확인
+    const existing = await prisma.review.findFirst({
+      where: { reviewerId, revieweeId, postId },
+      select: { id: true },
+    });
+    if (existing) {
+      return NextResponse.json({ error: "이미 리뷰를 남겼어요." }, { status: 409 });
+    }
+
     const review = await prisma.review.create({
       data: { reviewerId, revieweeId, rating, content, postId },
       select: {
@@ -104,7 +80,7 @@ export async function POST(
   } catch (e: unknown) {
     const code = (e as { code?: string })?.code;
     if (code === "P2002") return NextResponse.json({ error: "이미 리뷰를 남겼어요." }, { status: 409 });
-    throw e;
+    return NextResponse.json({ error: "리뷰 저장 중 오류가 발생했어요." }, { status: 500 });
   }
 }
 

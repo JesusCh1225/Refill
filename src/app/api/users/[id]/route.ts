@@ -8,7 +8,7 @@ export async function GET(
   const userId = Number((await params).id);
   if (isNaN(userId)) return NextResponse.json({ error: "invalid id" }, { status: 400 });
 
-  const [user, reviewStats] = await Promise.all([
+  const [user, reviewsReceived, reviewStats] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -37,18 +37,19 @@ export async function GET(
             categories: { select: { category: { select: { name: true } } } },
           },
         },
-        reviewsReceived: {
-          orderBy: { createdAt: "desc" },
-          take: 10,
-          select: {
-            id: true,
-            rating: true,
-            content: true,
-            createdAt: true,
-            postId: true,
-            reviewer: { select: { id: true, name: true, nickname: true, avatarUrl: true } },
-          },
-        },
+      },
+    }),
+    prisma.review.findMany({
+      where: { revieweeId: userId },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+      select: {
+        id: true,
+        rating: true,
+        content: true,
+        createdAt: true,
+        postId: true,
+        reviewer: { select: { id: true, name: true, nickname: true, avatarUrl: true } },
       },
     }),
     prisma.review.aggregate({
@@ -64,5 +65,5 @@ export async function GET(
     ? Math.round(reviewStats._avg.rating * 10) / 10
     : null;
 
-  return NextResponse.json({ ...user, avgRating, reviewCount: reviewStats._count._all });
+  return NextResponse.json({ ...user, reviewsReceived, avgRating, reviewCount: reviewStats._count._all });
 }
