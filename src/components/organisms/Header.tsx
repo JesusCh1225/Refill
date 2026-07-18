@@ -56,7 +56,7 @@ export default function Header({ onLogoClick }: HeaderProps) {
     };
 
     fetchCount();
-    const timer = setInterval(fetchCount, 60_000);
+    const timer = setInterval(fetchCount, 5_000);
     return () => clearInterval(timer);
   }, [session, pathname]);
 

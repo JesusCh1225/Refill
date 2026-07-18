@@ -6,11 +6,18 @@ import InfoField from "@/components/atom/InfoField";
 import EditableField from "@/components/atom/EditableField";
 import Avatar from "@/components/atom/Avatar";
 
-const PROVIDER_LABEL: Record<string, string> = { kakao: "카카오", naver: "네이버" };
+const PROVIDER_LABEL: Record<string, string> = {
+  kakao: "카카오",
+  naver: "네이버",
+};
 
 function parseList(json: string | null): string[] {
   if (!json) return [];
-  try { return JSON.parse(json) as string[]; } catch { return []; }
+  try {
+    return JSON.parse(json) as string[];
+  } catch {
+    return [];
+  }
 }
 
 interface ListFieldProps {
@@ -21,7 +28,13 @@ interface ListFieldProps {
   onSave: (json: string) => Promise<void>;
 }
 
-function ListField({ title, description, placeholder, initialJson, onSave }: ListFieldProps) {
+function ListField({
+  title,
+  description,
+  placeholder,
+  initialJson,
+  onSave,
+}: ListFieldProps) {
   const [items, setItems] = useState<string[]>(() => parseList(initialJson));
   const [saving, setSaving] = useState(false);
   const initial = parseList(initialJson);
@@ -35,7 +48,12 @@ function ListField({ title, description, placeholder, initialJson, onSave }: Lis
   const handleSave = async () => {
     setSaving(true);
     const cleaned = items.filter((it) => it.trim());
-    try { await onSave(JSON.stringify(cleaned)); setItems(cleaned); } finally { setSaving(false); }
+    try {
+      await onSave(JSON.stringify(cleaned));
+      setItems(cleaned);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -102,7 +120,7 @@ function BlockedUsersList() {
 
   useEffect(() => {
     fetch("/api/profile/blocks")
-      .then((r) => r.ok ? r.json() : [])
+      .then((r) => (r.ok ? r.json() : []))
       .then(setUsers)
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -111,7 +129,9 @@ function BlockedUsersList() {
   const handleUnblock = async (userId: number) => {
     setUnblocking(true);
     try {
-      const res = await fetch(`/api/users/${userId}/block`, { method: "DELETE" });
+      const res = await fetch(`/api/users/${userId}/block`, {
+        method: "DELETE",
+      });
       if (res.ok) {
         setUsers((prev) => prev.filter((u) => u.id !== userId));
         setConfirmId(null);
@@ -125,7 +145,9 @@ function BlockedUsersList() {
     <section className="flex flex-col gap-3">
       <div>
         <h2 className="text-[14px] font-bold text-text-heading">차단 목록</h2>
-        <p className="text-[12px] text-text-muted mt-0.5">차단한 사용자는 내 게시글 목록과 채팅에 표시되지 않아요.</p>
+        <p className="text-[12px] text-text-muted mt-0.5">
+          차단한 사용자는 내 게시글 목록과 채팅에 표시되지 않아요.
+        </p>
       </div>
 
       {loading ? (
@@ -137,15 +159,30 @@ function BlockedUsersList() {
           {users.map((user) => {
             const name = user.nickname ?? user.name;
             return (
-              <li key={user.id} className="flex items-center gap-3 bg-surface-card rounded-xl px-3 py-2.5">
-                <Link href={`/profile/${user.id}`} className="flex items-center gap-2.5 flex-1 min-w-0 hover:opacity-75 transition-opacity">
-                  <Avatar src={user.avatarUrl} name={name} className="w-8 h-8 shrink-0" textClassName="text-[11px]" />
-                  <span className="text-[13px] font-semibold text-text-heading truncate">{name}</span>
+              <li
+                key={user.id}
+                className="flex items-center gap-3 bg-surface-card rounded-xl px-3 py-2.5"
+              >
+                <Link
+                  href={`/profile/${user.id}`}
+                  className="flex items-center gap-2.5 flex-1 min-w-0 hover:opacity-75 transition-opacity"
+                >
+                  <Avatar
+                    src={user.avatarUrl}
+                    name={name}
+                    className="w-8 h-8 shrink-0"
+                    textClassName="text-[11px]"
+                  />
+                  <span className="text-[13px] font-semibold text-text-heading truncate">
+                    {name}
+                  </span>
                 </Link>
 
                 {confirmId === user.id ? (
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <span className="text-[12px] text-text-muted">차단을 푸시겠습니까?</span>
+                    <span className="text-[12px] text-text-muted">
+                      차단을 푸시겠습니까?
+                    </span>
                     <button
                       onClick={() => handleUnblock(user.id)}
                       disabled={unblocking}
@@ -206,7 +243,10 @@ interface Props {
   onShowDeleteConfirm: (v: boolean) => void;
   onDeleteAccount: () => void;
   deleting: boolean;
-  onProfileFieldSave: (field: "bio" | "contact" | "representativeSong" | "licenses" | "career", value: string) => Promise<void>;
+  onProfileFieldSave: (
+    field: "bio" | "contact" | "representativeSong" | "licenses" | "career",
+    value: string,
+  ) => Promise<void>;
 }
 
 export default function InfoTab({
@@ -230,7 +270,6 @@ export default function InfoTab({
 
   return (
     <div className="bg-white rounded-2xl border border-border-card px-4 py-5 sm:px-8 sm:py-7 flex flex-col gap-6">
-
       {/* 프로필 사진 + 닉네임 — 최상단 */}
       <section className="flex items-start gap-4 sm:gap-5">
         {/* 아바타 */}
@@ -243,9 +282,23 @@ export default function InfoTab({
               className="block rounded-full overflow-hidden w-20 h-20 cursor-pointer border-none p-0 bg-transparent disabled:opacity-60 disabled:cursor-not-allowed"
               title="사진 변경"
             >
-              <Avatar src={profile.avatarUrl} name={displayName} className="w-20 h-20" textClassName="text-3xl" />
+              <Avatar
+                src={profile.avatarUrl}
+                name={displayName}
+                className="w-20 h-20"
+                textClassName="text-3xl"
+              />
               <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="white"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
                   <circle cx="12" cy="13" r="4" />
                 </svg>
@@ -267,7 +320,9 @@ export default function InfoTab({
         <div className="flex-1 min-w-0 flex flex-col gap-2 pt-1">
           <div>
             <h2 className="text-[14px] font-bold text-text-heading">닉네임</h2>
-            <p className="text-[12px] text-text-muted mt-0.5">게시글과 댓글에 표시되는 이름입니다.</p>
+            <p className="text-[12px] text-text-muted mt-0.5">
+              게시글과 댓글에 표시되는 이름입니다.
+            </p>
           </div>
           <div className="flex gap-2">
             <input
@@ -280,13 +335,19 @@ export default function InfoTab({
             />
             <button
               onClick={onNicknameSave}
-              disabled={!nicknameInput.trim() || nicknameInput === savedNickname || nicknameSaving}
+              disabled={
+                !nicknameInput.trim() ||
+                nicknameInput === savedNickname ||
+                nicknameSaving
+              }
               className="px-4 h-10 rounded-lg bg-brand text-white text-[13px] font-semibold border-none cursor-pointer hover:opacity-85 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
             >
               {nicknameSaving ? "저장중…" : "저장"}
             </button>
           </div>
-          <p className="text-right text-[11px] text-text-placeholder">{nicknameInput.length}/20</p>
+          <p className="text-right text-[11px] text-text-placeholder">
+            {nicknameInput.length}/20
+          </p>
         </div>
       </section>
 
@@ -325,31 +386,31 @@ export default function InfoTab({
         placeholder="https://soundcloud.com/..."
         maxLength={500}
         onSave={(v) => onProfileFieldSave("representativeSong", v)}
-        extra={(v) => v ? (
-          <a href={v} target="_blank" rel="noopener noreferrer" className="text-[12px] text-brand hover:underline truncate">
-            🎵 {v}
-          </a>
-        ) : null}
+        extra={(v) =>
+          v ? (
+            <a
+              href={v}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[12px] text-brand hover:underline truncate"
+            >
+              🎵 {v}
+            </a>
+          ) : null
+        }
       />
 
       <hr className="border-border-base" />
 
       <ListField
-        title="보유 라이센스 / 자격증"
-        description="공식 자격증, 수료증, 학위 등을 입력하세요."
-        placeholder="예: 기타 강사 자격증 (한국음악협회, 2022)"
-        initialJson={profile.licenses}
-        onSave={(v) => onProfileFieldSave("licenses", v)}
-      />
-
-      <hr className="border-border-base" />
-
-      <ListField
-        title="경력 / 활동 이력"
-        description="연주 경력, 레슨 경력, 밴드 활동 등을 입력하세요."
-        placeholder="예: 홍대 OO밴드 기타리스트 (2019-2022)"
-        initialJson={profile.career}
-        onSave={(v) => onProfileFieldSave("career", v)}
+        title="공식 보유 라이센스 및 이력 정보"
+        description="자격증, 수료증, 연주·레슨 경력, 밴드 활동 등을 자유롭게 입력하세요."
+        placeholder="예: 기타 강사 자격증 (한국음악협회, 2022) / 홍대 OO밴드 기타리스트 (2019-2022)"
+        initialJson={JSON.stringify([...parseList(profile.licenses), ...parseList(profile.career)])}
+        onSave={async (v) => {
+          await onProfileFieldSave("licenses", v);
+          if (profile.career) await onProfileFieldSave("career", "[]");
+        }}
       />
 
       <hr className="border-border-base" />
@@ -364,12 +425,20 @@ export default function InfoTab({
         <div className="flex flex-col gap-3">
           <InfoField label="이름" value={profile.name} />
           {profile.email && <InfoField label="이메일" value={profile.email} />}
-          <InfoField label="가입일" value={new Date(profile.createdAt).toLocaleDateString("ko-KR")} />
+          <InfoField
+            label="가입일"
+            value={new Date(profile.createdAt).toLocaleDateString("ko-KR")}
+          />
           <div className="flex items-center gap-4">
-            <span className="text-[12px] font-semibold text-text-muted w-14 shrink-0">연동</span>
+            <span className="text-[12px] font-semibold text-text-muted w-14 shrink-0">
+              연동
+            </span>
             <div className="flex gap-1.5">
               {profile.oauthAccounts.map((acc) => (
-                <span key={acc.provider} className="text-[12px] font-semibold text-brand bg-brand-bg px-2.5 py-1 rounded-full">
+                <span
+                  key={acc.provider}
+                  className="text-[12px] font-semibold text-brand bg-brand-bg px-2.5 py-1 rounded-full"
+                >
                   {PROVIDER_LABEL[acc.provider] ?? acc.provider}
                 </span>
               ))}
@@ -390,7 +459,9 @@ export default function InfoTab({
         </div>
         {showDeleteConfirm ? (
           <div className="flex flex-col gap-2 p-4 rounded-xl bg-red-50 border border-red-200">
-            <p className="text-[13px] text-red-600 font-semibold">정말 탈퇴하시겠습니까? 이 작업은 되돌릴 수 없습니다.</p>
+            <p className="text-[13px] text-red-600 font-semibold">
+              정말 탈퇴하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+            </p>
             <div className="flex gap-2">
               <button
                 onClick={onDeleteAccount}

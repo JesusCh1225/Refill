@@ -117,8 +117,8 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userId
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ rating: reviewRating, content: reviewContent }),
       });
-      const data = await res.json();
-      if (!res.ok) { setReviewError(data.error ?? "오류가 발생했어요."); return; }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setReviewError((data as { error?: string }).error ?? "오류가 발생했어요."); return; }
       setVisibleReviews((prev) => [data, ...prev]);
       setProfile((p) =>
         p
@@ -267,30 +267,15 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userId
             </div>
           )}
 
-          {/* 보유 라이센스 */}
-          {parseList(profile.licenses).length > 0 && (
+          {/* 라이센스 + 경력 통합 */}
+          {[...parseList(profile.licenses), ...parseList(profile.career)].length > 0 && (
             <div className="flex flex-col gap-1.5 border-t border-border-base pt-4">
-              <span className="text-[13px] font-semibold text-text-muted">보유 라이센스 / 자격증</span>
+              <span className="text-[13px] font-semibold text-text-muted">공식 보유 라이센스 및 이력 정보</span>
               <ul className="flex flex-col gap-1">
-                {parseList(profile.licenses).map((item, i) => (
-                  <li key={i} className="flex items-start gap-1.5 text-[13px] text-text-body">
-                    <span className="text-text-placeholder mt-0.5 shrink-0">•</span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* 경력 / 활동 이력 */}
-          {parseList(profile.career).length > 0 && (
-            <div className="flex flex-col gap-1.5 border-t border-border-base pt-4">
-              <span className="text-[13px] font-semibold text-text-muted">경력 / 활동 이력</span>
-              <ul className="flex flex-col gap-1">
-                {parseList(profile.career).map((item, i) => (
-                  <li key={i} className="flex items-start gap-1.5 text-[13px] text-text-body">
-                    <span className="text-text-placeholder mt-0.5 shrink-0">•</span>
-                    {item}
+                {[...parseList(profile.licenses), ...parseList(profile.career)].map((item, i) => (
+                  <li key={i} className="flex items-baseline gap-2 text-[13px] text-text-body">
+                    <span className="text-text-placeholder shrink-0 leading-none">•</span>
+                    <span>{item}</span>
                   </li>
                 ))}
               </ul>
