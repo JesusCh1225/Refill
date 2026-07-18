@@ -111,7 +111,7 @@ export default function Header({ onLogoClick }: HeaderProps) {
             <div className="w-8 h-8 rounded-full bg-brand-bg animate-pulse" />
           ) : session ? (
             <div className="flex items-center gap-3">
-              <Link href="/messages" className="relative text-text-muted hover:text-text-body transition-colors">
+              <Link href="/messages" prefetch={false} className="relative text-text-muted hover:text-text-body transition-colors">
                 <ChatIcon />
                 {unreadMessages > 0 && (
                   <span className="absolute -top-1 -right-1 min-w-4 h-4 px-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center leading-none">
@@ -119,7 +119,7 @@ export default function Header({ onLogoClick }: HeaderProps) {
                   </span>
                 )}
               </Link>
-              <Link href="/notifications" className="relative text-text-muted hover:text-text-body transition-colors">
+              <Link href="/notifications" prefetch={false} className="relative text-text-muted hover:text-text-body transition-colors">
                 <BellIcon />
                 {unreadCount > 0 && (
                   <span className="absolute -top-1 -right-1 min-w-4 h-4 px-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center leading-none">
@@ -129,6 +129,7 @@ export default function Header({ onLogoClick }: HeaderProps) {
               </Link>
               <Link
                 href="/profile"
+                prefetch={false}
                 className="flex items-center gap-2 hover:opacity-80 transition-opacity"
               >
                 <Avatar src={session.user.image} name={session.user.name ?? "?"} className="w-8 h-8" textClassName="text-sm" />
@@ -159,7 +160,7 @@ export default function Header({ onLogoClick }: HeaderProps) {
             <div className="w-8 h-8 rounded-full bg-brand-bg animate-pulse" />
           ) : session ? (
             <div className="flex items-center gap-2">
-              <Link href="/messages" className="relative text-text-muted hover:text-text-body transition-colors">
+              <Link href="/messages" prefetch={false} className="relative text-text-muted hover:text-text-body transition-colors">
                 <ChatIcon />
                 {unreadMessages > 0 && (
                   <span className="absolute -top-1 -right-1 min-w-4 h-4 px-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center leading-none">
@@ -167,7 +168,7 @@ export default function Header({ onLogoClick }: HeaderProps) {
                   </span>
                 )}
               </Link>
-              <Link href="/notifications" className="relative text-text-muted hover:text-text-body transition-colors">
+              <Link href="/notifications" prefetch={false} className="relative text-text-muted hover:text-text-body transition-colors">
                 <BellIcon />
                 {unreadCount > 0 && (
                   <span className="absolute -top-1 -right-1 min-w-4 h-4 px-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center leading-none">
@@ -175,7 +176,7 @@ export default function Header({ onLogoClick }: HeaderProps) {
                   </span>
                 )}
               </Link>
-              <Link href="/profile" className="hover:opacity-80 transition-opacity">
+              <Link href="/profile" prefetch={false} className="hover:opacity-80 transition-opacity">
                 <Avatar src={session.user.image} name={session.user.name ?? "?"} className="w-8 h-8" textClassName="text-sm" />
               </Link>
             </div>
