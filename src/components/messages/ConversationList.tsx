@@ -36,12 +36,34 @@ export default function ConversationList({ onSelect }: Props) {
   const pathname = usePathname();
   const [conversations, setConversations] = useState<Conversation[]>([]);
 
-  useEffect(() => {
+  const fetchConversations = () => {
     fetch("/api/messages")
       .then((r) => r.ok ? r.json() : null)
       .then((data) => { if (data) setConversations(data.conversations); })
       .catch(() => {});
+  };
+
+  // 5초 폴링으로 새 메시지/unread 실시간 반영
+  useEffect(() => {
+    fetchConversations();
+    const timer = setInterval(fetchConversations, 5_000);
+    // 채팅방에서 읽음 처리 후 즉시 갱신
+    window.addEventListener("conversations-refresh", fetchConversations);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener("conversations-refresh", fetchConversations);
+    };
   }, []);
+
+  // 채팅방 진입 시 해당 대화의 뱃지 즉시 클리어
+  useEffect(() => {
+    const match = pathname.match(/^\/messages\/(\d+)$/);
+    if (!match) return;
+    const activeId = Number(match[1]);
+    setConversations((prev) =>
+      prev.map((c) => c.partner.id === activeId ? { ...c, unreadCount: 0 } : c)
+    );
+  }, [pathname]);
 
   if (conversations.length === 0) {
     return (

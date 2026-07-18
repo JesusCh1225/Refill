@@ -85,7 +85,9 @@ export default function ChatPage({ params }: { params: Promise<{ userId: string 
       })
       .finally(() => setLoading(false));
 
-    fetch(`/api/messages/${userId}/read`, { method: "PATCH" }).catch(() => {});
+    fetch(`/api/messages/${userId}/read`, { method: "PATCH" })
+      .then(() => window.dispatchEvent(new Event("conversations-refresh")))
+      .catch(() => {});
   }, [status, userId, router]);
 
   useEffect(() => {
@@ -102,7 +104,9 @@ export default function ChatPage({ params }: { params: Promise<{ userId: string 
       if (data.messages.length === 0) return;
       setMessages((prev) => [...prev, ...data.messages]);
       lastIdRef.current = data.messages[data.messages.length - 1].id;
-      fetch(`/api/messages/${userId}/read`, { method: "PATCH" }).catch(() => {});
+      fetch(`/api/messages/${userId}/read`, { method: "PATCH" })
+        .then(() => window.dispatchEvent(new Event("conversations-refresh")))
+        .catch(() => {});
       scrollToBottom(true);
     }, 3000);
     return () => clearInterval(timer);
