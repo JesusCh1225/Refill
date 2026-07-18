@@ -242,7 +242,8 @@ export default function ChatPage({ params }: { params: Promise<{ userId: string 
       )}
 
       {/* 메시지 목록 */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 flex flex-col bg-surface-page">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto bg-surface-page">
+      <div className="mx-auto px-4 sm:px-6 py-4 flex flex-col min-h-full" style={{ maxWidth: "760px" }}>
         {messages.length === 0 && (
           <p className="text-center text-[13px] text-text-muted py-10">첫 메시지를 보내보세요.</p>
         )}
@@ -308,9 +309,11 @@ export default function ChatPage({ params }: { params: Promise<{ userId: string 
           );
         })}
       </div>
+      </div>
 
       {/* 입력 영역 */}
-      <div className="shrink-0 px-4 py-3 bg-white border-t border-border-base flex items-end gap-2">
+      <div className="shrink-0 bg-white border-t border-border-base">
+      <div className="mx-auto px-4 sm:px-6 py-3 flex items-end gap-2" style={{ maxWidth: "760px" }}>
         <textarea
           ref={inputRef}
           value={text}
@@ -335,6 +338,7 @@ export default function ChatPage({ params }: { params: Promise<{ userId: string 
             <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
           </svg>
         </button>
+      </div>
       </div>
     </div>
   );
