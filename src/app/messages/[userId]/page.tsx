@@ -62,6 +62,10 @@ export default function ChatPage({ params }: { params: Promise<{ userId: string 
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastIdRef = useRef(0);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  // 맨 아래에 있으면 true — 스크롤 이벤트로 실시간 갱신
+  const atBottomRef = useRef(true);
+  // 최초 로드 여부 — messages useEffect에서 초기 로드를 건너뜀
+  const skipNextScrollRef = useRef(true);
 
   const scrollToBottom = (smooth = false) => {
     if (scrollRef.current) {
@@ -75,15 +79,24 @@ export default function ChatPage({ params }: { params: Promise<{ userId: string 
     return el.scrollHeight - el.scrollTop - el.clientHeight < 80;
   };
 
-  // 스크롤이 맨 아래로 돌아오면 버블 해제
+  // 스크롤 위치를 추적해 atBottomRef 갱신 + 버블 해제
   useEffect(() => {
     if (loading) return;
     const el = scrollRef.current;
     if (!el) return;
-    const onScroll = () => { if (isNearBottom()) setNewMsgBubble(0); };
+    const onScroll = () => {
+      atBottomRef.current = isNearBottom();
+      if (atBottomRef.current) setNewMsgBubble(0);
+    };
     el.addEventListener("scroll", onScroll, { passive: true });
     return () => el.removeEventListener("scroll", onScroll);
   }, [loading]);
+
+  // 메시지 렌더 완료 후 자동 스크롤 (DOM이 실제로 업데이트된 이후에 실행)
+  useEffect(() => {
+    if (skipNextScrollRef.current) return; // 초기 로드는 loading effect가 처리
+    if (atBottomRef.current) scrollToBottom(true);
+  }, [messages]);
 
   useEffect(() => {
     if (status === "unauthenticated") { router.replace("/"); return; }
@@ -92,6 +105,8 @@ export default function ChatPage({ params }: { params: Promise<{ userId: string 
     setLoading(true);
     setMessages([]);
     setNewMsgBubble(0);
+    atBottomRef.current = true;
+    skipNextScrollRef.current = true; // 다음 messages 변경은 초기 로드이므로 건너뜀
 
     fetch(`/api/messages/${userId}`)
       .then((r) => r.ok ? r.json() : null)
@@ -109,7 +124,10 @@ export default function ChatPage({ params }: { params: Promise<{ userId: string 
   }, [status, userId, router]);
 
   useEffect(() => {
-    if (!loading) scrollToBottom();
+    if (!loading) {
+      skipNextScrollRef.current = false; // 이후 messages 변경부터 자동 스크롤 활성화
+      scrollToBottom(); // 초기 로드: 즉시 맨 아래로
+    }
   }, [loading]);
 
   useEffect(() => {
@@ -120,14 +138,15 @@ export default function ChatPage({ params }: { params: Promise<{ userId: string 
       if (!res?.ok) return;
       const data = await res.json();
       if (data.messages.length === 0) return;
+      // atBottomRef는 스크롤 이벤트로 실시간 갱신되어 있음
+      const wasAtBottom = atBottomRef.current;
       setMessages((prev) => [...prev, ...data.messages]);
       lastIdRef.current = data.messages[data.messages.length - 1].id;
       fetch(`/api/messages/${userId}/read`, { method: "PATCH" })
         .then(() => window.dispatchEvent(new Event("conversations-refresh")))
         .catch(() => {});
-      if (isNearBottom()) {
-        scrollToBottom(true);
-      } else {
+      // 위를 보고 있었다면 버블 표시 (스크롤은 useEffect([messages])가 처리)
+      if (!wasAtBottom) {
         const receivedCount = data.messages.filter((m: Message) => !m.isFromMe).length;
         if (receivedCount > 0) setNewMsgBubble((prev) => prev + receivedCount);
       }
@@ -146,12 +165,12 @@ export default function ChatPage({ params }: { params: Promise<{ userId: string 
       });
       if (res.ok) {
         const msg: Message = await res.json();
+        atBottomRef.current = true; // 내가 보낸 메시지는 항상 아래로
+        setNewMsgBubble(0);
         setMessages((prev) => [...prev, msg]);
         lastIdRef.current = msg.id;
         setText("");
         if (inputRef.current) inputRef.current.style.height = "auto";
-        setNewMsgBubble(0);
-        setTimeout(() => scrollToBottom(true), 50);
         inputRef.current?.focus();
       }
     } finally {
