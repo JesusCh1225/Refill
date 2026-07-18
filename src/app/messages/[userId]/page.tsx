@@ -4,9 +4,9 @@ import { use, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import Header from "@/components/organisms/Header";
 import Avatar from "@/components/atom/Avatar";
 import Spinner from "@/components/atom/Spinner";
+import BlockButton from "@/components/atom/BlockButton";
 
 interface Message {
   id: number;
@@ -23,8 +23,7 @@ interface Partner {
 }
 
 function formatTime(iso: string) {
-  const d = new Date(iso);
-  return d.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
+  return new Date(iso).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
 }
 
 function formatDate(iso: string) {
@@ -41,6 +40,9 @@ export default function ChatPage({ params }: { params: Promise<{ userId: string 
   const [loading, setLoading] = useState(true);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [leaveConfirm, setLeaveConfirm] = useState(false);
+  const [leaving, setLeaving] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastIdRef = useRef(0);
@@ -56,10 +58,13 @@ export default function ChatPage({ params }: { params: Promise<{ userId: string 
     if (status === "unauthenticated") { router.replace("/"); return; }
     if (status !== "authenticated") return;
 
+    setLoading(true);
+    setMessages([]);
+
     fetch(`/api/messages/${userId}`)
       .then((r) => r.ok ? r.json() : null)
       .then((data) => {
-        if (!data) { router.replace("/messages"); return; }
+        if (!data) return;
         setMessages(data.messages);
         setPartner(data.partner);
         if (data.messages.length > 0) lastIdRef.current = data.messages[data.messages.length - 1].id;
@@ -69,12 +74,10 @@ export default function ChatPage({ params }: { params: Promise<{ userId: string 
     fetch(`/api/messages/${userId}/read`, { method: "PATCH" }).catch(() => {});
   }, [status, userId, router]);
 
-  // 메시지 로드 후 스크롤 맨 아래로
   useEffect(() => {
     if (!loading) scrollToBottom();
   }, [loading]);
 
-  // 3초마다 새 메시지 폴링
   useEffect(() => {
     if (status !== "authenticated") return;
     const timer = setInterval(async () => {
@@ -114,57 +117,125 @@ export default function ChatPage({ params }: { params: Promise<{ userId: string 
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
+  };
+
+  const handleLeave = async () => {
+    setLeaving(true);
+    try {
+      await fetch(`/api/messages/${userId}/leave`, { method: "PATCH" });
+      router.push("/messages");
+    } finally {
+      setLeaving(false);
+      setLeaveConfirm(false);
     }
   };
 
-  if (status === "loading" || loading) {
+  const partnerName = partner ? (partner.nickname ?? partner.name) : "";
+
+  if (loading) {
     return (
-      <div className="h-screen flex flex-col overflow-hidden bg-surface-page">
-        <Header />
-        <div className="flex items-center justify-center flex-1"><Spinner /></div>
+      <div className="flex items-center justify-center h-full py-20">
+        <Spinner />
       </div>
     );
   }
 
-  const partnerName = partner ? (partner.nickname ?? partner.name) : "알 수 없는 사용자";
-
-  // 날짜 구분선 렌더
   let lastDate = "";
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-surface-page">
-      <Header />
+    /* 모바일: h-[calc(100svh-60px)]로 전체 화면 채움 / 데스크톱: h-full로 우측 패널 채움 */
+    <div className="flex flex-col h-[calc(100svh-60px)] sm:h-full">
 
       {/* 채팅 헤더 */}
-      <div className="shrink-0 flex items-center gap-3 px-4 py-3 bg-white border-b border-border-base" style={{ minHeight: "56px" }}>
+      <div className="shrink-0 flex items-center gap-3 px-4 py-3 bg-white border-b border-border-base">
+        {/* 모바일에서만 뒤로가기 */}
         <button
           onClick={() => router.push("/messages")}
-          className="text-text-muted hover:text-text-body border-none bg-transparent cursor-pointer shrink-0 flex items-center"
+          className="sm:hidden text-text-muted hover:text-text-body border-none bg-transparent cursor-pointer shrink-0 text-[18px] leading-none"
         >
           ←
         </button>
-        {partner && (
-          <Link href={`/profile/${partner.id}`} className="flex items-center gap-2.5 hover:opacity-75 transition-opacity">
-            <Avatar src={partner.avatarUrl} name={partnerName} className="w-9 h-9" textClassName="text-[13px]" />
-            <span className="text-[15px] font-bold text-text-heading">{partnerName}</span>
+        {partner ? (
+          <Link href={`/profile/${partner.id}`} className="flex items-center gap-2.5 hover:opacity-75 transition-opacity flex-1 min-w-0">
+            <Avatar src={partner.avatarUrl} name={partnerName} className="w-8 h-8" textClassName="text-[12px]" />
+            <span className="text-[15px] font-bold text-text-heading truncate">{partnerName}</span>
           </Link>
+        ) : (
+          <span className="text-[15px] font-bold text-text-heading flex-1">알 수 없는 사용자</span>
         )}
+
+        {/* 더보기 메뉴 */}
+        <div className="relative shrink-0">
+          <button
+            onClick={() => setMenuOpen((v) => !v)}
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:bg-surface-card border-none bg-transparent cursor-pointer transition-colors"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <circle cx="12" cy="5" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="12" cy="19" r="1.5" />
+            </svg>
+          </button>
+          {menuOpen && (
+            <>
+              <div className="fixed inset-0 z-30" onClick={() => setMenuOpen(false)} />
+              <div className="absolute right-0 top-full mt-1 z-40 bg-white rounded-xl border border-border-base shadow-lg overflow-hidden min-w-35">
+                <button
+                  onClick={() => { setMenuOpen(false); setLeaveConfirm(true); }}
+                  className="w-full text-left px-4 py-2.5 text-[13px] text-text-body hover:bg-surface-card transition-colors"
+                >
+                  채팅방 나가기
+                </button>
+                {partner && (
+                  <BlockButton
+                    userId={partner.id}
+                    variant="menu"
+                    onBlockChange={() => setMenuOpen(false)}
+                  />
+                )}
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
-      {/* 메시지 영역 */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-1">
-        {messages.length === 0 && (
-          <p className="text-center text-[13px] text-text-muted py-8">첫 메시지를 보내보세요.</p>
-        )}
+      {/* 채팅방 나가기 확인 모달 */}
+      {leaveConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => !leaving && setLeaveConfirm(false)} />
+          <div className="relative bg-white rounded-2xl shadow-xl px-6 py-5 max-w-sm w-full flex flex-col gap-4">
+            <p className="text-[14px] font-semibold text-text-heading">채팅방 나가기</p>
+            <p className="text-[13px] text-text-muted leading-relaxed">
+              채팅방을 나가면 대화 목록에서 사라져요. 상대방이 다시 메시지를 보내면 다시 표시돼요.
+            </p>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setLeaveConfirm(false)}
+                disabled={leaving}
+                className="px-4 h-9 rounded-xl border border-border-base text-[13px] text-text-muted bg-transparent cursor-pointer hover:bg-surface-card disabled:opacity-50"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleLeave}
+                disabled={leaving}
+                className="px-4 h-9 rounded-xl bg-red-500 text-white text-[13px] font-semibold border-none cursor-pointer hover:bg-red-600 disabled:opacity-50"
+              >
+                {leaving ? "처리 중…" : "나가기"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
+      {/* 메시지 목록 */}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-1 bg-surface-page">
+        {messages.length === 0 && (
+          <p className="text-center text-[13px] text-text-muted py-10">첫 메시지를 보내보세요.</p>
+        )}
         {messages.map((msg) => {
           const dateStr = new Date(msg.createdAt).toDateString();
           const showDate = dateStr !== lastDate;
           lastDate = dateStr;
-
           return (
             <div key={msg.id}>
               {showDate && (
@@ -175,13 +246,11 @@ export default function ChatPage({ params }: { params: Promise<{ userId: string 
                 </div>
               )}
               <div className={`flex items-end gap-1.5 ${msg.isFromMe ? "flex-row-reverse" : "flex-row"}`}>
-                <div
-                  className={`max-w-[72%] px-3.5 py-2.5 rounded-2xl text-[14px] leading-relaxed whitespace-pre-wrap break-words ${
-                    msg.isFromMe
-                      ? "bg-brand text-white rounded-br-sm"
-                      : "bg-white border border-border-base text-text-body rounded-bl-sm"
-                  }`}
-                >
+                <div className={`max-w-[70%] px-3.5 py-2.5 rounded-2xl text-[14px] leading-relaxed whitespace-pre-wrap ${
+                  msg.isFromMe
+                    ? "bg-brand text-white rounded-br-sm"
+                    : "bg-white border border-border-base text-text-body rounded-bl-sm"
+                }`} style={{ wordBreak: "break-word" }}>
                   {msg.content}
                 </div>
                 <span className="text-[10px] text-text-placeholder shrink-0 mb-0.5">{formatTime(msg.createdAt)}</span>
@@ -198,7 +267,7 @@ export default function ChatPage({ params }: { params: Promise<{ userId: string 
           value={text}
           onChange={(e) => setText(e.target.value.slice(0, 1000))}
           onKeyDown={handleKeyDown}
-          placeholder="메시지를 입력하세요 (Enter 전송)"
+          placeholder="메시지 입력 (Enter 전송 / Shift+Enter 줄바꿈)"
           rows={1}
           className="flex-1 px-3 py-2.5 rounded-xl border border-border-base text-[14px] text-text-body placeholder:text-text-placeholder focus:outline-none focus:border-brand transition-colors resize-none leading-relaxed"
           style={{ maxHeight: "120px", overflowY: "auto" }}
@@ -213,7 +282,7 @@ export default function ChatPage({ params }: { params: Promise<{ userId: string 
           disabled={!text.trim() || sending}
           className="w-10 h-10 rounded-xl bg-brand text-white flex items-center justify-center border-none cursor-pointer hover:opacity-85 transition-opacity disabled:opacity-40 shrink-0"
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
           </svg>
         </button>

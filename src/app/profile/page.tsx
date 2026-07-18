@@ -9,6 +9,7 @@ import ProfileHeader from "@/components/profile/ProfileHeader";
 import AvatarCropModal from "@/components/profile/AvatarCropModal";
 import InfoTab from "@/components/profile/InfoTab";
 import PostsTab from "@/components/profile/PostsTab";
+import type { ProfilePost } from "@/components/profile/PostsTab";
 import BookmarksTab from "@/components/profile/BookmarksTab";
 import type { SearchResultItem } from "@/data/sampleMockResults";
 import { ACCEPT_IMAGE, ALLOWED_IMAGE_TYPES } from "@/lib/uploadValidator";
@@ -47,9 +48,9 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [myPosts, setMyPosts] = useState<SearchResultItem[]>([]);
+  const [myPosts, setMyPosts] = useState<ProfilePost[]>([]);
   const [myBookmarks, setMyBookmarks] = useState<SearchResultItem[]>([]);
-  const [deletingPostId, setDeletingPostId] = useState<number | null>(null);
+  const [deletingPost, setDeletingPost] = useState<{ id: number; type: "map" | "community" } | null>(null);
   const [postDeleteLoading, setPostDeleteLoading] = useState(false);
 
   // 아바타
@@ -173,12 +174,16 @@ export default function ProfilePage() {
   const cancelPreview = () => { setAvatarSrc(null); setAvatarError(null); };
   const triggerAvatarChange = () => { setAvatarError(null); fileInputRef.current?.click(); };;
 
-  const handlePostDelete = async (postId: number) => {
+  const handlePostDelete = async (postId: number, type: "map" | "community") => {
     if (postDeleteLoading) return;
     setPostDeleteLoading(true);
     try {
-      const res = await fetch(`/api/posts/${postId}`, { method: "DELETE" });
-      if (res.ok) { setMyPosts((prev) => prev.filter((p) => p.id !== postId)); setDeletingPostId(null); }
+      const url = type === "map" ? `/api/posts/${postId}` : `/api/community/${postId}`;
+      const res = await fetch(url, { method: "DELETE" });
+      if (res.ok) {
+        setMyPosts((prev) => prev.filter((p) => !(p.id === postId && p.type === type)));
+        setDeletingPost(null);
+      }
     } finally {
       setPostDeleteLoading(false);
     }
@@ -252,11 +257,11 @@ export default function ProfilePage() {
         {tab === "posts" && (
           <PostsTab
             posts={myPosts}
-            deletingPostId={deletingPostId}
+            deletingPost={deletingPost}
             deleteLoading={postDeleteLoading}
-            onDeleteClick={setDeletingPostId}
+            onDeleteClick={(id, type) => setDeletingPost({ id, type })}
             onDeleteConfirm={handlePostDelete}
-            onDeleteCancel={() => setDeletingPostId(null)}
+            onDeleteCancel={() => setDeletingPost(null)}
           />
         )}
         {tab === "bookmarks" && <BookmarksTab bookmarks={myBookmarks} />}

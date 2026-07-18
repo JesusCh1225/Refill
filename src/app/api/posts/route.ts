@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { POST_SELECT, mapPost, PRICE_TYPE_MAP } from "@/lib/postMapper";
 import { syncPostCategories, syncPostHashtags, syncPostLocationTags, syncPostImages } from "@/lib/postRelations";
 import { getSessionUserId } from "@/lib/auth";
+import { getBlockedIds } from "@/lib/blockFilter";
 
 const PAGE_SIZE = 50;
 
@@ -14,9 +15,13 @@ export async function GET(req: NextRequest) {
   const direction = searchParams.get("direction") ?? "";
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1") || 1);
 
+  const userId = await getSessionUserId();
+  const blockedIds = await getBlockedIds(userId);
+
   const posts = await prisma.post.findMany({
     where: {
       status: "PUBLISHED",
+      ...(blockedIds.length > 0 ? { authorId: { notIn: blockedIds } } : {}),
       ...(q && { title: { contains: q } }),
       ...(category && {
         categories: { some: { category: { slug: category } } },

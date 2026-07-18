@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUserId } from "@/lib/auth";
+import { getBlockedIds } from "@/lib/blockFilter";
 
 const REPLY_SELECT = {
   id: true,
@@ -60,14 +61,33 @@ export async function GET(
 
   if (!post) return NextResponse.json([], { status: 200 });
 
-  const comments = await prisma.comment.findMany({
-    where: { postId, parentId: null },
-    orderBy: { createdAt: "asc" },
-    select: COMMENT_SELECT,
-  });
+  const [comments, blockedIds] = await Promise.all([
+    prisma.comment.findMany({
+      where: { postId, parentId: null },
+      orderBy: { createdAt: "asc" },
+      select: COMMENT_SELECT,
+    }),
+    getBlockedIds(viewerId),
+  ]);
+
+  const blockedSet = new Set(blockedIds);
+
+  function maskBlocked(c: RawComment): RawComment {
+    const isBlocked = c.authorId !== null && blockedSet.has(c.authorId);
+    return {
+      ...c,
+      content: isBlocked ? "차단한 사용자입니다." : c.content,
+      author: isBlocked
+        ? (c.author ? { name: "차단된 사용자", nickname: null } : null)
+        : c.author,
+      replies: c.replies?.map(maskBlocked),
+    };
+  }
 
   return NextResponse.json(
-    comments.map((c) => redact(c as unknown as RawComment, viewerId ?? null, post.authorId)),
+    comments
+      .map((c) => redact(c as unknown as RawComment, viewerId ?? null, post.authorId))
+      .map(maskBlocked),
   );
 }
 

@@ -62,6 +62,17 @@ export async function POST(
   if (content.trim().length > 1000)
     return NextResponse.json({ error: "too long" }, { status: 400 });
 
+  // 차단 여부 확인 (상대가 나를 차단했거나 내가 차단한 경우)
+  const block = await prisma.userBlock.findFirst({
+    where: {
+      OR: [
+        { blockerId: myId, blockedId: partnerId },
+        { blockerId: partnerId, blockedId: myId },
+      ],
+    },
+  });
+  if (block) return NextResponse.json({ error: "blocked" }, { status: 403 });
+
   const msg = await prisma.message.create({
     data: { content: content.trim(), senderId: myId, receiverId: partnerId },
     select: { id: true, content: true, createdAt: true, senderId: true },

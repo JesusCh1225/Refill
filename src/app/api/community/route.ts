@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUserId } from "@/lib/auth";
 import { sanitizePostContent } from "@/lib/sanitize";
+import { getBlockedIds } from "@/lib/blockFilter";
 
 const MAX_CONTENT_LENGTH = 50_000;
 
@@ -13,7 +14,11 @@ export async function GET(req: NextRequest) {
   const q = searchParams.get("q") ?? "";
   const page = Math.max(1, Number(searchParams.get("page") ?? "1"));
 
+  const userId = await getSessionUserId();
+  const blockedIds = await getBlockedIds(userId);
+
   const where = {
+    ...(blockedIds.length > 0 ? { authorId: { notIn: blockedIds } } : {}),
     ...(category ? { category } : {}),
     ...(q ? {
       OR: [

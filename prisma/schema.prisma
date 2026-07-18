@@ -29,16 +29,20 @@ model User {
   comments             Comment[]
   likes                Like[]
   bookmarks            Bookmark[]
-  sentMessages         Message[]      @relation("SentMessages")
-  receivedMessages     Message[]      @relation("ReceivedMessages")
-  reviewsGiven         Review[]       @relation("ReviewsGiven")
-  reviewsReceived      Review[]       @relation("ReviewsReceived")
-  notifications        Notification[] @relation("NotificationsReceived")
-  actedNotifications   Notification[] @relation("NotificationsSent")
+  sentMessages         Message[]          @relation("SentMessages")
+  receivedMessages     Message[]          @relation("ReceivedMessages")
+  reviewsGiven         Review[]           @relation("ReviewsGiven")
+  reviewsReceived      Review[]           @relation("ReviewsReceived")
+  notifications        Notification[]     @relation("NotificationsReceived")
+  actedNotifications   Notification[]     @relation("NotificationsSent")
   reports              Report[]
   communityPosts       CommunityPost[]
   communityComments    CommunityComment[]
   communityLikes       CommunityLike[]
+  blockedUsers         UserBlock[]        @relation("BlockedBy")
+  blockedByUsers       UserBlock[]        @relation("Blocking")
+  conversationsLeft    ConversationLeft[] @relation("LeftByMe")
+  conversationPartners ConversationLeft[] @relation("LeftByPartner")
 }
 
 // ── OAuth 계정 연동 ──────────────────────────────────────────────────────
@@ -337,6 +341,35 @@ model CommunityLike {
   post CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@id([userId, postId])
+}
+
+// ── 사용자 차단 ───────────────────────────────────────────────────────────
+
+model UserBlock {
+  blockerId Int
+  blockedId Int
+  createdAt DateTime @default(now())
+
+  blocker User @relation("BlockedBy", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked User @relation("Blocking",  fields: [blockedId],  references: [id], onDelete: Cascade)
+
+  @@id([blockerId, blockedId])
+  @@index([blockerId])
+  @@index([blockedId])
+}
+
+// ── 채팅방 나가기 ─────────────────────────────────────────────────────────
+
+model ConversationLeft {
+  userId    Int
+  partnerId Int
+  leftAt    DateTime @default(now())
+
+  user    User @relation("LeftByMe",      fields: [userId],    references: [id], onDelete: Cascade)
+  partner User @relation("LeftByPartner", fields: [partnerId], references: [id], onDelete: Cascade)
+
+  @@id([userId, partnerId])
+  @@index([userId])
 }
 
 // ── 신고 ──────────────────────────────────────────────────────────────────

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { parseSearchQuery } from "@/lib/SearchParser";
 import { prisma } from "@/lib/prisma";
 import { POST_SELECT, mapPost } from "@/lib/postMapper";
+import { getSessionUserId } from "@/lib/auth";
+import { getBlockedIds } from "@/lib/blockFilter";
 
 async function getGeminiSuggestions(query: string): Promise<string[]> {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -73,6 +75,10 @@ export async function POST(req: NextRequest) {
     if (parsed.direction === "SEEK") where.direction = "OFFER";
     else if (parsed.direction === "OFFER") where.direction = "SEEK";
   }
+
+  const userId = await getSessionUserId();
+  const blockedIds = await getBlockedIds(userId);
+  if (blockedIds.length > 0) where.authorId = { notIn: blockedIds };
 
   const [results, total] = await Promise.all([
     prisma.post.findMany({

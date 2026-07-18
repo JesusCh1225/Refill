@@ -155,12 +155,6 @@ export default function Header({ onLogoClick }: HeaderProps) {
 
         {/* 모바일 우측 영역 */}
         <div className="flex sm:hidden items-center gap-2">
-          <Link
-            href="/"
-            className="px-2 text-sm text-text-body hover:text-brand transition-colors"
-          >
-            검색
-          </Link>
           {loading ? (
             <div className="w-8 h-8 rounded-full bg-brand-bg animate-pulse" />
           ) : session ? (
@@ -228,43 +222,46 @@ export default function Header({ onLogoClick }: HeaderProps) {
 
         {/* 모바일 드롭다운 메뉴 */}
         {menuOpen && (
-          <div className="sm:hidden absolute top-full left-0 right-0 z-40 bg-white border-b border-border-header shadow-lg">
-            <nav className="flex flex-col px-4 py-3 gap-0.5">
-              {NAV_LINKS.map((link) =>
-                link.disabled ? (
-                  <div
-                    key={link.label}
-                    className="flex items-center gap-2 py-3 px-3 rounded-xl text-text-muted cursor-not-allowed"
-                  >
-                    <span className="text-sm">{link.label}</span>
-                    <span className="text-[10px] font-semibold text-brand bg-brand-bg px-1.5 py-0.5 rounded-full">
-                      개발중
-                    </span>
-                  </div>
-                ) : (
-                  <Link
-                    key={link.label}
-                    href={link.href}
-                    onClick={() => setMenuOpen(false)}
-                    className="py-3 px-3 text-sm text-text-body font-medium hover:bg-surface-card rounded-xl transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                ),
-              )}
-              {session && (
-                <button
-                  onClick={() => {
-                    setMenuOpen(false);
-                    signOut({ callbackUrl: "/" });
-                  }}
-                  className="py-3 px-3 text-sm text-text-muted text-left border-none bg-transparent cursor-pointer hover:bg-surface-card rounded-xl transition-colors"
+          <>
+            {/* 외부 클릭 시 닫기 */}
+            <div className="fixed inset-0 z-30" onClick={() => setMenuOpen(false)} />
+            <div className="sm:hidden absolute top-full left-0 right-0 z-40 bg-white border-b border-border-header shadow-lg">
+              <nav className="flex flex-col px-4 py-3 gap-0.5">
+                <Link
+                  href="/musicmap"
+                  onClick={() => setMenuOpen(false)}
+                  className="py-3 px-3 text-sm text-text-body font-medium hover:bg-surface-card rounded-xl transition-colors"
                 >
-                  로그아웃
-                </button>
-              )}
-            </nav>
-          </div>
+                  음악맵
+                </Link>
+                <Link
+                  href="/"
+                  onClick={() => setMenuOpen(false)}
+                  className="py-3 px-3 text-sm text-text-body font-medium hover:bg-surface-card rounded-xl transition-colors"
+                >
+                  검색
+                </Link>
+                <Link
+                  href="/community"
+                  onClick={() => setMenuOpen(false)}
+                  className="py-3 px-3 text-sm text-text-body font-medium hover:bg-surface-card rounded-xl transition-colors"
+                >
+                  커뮤니티
+                </Link>
+                {session && (
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false);
+                      signOut({ callbackUrl: "/" });
+                    }}
+                    className="py-3 px-3 text-sm text-text-muted text-left border-none bg-transparent cursor-pointer hover:bg-surface-card rounded-xl transition-colors"
+                  >
+                    로그아웃
+                  </button>
+                )}
+              </nav>
+            </div>
+          </>
         )}
       </header>
 

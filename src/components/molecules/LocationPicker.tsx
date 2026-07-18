@@ -28,19 +28,22 @@ function Check({ checked }: { checked: boolean }) {
   );
 }
 
+type MobileStep = "si" | "gu" | "dong";
+
 export default function LocationPicker({ value, onChange }: Props) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<LocationEntry[]>(value);
   const [activeSi, setActiveSi] = useState<string>(KOREA_LOCATIONS[0]?.si ?? "");
   const [focusedGu, setFocusedGu] = useState<string>("");
+  const [mobileStep, setMobileStep] = useState<MobileStep>("si");
   const ref = useRef<HTMLDivElement>(null);
 
-  // 드롭다운 열릴 때 부모 값으로 내부 상태 동기화
   useEffect(() => {
     if (open) {
       setDraft(value);
       setActiveSi(value[0]?.si || KOREA_LOCATIONS[0]?.si || "");
       setFocusedGu("");
+      setMobileStep("si");
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
@@ -141,10 +144,10 @@ export default function LocationPicker({ value, onChange }: Props) {
         )}
       </button>
 
-      {/* 드롭다운 패널 */}
+      {/* 데스크톱 드롭다운 */}
       {open && (
         <div
-          className="absolute top-full left-0 mt-1 z-50 bg-white rounded-2xl shadow-lg border border-border-base overflow-hidden flex flex-col"
+          className="hidden sm:flex absolute top-full left-0 mt-1 z-50 bg-white rounded-2xl shadow-lg border border-border-base overflow-hidden flex-col"
           style={{ width: focusedGu ? "480px" : "320px" }}
         >
           {/* 3컬럼 영역 */}
@@ -284,6 +287,138 @@ export default function LocationPicker({ value, onChange }: Props) {
             >
               적용하기
             </button>
+          </div>
+        </div>
+      )}
+      {/* 모바일 바텀시트 */}
+      {open && (
+        <div className="sm:hidden fixed inset-0 z-50 flex flex-col justify-end">
+          {/* 배경 오버레이 */}
+          <div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
+
+          {/* 시트 */}
+          <div className="relative bg-white rounded-t-2xl flex flex-col" style={{ maxHeight: "82vh" }}>
+            {/* 헤더 */}
+            <div className="flex items-center justify-between px-4 py-3.5 border-b border-border-base shrink-0">
+              <div className="flex items-center gap-2">
+                {mobileStep !== "si" && (
+                  <button
+                    onClick={() => mobileStep === "dong" ? setMobileStep("gu") : setMobileStep("si")}
+                    className="text-text-muted border-none bg-transparent cursor-pointer text-[20px] leading-none mr-1 p-0"
+                  >
+                    ←
+                  </button>
+                )}
+                <h3 className="text-[16px] font-bold text-text-heading">
+                  {mobileStep === "si" && "시/도 선택"}
+                  {mobileStep === "gu" && `${activeSi}`}
+                  {mobileStep === "dong" && `${activeSi} ${focusedGu}`}
+                </h3>
+              </div>
+              <button onClick={() => setOpen(false)} className="text-text-muted border-none bg-transparent cursor-pointer text-[18px] leading-none p-0">
+                ✕
+              </button>
+            </div>
+
+            {/* 리스트 */}
+            <div className="overflow-y-auto flex-1" style={{ scrollbarWidth: "none" }}>
+              {/* 시/도 */}
+              {mobileStep === "si" && (
+                <ul className="list-none m-0 p-0">
+                  {KOREA_LOCATIONS.map((loc) => {
+                    const c = countFor(loc.si);
+                    return (
+                      <li key={loc.si} className="border-b border-border-base last:border-0">
+                        <button
+                          onClick={() => { setActiveSi(loc.si); setMobileStep("gu"); setFocusedGu(""); }}
+                          className="w-full flex items-center justify-between px-4 py-3.5 text-[14px] border-none bg-transparent cursor-pointer active:bg-surface-card"
+                        >
+                          <span className={activeSi === loc.si ? "font-bold text-brand" : "font-medium text-text-body"}>{loc.si}</span>
+                          <div className="flex items-center gap-2">
+                            {c > 0 && (
+                              <span className="text-[10px] font-bold text-white bg-brand rounded-full w-5 h-5 flex items-center justify-center">{c}</span>
+                            )}
+                            <span className="text-text-placeholder text-[16px]">›</span>
+                          </div>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+
+              {/* 구/군 */}
+              {mobileStep === "gu" && (
+                <ul className="list-none m-0 p-0">
+                  <li className="border-b border-border-base">
+                    <button onClick={toggleWholeSi} className="w-full flex items-center gap-3 px-4 py-3.5 text-[14px] border-none bg-transparent cursor-pointer active:bg-surface-card">
+                      <Check checked={isWholeSiChecked} />
+                      <span className="text-text-body font-medium">전지역</span>
+                    </button>
+                  </li>
+                  {siData?.gus.map((g) => {
+                    const partial = guPartialCount(g.gu);
+                    return (
+                      <li key={g.gu} className="border-b border-border-base last:border-0">
+                        <div className="flex items-center">
+                          <button onClick={() => toggleGu(g.gu)} className="flex-1 flex items-center gap-3 px-4 py-3.5 text-[14px] font-medium border-none bg-transparent cursor-pointer active:bg-surface-card">
+                            <Check checked={isGuChecked(g.gu)} />
+                            <span className="text-text-body">{g.gu}</span>
+                            {partial > 0 && <span className="text-brand text-[12px] font-bold">{partial}</span>}
+                          </button>
+                          {g.dongs && g.dongs.length > 0 && (
+                            <button
+                              onClick={() => { setFocusedGu(g.gu); setMobileStep("dong"); }}
+                              className="px-4 py-3.5 text-text-placeholder border-none bg-transparent cursor-pointer text-[18px]"
+                            >
+                              ›
+                            </button>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+
+              {/* 동 */}
+              {mobileStep === "dong" && guData && (
+                <ul className="list-none m-0 p-0">
+                  <li className="border-b border-border-base">
+                    <button onClick={() => toggleGu(focusedGu)} className="w-full flex items-center gap-3 px-4 py-3.5 text-[14px] border-none bg-transparent cursor-pointer active:bg-surface-card">
+                      <Check checked={isGuChecked(focusedGu)} />
+                      <span className="text-text-body font-medium">전체</span>
+                    </button>
+                  </li>
+                  {guData.dongs?.map((dong) => (
+                    <li key={dong} className="border-b border-border-base last:border-0">
+                      <button onClick={() => toggleDong(dong)} className="w-full flex items-center gap-3 px-4 py-3.5 text-[14px] font-medium border-none bg-transparent cursor-pointer active:bg-surface-card">
+                        <Check checked={isDongChecked(focusedGu, dong)} />
+                        <span className="text-text-body">{dong}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* 선택된 지역 칩 */}
+            {draft.length > 0 && (
+              <div className="px-4 py-2.5 flex flex-wrap gap-1.5 max-h-20 overflow-y-auto border-t border-border-base shrink-0" style={{ scrollbarWidth: "thin" }}>
+                {draft.map((d, i) => (
+                  <span key={`${d.si}-${d.gu}-${d.dong}-${i}`} className="inline-flex items-center gap-1 text-[11px] font-semibold text-text-body bg-surface-card border border-border-base rounded-full pl-2.5 pr-1.5 py-1">
+                    {entryLabel(d)}
+                    <button onClick={() => removeEntry(d)} className="text-text-muted border-none bg-transparent cursor-pointer">✕</button>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* 푸터 */}
+            <div className="flex items-center justify-between px-4 py-3.5 border-t border-border-base shrink-0 bg-surface-card">
+              <button onClick={() => setDraft([])} className="text-[13px] text-text-muted border-none bg-transparent cursor-pointer">↻ 초기화</button>
+              <button onClick={handleApply} className="h-10 px-6 rounded-full text-[13px] font-semibold bg-brand text-white border-none cursor-pointer">적용하기</button>
+            </div>
           </div>
         </div>
       )}

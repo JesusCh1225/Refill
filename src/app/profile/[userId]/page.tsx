@@ -9,6 +9,7 @@ import Avatar from "@/components/atom/Avatar";
 import AuthorLink from "@/components/atom/AuthorLink";
 import Spinner from "@/components/atom/Spinner";
 import ChatButton from "@/components/atom/ChatButton";
+import BlockButton from "@/components/atom/BlockButton";
 import { StarRating, InteractiveStars } from "@/components/atom/StarRating";
 
 interface PublicPost {
@@ -206,7 +207,12 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userId
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2.5">
                 <p className="text-[20px] font-bold text-text-heading">{displayName}</p>
-                {!isMyProfile && <ChatButton userId={profile.id} />}
+                {!isMyProfile && (
+                  <div className="flex items-center gap-2">
+                    <ChatButton userId={profile.id} />
+                    <BlockButton userId={profile.id} myUserId={myUserId} />
+                  </div>
+                )}
               </div>
               <p className="text-[12px] text-text-muted mt-0.5">
                 가입일 {formatDate(profile.createdAt)}
