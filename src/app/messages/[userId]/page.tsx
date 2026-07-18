@@ -30,6 +30,20 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" });
 }
 
+/** 두 메시지가 같은 발신자 + 같은 분(minute) 안에 있는지 */
+function sameMinuteGroup(a: Message, b: Message): boolean {
+  if (a.isFromMe !== b.isFromMe) return false;
+  const da = new Date(a.createdAt);
+  const db = new Date(b.createdAt);
+  return (
+    da.getFullYear() === db.getFullYear() &&
+    da.getMonth() === db.getMonth() &&
+    da.getDate() === db.getDate() &&
+    da.getHours() === db.getHours() &&
+    da.getMinutes() === db.getMinutes()
+  );
+}
+
 export default function ChatPage({ params }: { params: Promise<{ userId: string }> }) {
   const { userId } = use(params);
   const router = useRouter();
@@ -228,16 +242,24 @@ export default function ChatPage({ params }: { params: Promise<{ userId: string 
       )}
 
       {/* 메시지 목록 */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-1 bg-surface-page">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 flex flex-col bg-surface-page">
         {messages.length === 0 && (
           <p className="text-center text-[13px] text-text-muted py-10">첫 메시지를 보내보세요.</p>
         )}
-        {messages.map((msg) => {
+        {messages.map((msg, idx) => {
+          const prev = messages[idx - 1];
+          const next = messages[idx + 1];
+          const isLastInGroup = !next || !sameMinuteGroup(msg, next);
+          const isFirstInGroup = !prev || !sameMinuteGroup(prev, msg);
+
           const dateStr = new Date(msg.createdAt).toDateString();
           const showDate = dateStr !== lastDate;
-          lastDate = dateStr;
+          if (showDate) lastDate = dateStr;
+
+          const topMargin = showDate ? "mt-0" : isFirstInGroup ? "mt-3" : "mt-0.5";
+
           return (
-            <div key={msg.id}>
+            <div key={msg.id} className={topMargin}>
               {showDate && (
                 <div className="flex items-center gap-3 my-3">
                   <div className="flex-1 h-px bg-border-base" />
@@ -245,16 +267,43 @@ export default function ChatPage({ params }: { params: Promise<{ userId: string 
                   <div className="flex-1 h-px bg-border-base" />
                 </div>
               )}
-              <div className={`flex items-end gap-1.5 ${msg.isFromMe ? "flex-row-reverse" : "flex-row"}`}>
-                <div className={`max-w-[70%] px-3.5 py-2.5 rounded-2xl text-[14px] leading-relaxed whitespace-pre-wrap ${
-                  msg.isFromMe
-                    ? "bg-brand text-white rounded-br-sm"
-                    : "bg-white border border-border-base text-text-body rounded-bl-sm"
-                }`} style={{ wordBreak: "break-word" }}>
-                  {msg.content}
+
+              {msg.isFromMe ? (
+                /* 내 메시지 — 오른쪽 정렬 */
+                <div className="flex flex-row-reverse items-end gap-1.5">
+                  <div
+                    className={`max-w-[70%] px-3.5 py-2.5 text-[14px] leading-relaxed whitespace-pre-wrap bg-brand text-white ${
+                      isLastInGroup ? "rounded-2xl rounded-br-sm" : "rounded-2xl"
+                    }`}
+                    style={{ wordBreak: "break-word" }}
+                  >
+                    {msg.content}
+                  </div>
+                  {isLastInGroup && (
+                    <span className="text-[10px] text-text-placeholder shrink-0 mb-1">{formatTime(msg.createdAt)}</span>
+                  )}
                 </div>
-                <span className="text-[10px] text-text-placeholder shrink-0 mb-0.5">{formatTime(msg.createdAt)}</span>
-              </div>
+              ) : (
+                /* 상대방 메시지 — 왼쪽 정렬 + 아바타 */
+                <div className="flex flex-row items-end gap-1.5">
+                  <div className="w-8 h-8 shrink-0 flex items-end">
+                    {isLastInGroup ? (
+                      <Avatar src={partner?.avatarUrl ?? null} name={partnerName} className="w-8 h-8" textClassName="text-[10px]" />
+                    ) : null}
+                  </div>
+                  <div
+                    className={`max-w-[70%] px-3.5 py-2.5 text-[14px] leading-relaxed whitespace-pre-wrap bg-white border border-border-base text-text-body ${
+                      isLastInGroup ? "rounded-2xl rounded-bl-sm" : "rounded-2xl"
+                    }`}
+                    style={{ wordBreak: "break-word" }}
+                  >
+                    {msg.content}
+                  </div>
+                  {isLastInGroup && (
+                    <span className="text-[10px] text-text-placeholder shrink-0 mb-1">{formatTime(msg.createdAt)}</span>
+                  )}
+                </div>
+              )}
             </div>
           );
         })}
