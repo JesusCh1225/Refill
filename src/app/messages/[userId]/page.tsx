@@ -57,6 +57,7 @@ export default function ChatPage({ params }: { params: Promise<{ userId: string 
   const [menuOpen, setMenuOpen] = useState(false);
   const [leaveConfirm, setLeaveConfirm] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const [newMsgBubble, setNewMsgBubble] = useState(0);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastIdRef = useRef(0);
@@ -68,12 +69,29 @@ export default function ChatPage({ params }: { params: Promise<{ userId: string 
     }
   };
 
+  const isNearBottom = () => {
+    const el = scrollRef.current;
+    if (!el) return true;
+    return el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+  };
+
+  // 스크롤이 맨 아래로 돌아오면 버블 해제
+  useEffect(() => {
+    if (loading) return;
+    const el = scrollRef.current;
+    if (!el) return;
+    const onScroll = () => { if (isNearBottom()) setNewMsgBubble(0); };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [loading]);
+
   useEffect(() => {
     if (status === "unauthenticated") { router.replace("/"); return; }
     if (status !== "authenticated") return;
 
     setLoading(true);
     setMessages([]);
+    setNewMsgBubble(0);
 
     fetch(`/api/messages/${userId}`)
       .then((r) => r.ok ? r.json() : null)
@@ -107,7 +125,12 @@ export default function ChatPage({ params }: { params: Promise<{ userId: string 
       fetch(`/api/messages/${userId}/read`, { method: "PATCH" })
         .then(() => window.dispatchEvent(new Event("conversations-refresh")))
         .catch(() => {});
-      scrollToBottom(true);
+      if (isNearBottom()) {
+        scrollToBottom(true);
+      } else {
+        const receivedCount = data.messages.filter((m: Message) => !m.isFromMe).length;
+        if (receivedCount > 0) setNewMsgBubble((prev) => prev + receivedCount);
+      }
     }, 3000);
     return () => clearInterval(timer);
   }, [status, userId]);
@@ -126,6 +149,8 @@ export default function ChatPage({ params }: { params: Promise<{ userId: string 
         setMessages((prev) => [...prev, msg]);
         lastIdRef.current = msg.id;
         setText("");
+        if (inputRef.current) inputRef.current.style.height = "auto";
+        setNewMsgBubble(0);
         setTimeout(() => scrollToBottom(true), 50);
         inputRef.current?.focus();
       }
@@ -315,22 +340,34 @@ export default function ChatPage({ params }: { params: Promise<{ userId: string 
       </div>
       </div>
 
+      {/* 새 메시지 버블 — 위를 보는 중일 때 표시 */}
+      {newMsgBubble > 0 && (
+        <div className="shrink-0 flex justify-center pb-2">
+          <button
+            onClick={() => { setNewMsgBubble(0); scrollToBottom(true); }}
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-brand text-white text-[12px] font-semibold shadow-lg border-none cursor-pointer hover:opacity-85 transition-opacity"
+          >
+            새 메시지 {newMsgBubble}개 ↓
+          </button>
+        </div>
+      )}
+
       {/* 입력 영역 */}
       <div className="shrink-0 bg-white border-t border-border-base">
       <div className="mx-auto px-4 sm:px-6 py-3 flex items-end gap-2" style={{ maxWidth: "760px" }}>
         <textarea
           ref={inputRef}
           value={text}
-          onChange={(e) => setText(e.target.value.slice(0, 1000))}
+          onChange={(e) => setText(e.target.value.trimStart().slice(0, 1000))}
           onKeyDown={handleKeyDown}
           placeholder="메시지 입력 (Enter 전송 / Shift+Enter 줄바꿈)"
           rows={1}
           className="flex-1 px-3 py-2.5 rounded-xl border border-border-base text-[14px] text-text-body placeholder:text-text-placeholder focus:outline-none focus:border-brand transition-colors resize-none leading-relaxed"
-          style={{ maxHeight: "120px", overflowY: "auto" }}
+          style={{ maxHeight: "134px", overflowY: "auto" }}
           onInput={(e) => {
             const el = e.currentTarget;
             el.style.height = "auto";
-            el.style.height = Math.min(el.scrollHeight, 120) + "px";
+            el.style.height = Math.min(el.scrollHeight, 134) + "px";
           }}
         />
         <button
