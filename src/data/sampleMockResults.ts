@@ -24,6 +24,7 @@ export interface SearchResultItem {
   imageUrls?: string[];       // 전체 이미지 URL 배열
   priceType?: string;         // 수정 폼 pre-fill용
   priceAmount?: number | null;
+  createdAt?: string;         // ISO 문자열 — 상세 페이지 정확한 날짜 표시용
 }
 
 // 글 작성 시 WritePostModal → API로 전달되는 데이터 타입

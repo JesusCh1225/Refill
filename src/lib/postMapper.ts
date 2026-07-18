@@ -60,10 +60,12 @@ export function timeAgo(date: Date): string {
   const h = Math.floor(min / 60);
   if (h < 24) return `${h}시간 전`;
   const d = Math.floor(h / 24);
-  if (d < 30) return `${d}일 전`;
-  const mo = Math.floor(d / 30);
-  if (mo < 12) return `${mo}개월 전`;
-  return `${Math.floor(mo / 12)}년 전`;
+  if (d <= 5) return `${d}일 전`;
+  // 5일 초과 — 날짜만 표시 (시간 제외)
+  const y = date.getFullYear();
+  const mo = String(date.getMonth() + 1).padStart(2, "0");
+  const da = String(date.getDate()).padStart(2, "0");
+  return `${y}.${mo}.${da}`;
 }
 
 export function mapPost(post: PostRow): SearchResultItem {
@@ -88,5 +90,6 @@ export function mapPost(post: PostRow): SearchResultItem {
     imageUrl: post.images[0]?.url ?? undefined,
     priceType: post.priceType.toLowerCase(),
     priceAmount: post.priceAmount,
+    createdAt: post.createdAt.toISOString(),
   };
 }

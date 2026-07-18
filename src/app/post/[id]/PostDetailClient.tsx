@@ -127,7 +127,7 @@ export default function PostDetailClient({
           >
             ← 목록으로
           </button>
-          {isAuthor ? (
+          {isAuthor && (
             <div className="flex items-center gap-2">
               {!postDeletePending && (
                 <button onClick={() => setEditModalOpen(true)} className="px-3 h-7 rounded-lg border border-brand text-brand text-[12px] font-semibold bg-transparent cursor-pointer hover:bg-brand-bg transition-colors">
@@ -145,32 +145,6 @@ export default function PostDetailClient({
                 confirmButtonClassName="px-3 h-7 rounded-lg bg-red-500 text-white text-[12px] font-semibold border-none cursor-pointer hover:bg-red-600 disabled:opacity-50"
                 cancelButtonClassName="px-3 h-7 rounded-lg border border-border-base text-[12px] text-text-muted bg-white cursor-pointer hover:bg-surface-card"
               />
-            </div>
-          ) : myUserId && (
-            <div className="relative">
-              {reportDone ? (
-                <span className="text-[12px] text-text-muted">신고 접수됨</span>
-              ) : (
-                <button
-                  onClick={() => setReportOpen((v) => !v)}
-                  className="px-3 h-7 rounded-lg border border-border-base text-[12px] text-text-muted bg-transparent cursor-pointer hover:border-red-300 hover:text-red-400 transition-colors"
-                >
-                  신고
-                </button>
-              )}
-              {reportOpen && (
-                <div className="absolute right-0 top-full mt-1 z-50 bg-white rounded-xl border border-border-base shadow-lg py-1 min-w-35">
-                  {REPORT_REASONS.map((r) => (
-                    <button
-                      key={r}
-                      onClick={() => handleReport(r)}
-                      className="w-full text-left px-4 py-2.5 text-[13px] text-text-body hover:bg-surface-card border-none bg-transparent cursor-pointer"
-                    >
-                      {r}
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
           )}
         </div>
@@ -207,14 +181,55 @@ export default function PostDetailClient({
             <div className="flex flex-col gap-3">
               <InfoRow label="가격" value={item.price} highlight />
               <InfoRow label="지역" value={item.location} />
-              <InfoRow label="등록일" value={item.timeAgo} />
+              <InfoRow
+                label="등록일"
+                value={item.createdAt
+                  ? new Date(item.createdAt).toLocaleString("ko-KR", {
+                      year: "numeric", month: "long", day: "numeric",
+                      hour: "2-digit", minute: "2-digit",
+                    })
+                  : item.timeAgo}
+              />
               {item.author && item.authorId && (
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
                   <span className="text-[12px] font-semibold text-text-muted w-14 shrink-0">작성자</span>
-                  <div className="flex items-center gap-2 flex-1">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
                     <AuthorLink authorId={item.authorId} name={item.author} className="text-[14px] text-text-body font-medium" />
-                    <ChatButton userId={item.authorId} />
                   </div>
+                  {/* 오른쪽: 채팅 + 신고 */}
+                  {!isAuthor && myUserId && (
+                    <div className="flex items-center gap-2 shrink-0">
+                      {reportDone ? (
+                        <span className="text-[12px] text-text-muted">신고 접수됨</span>
+                      ) : (
+                        <div className="relative">
+                          <button
+                            onClick={() => setReportOpen((v) => !v)}
+                            className="px-3 h-7 rounded-lg border border-border-base text-[12px] text-text-muted bg-transparent cursor-pointer hover:border-red-300 hover:text-red-400 transition-colors"
+                          >
+                            신고
+                          </button>
+                          {reportOpen && (
+                            <>
+                              <div className="fixed inset-0 z-30" onClick={() => setReportOpen(false)} />
+                              <div className="absolute right-0 top-full mt-1 z-40 bg-white rounded-xl border border-border-base shadow-lg py-1 min-w-35">
+                                {REPORT_REASONS.map((r) => (
+                                  <button
+                                    key={r}
+                                    onClick={() => handleReport(r)}
+                                    className="w-full text-left px-4 py-2.5 text-[13px] text-text-body hover:bg-surface-card border-none bg-transparent cursor-pointer"
+                                  >
+                                    {r}
+                                  </button>
+                                ))}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )}
+                      <ChatButton userId={item.authorId} label="채팅" />
+                    </div>
+                  )}
                 </div>
               )}
             </div>

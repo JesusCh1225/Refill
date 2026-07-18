@@ -39,6 +39,10 @@ export default function CommunityDetailPage({ params }: { params: Promise<{ id: 
   const [likeCount, setLikeCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportDone, setReportDone] = useState(false);
+
+  const REPORT_REASONS = ["스팸/광고", "불법 정보", "욕설/혐오", "사기 의심", "기타"];
 
   useEffect(() => {
     Promise.all([
@@ -63,6 +67,16 @@ export default function CommunityDetailPage({ params }: { params: Promise<{ id: 
     }
   };
 
+  const handleReport = async (reason: string) => {
+    await fetch(`/api/community/${id}/report`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reason }),
+    });
+    setReportOpen(false);
+    setReportDone(true);
+  };
+
   const handleDelete = async () => {
     if (!confirm("게시글을 삭제할까요?")) return;
     setDeleting(true);
@@ -81,6 +95,15 @@ export default function CommunityDetailPage({ params }: { params: Promise<{ id: 
   if (!post) return null;
 
   const displayName = post.author.nickname ?? post.author.name;
+  const isAuthor = myId === post.author.id;
+
+  function formatExact(iso: string) {
+    const d = new Date(iso);
+    return d.toLocaleString("ko-KR", {
+      year: "numeric", month: "long", day: "numeric",
+      hour: "2-digit", minute: "2-digit",
+    });
+  }
 
   return (
     <div className="min-h-screen bg-surface-page">
@@ -101,34 +124,66 @@ export default function CommunityDetailPage({ params }: { params: Promise<{ id: 
           </div>
 
           {/* 작성자 정보 */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-2 flex-wrap">
-              <Link href={`/profile/${post.author.id}`} className="flex items-center gap-2 hover:opacity-75 transition-opacity">
+          <div className="flex items-center justify-between gap-3 mb-6">
+            {/* 왼쪽: 아바타 + 이름 + 날짜 */}
+            <div className="flex items-center gap-2 min-w-0">
+              <Link href={`/profile/${post.author.id}`} className="flex items-center gap-2 hover:opacity-75 transition-opacity shrink-0">
                 <Avatar src={post.author.avatarUrl} name={displayName} className="w-7 h-7" textClassName="text-[10px]" />
                 <span className="text-[13px] font-semibold text-text-body">{displayName}</span>
               </Link>
-              <ChatButton userId={post.author.id} />
-              <span className="text-[12px] text-text-muted">
-                {new Date(post.createdAt).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" })}
-              </span>
+              <span className="text-[12px] text-text-muted shrink-0">{formatExact(post.createdAt)}</span>
             </div>
-            {myId === post.author.id && (
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => router.push(`/community/${post.id}/edit`)}
-                  className="text-[12px] text-text-muted hover:text-brand border-none bg-transparent cursor-pointer"
-                >
-                  수정
-                </button>
-                <button
-                  onClick={handleDelete}
-                  disabled={deleting}
-                  className="text-[12px] text-red-400 hover:text-red-600 border-none bg-transparent cursor-pointer disabled:opacity-50"
-                >
-                  {deleting ? "삭제 중…" : "삭제"}
-                </button>
-              </div>
-            )}
+
+            {/* 오른쪽: 채팅 + 수정/삭제 or 신고 */}
+            <div className="flex items-center gap-2 shrink-0">
+              {isAuthor ? (
+                <>
+                  <button
+                    onClick={() => router.push(`/community/${post.id}/edit`)}
+                    className="text-[12px] text-text-muted hover:text-brand border-none bg-transparent cursor-pointer"
+                  >
+                    수정
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    className="text-[12px] text-red-400 hover:text-red-600 border-none bg-transparent cursor-pointer disabled:opacity-50"
+                  >
+                    {deleting ? "삭제 중…" : "삭제"}
+                  </button>
+                </>
+              ) : myId && (
+                <div className="relative">
+                  {reportDone ? (
+                    <span className="text-[12px] text-text-muted">신고 접수됨</span>
+                  ) : (
+                    <button
+                      onClick={() => setReportOpen((v) => !v)}
+                      className="px-3 h-7 rounded-lg border border-border-base text-[12px] text-text-muted bg-transparent cursor-pointer hover:border-red-300 hover:text-red-400 transition-colors"
+                    >
+                      신고
+                    </button>
+                  )}
+                  {reportOpen && (
+                    <>
+                      <div className="fixed inset-0 z-30" onClick={() => setReportOpen(false)} />
+                      <div className="absolute right-0 top-full mt-1 z-40 bg-white rounded-xl border border-border-base shadow-lg py-1 min-w-35">
+                        {REPORT_REASONS.map((r) => (
+                          <button
+                            key={r}
+                            onClick={() => handleReport(r)}
+                            className="w-full text-left px-4 py-2.5 text-[13px] text-text-body hover:bg-surface-card border-none bg-transparent cursor-pointer"
+                          >
+                            {r}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+              <ChatButton userId={post.author.id} label="채팅" />
+            </div>
           </div>
 
           <hr className="border-border-base mb-6" />
