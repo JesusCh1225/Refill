@@ -140,7 +140,12 @@ export default function ChatPage({ params }: { params: Promise<{ userId: string 
       if (data.messages.length === 0) return;
       // atBottomRef는 스크롤 이벤트로 실시간 갱신되어 있음
       const wasAtBottom = atBottomRef.current;
-      setMessages((prev) => [...prev, ...data.messages]);
+      // 이미 로컬에 있는 메시지(직접 추가된 내 메시지 등)는 제외해 중복 방지
+      setMessages((prev) => {
+        const existingIds = new Set(prev.map((m) => m.id));
+        const unique = (data.messages as Message[]).filter((m) => !existingIds.has(m.id));
+        return unique.length > 0 ? [...prev, ...unique] : prev;
+      });
       lastIdRef.current = data.messages[data.messages.length - 1].id;
       fetch(`/api/messages/${userId}/read`, { method: "PATCH" })
         .then(() => window.dispatchEvent(new Event("conversations-refresh")))
@@ -382,11 +387,12 @@ export default function ChatPage({ params }: { params: Promise<{ userId: string 
           placeholder="메시지 입력 (Enter 전송 / Shift+Enter 줄바꿈)"
           rows={1}
           className="flex-1 px-3 py-2.5 rounded-xl border border-border-base text-[14px] text-text-body placeholder:text-text-placeholder focus:outline-none focus:border-brand transition-colors resize-none leading-relaxed"
-          style={{ maxHeight: "134px", overflowY: "auto" }}
+          style={{ maxHeight: "134px", overflowY: "hidden" }}
           onInput={(e) => {
             const el = e.currentTarget;
             el.style.height = "auto";
             el.style.height = Math.min(el.scrollHeight, 134) + "px";
+            el.style.overflowY = el.scrollHeight > 134 ? "auto" : "hidden";
           }}
         />
         <button
