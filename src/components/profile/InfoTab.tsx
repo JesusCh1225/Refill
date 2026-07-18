@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Link from "next/link";
 import InfoField from "@/components/atom/InfoField";
 import EditableField from "@/components/atom/EditableField";
 import Avatar from "@/components/atom/Avatar";
@@ -82,6 +83,97 @@ function ListField({ title, description, placeholder, initialJson, onSave }: Lis
           {saving ? "저장중…" : "저장"}
         </button>
       </div>
+    </section>
+  );
+}
+
+interface BlockedUser {
+  id: number;
+  name: string;
+  nickname: string | null;
+  avatarUrl: string | null;
+}
+
+function BlockedUsersList() {
+  const [users, setUsers] = useState<BlockedUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [confirmId, setConfirmId] = useState<number | null>(null);
+  const [unblocking, setUnblocking] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/profile/blocks")
+      .then((r) => r.ok ? r.json() : [])
+      .then(setUsers)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleUnblock = async (userId: number) => {
+    setUnblocking(true);
+    try {
+      const res = await fetch(`/api/users/${userId}/block`, { method: "DELETE" });
+      if (res.ok) {
+        setUsers((prev) => prev.filter((u) => u.id !== userId));
+        setConfirmId(null);
+      }
+    } finally {
+      setUnblocking(false);
+    }
+  };
+
+  return (
+    <section className="flex flex-col gap-3">
+      <div>
+        <h2 className="text-[14px] font-bold text-text-heading">차단 목록</h2>
+        <p className="text-[12px] text-text-muted mt-0.5">차단한 사용자는 내 게시글 목록과 채팅에 표시되지 않아요.</p>
+      </div>
+
+      {loading ? (
+        <p className="text-[13px] text-text-muted">불러오는 중…</p>
+      ) : users.length === 0 ? (
+        <p className="text-[13px] text-text-muted">차단한 사용자가 없어요.</p>
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {users.map((user) => {
+            const name = user.nickname ?? user.name;
+            return (
+              <li key={user.id} className="flex items-center gap-3 bg-surface-card rounded-xl px-3 py-2.5">
+                <Link href={`/profile/${user.id}`} className="flex items-center gap-2.5 flex-1 min-w-0 hover:opacity-75 transition-opacity">
+                  <Avatar src={user.avatarUrl} name={name} className="w-8 h-8 shrink-0" textClassName="text-[11px]" />
+                  <span className="text-[13px] font-semibold text-text-heading truncate">{name}</span>
+                </Link>
+
+                {confirmId === user.id ? (
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="text-[12px] text-text-muted">차단을 푸시겠습니까?</span>
+                    <button
+                      onClick={() => handleUnblock(user.id)}
+                      disabled={unblocking}
+                      className="px-2.5 h-7 rounded-lg bg-brand text-white text-[11px] font-semibold border-none cursor-pointer hover:opacity-85 disabled:opacity-50"
+                    >
+                      {unblocking ? "…" : "확인"}
+                    </button>
+                    <button
+                      onClick={() => setConfirmId(null)}
+                      disabled={unblocking}
+                      className="px-2.5 h-7 rounded-lg border border-border-base text-[11px] text-text-muted bg-white cursor-pointer hover:bg-white"
+                    >
+                      취소
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setConfirmId(user.id)}
+                    className="shrink-0 px-2.5 h-7 rounded-lg border border-border-base text-[11px] text-text-muted bg-white cursor-pointer hover:border-brand hover:text-brand transition-colors"
+                  >
+                    차단 해제
+                  </button>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </section>
   );
 }
@@ -259,6 +351,10 @@ export default function InfoTab({
         initialJson={profile.career}
         onSave={(v) => onProfileFieldSave("career", v)}
       />
+
+      <hr className="border-border-base" />
+
+      <BlockedUsersList />
 
       <hr className="border-border-base" />
 
