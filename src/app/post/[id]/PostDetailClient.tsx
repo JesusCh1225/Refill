@@ -290,7 +290,7 @@ export default function PostDetailClient({
       </div>
 
       {/* 모바일 하단 액션 버튼 */}
-      <div className="sm:hidden fixed bottom-16 right-4 z-50 flex flex-col items-end gap-2">
+      <div className="fab-above-nav sm:hidden fixed right-4 z-50 flex flex-col items-end gap-2">
         {!isAuthor && myUserId && !reportDone && (
           <button
             onClick={() => setMobileReportOpen(true)}

@@ -51,7 +51,7 @@ function HomePageContent() {
 
       <button
         onClick={handleWriteClick}
-        className="fixed bottom-6 right-6 z-10 flex items-center gap-2 bg-brand text-white text-xs font-semibold px-4 rounded-full border-none cursor-pointer hover:opacity-85 transition-opacity shadow-search"
+        className="fab-above-nav fixed right-6 z-10 flex items-center gap-2 bg-brand text-white text-xs font-semibold px-4 rounded-full border-none cursor-pointer hover:opacity-85 transition-opacity shadow-search"
         style={{ height: "44px" }}
       >
         ✦ 글쓰기

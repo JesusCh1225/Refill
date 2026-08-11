@@ -195,7 +195,7 @@ export default function MusicMapPage() {
 
         <button
           onClick={() => { setSelectedItem(null); setPanelOpen((v) => !v); }}
-          className="absolute bottom-20 left-6 z-10 flex items-center gap-1.5 bg-white text-text-body text-xs font-semibold px-4 rounded-full border border-border-base cursor-pointer hover:bg-surface-card transition-colors shadow-search"
+          className="fab-above-nav-high absolute left-6 z-10 flex items-center gap-1.5 bg-white text-text-body text-xs font-semibold px-4 rounded-full border border-border-base cursor-pointer hover:bg-surface-card transition-colors shadow-search"
           style={{ height: "40px" }}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
@@ -217,7 +217,7 @@ export default function MusicMapPage() {
           </button>
         )}
 
-        <div className="absolute bottom-20 right-6 z-10 flex flex-col items-end gap-2">
+        <div className="fab-above-nav-high absolute right-6 z-10 flex flex-col items-end gap-2">
           {geoBlocked && (
             <div className="bg-gray-900 text-white text-[11px] rounded-xl px-3 py-2 whitespace-nowrap shadow-lg leading-relaxed">
               위치 권한이 차단되어 있어요.
@@ -241,7 +241,7 @@ export default function MusicMapPage() {
 
         <button
           onClick={() => { if (requireLogin()) setWriteModalOpen(true); }}
-          className="absolute bottom-16 sm:bottom-6 right-6 z-10 flex items-center gap-2 bg-brand text-white text-xs font-semibold px-4 rounded-full border-none cursor-pointer hover:opacity-85 transition-opacity shadow-search"
+          className="fab-above-nav absolute right-6 z-10 flex items-center gap-2 bg-brand text-white text-xs font-semibold px-4 rounded-full border-none cursor-pointer hover:opacity-85 transition-opacity shadow-search"
           style={{ height: "44px" }}
         >
           ✦ 글쓰기
