@@ -61,28 +61,34 @@ export default function CommunityEditPage({ params }: { params: Promise<{ id: st
   }
 
   return (
-    <div className="min-h-screen bg-surface-page">
-      <Header />
-      <main className="mx-auto px-4 sm:px-6 pt-8 pb-20" style={{ maxWidth: "760px" }}>
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-[20px] font-bold text-text-heading">글 수정</h1>
-          <div className="flex gap-2">
-            <button
-              onClick={() => router.back()}
-              className="px-4 h-9 rounded-xl border border-border-base text-[13px] text-text-body bg-white cursor-pointer hover:bg-surface-card transition-colors"
-            >
-              취소
-            </button>
-            <button
-              onClick={handleSubmit}
-              disabled={saving}
-              className="px-4 h-9 rounded-xl bg-brand text-white text-[13px] font-semibold border-none cursor-pointer hover:opacity-85 transition-opacity disabled:opacity-50"
-            >
-              {saving ? "저장 중…" : "저장"}
-            </button>
-          </div>
-        </div>
+    <div className="h-dvh flex flex-col overflow-hidden bg-surface-page">
+      <div className="shrink-0"><Header /></div>
 
+      {/* 타이틀 + 버튼 */}
+      <div className="shrink-0 flex items-center justify-between px-4 sm:px-6 py-4 border-b border-border-base bg-surface-page">
+        <h1 className="text-[20px] font-bold text-text-heading">글 수정</h1>
+        <div className="flex gap-2">
+          <button
+            onClick={() => router.back()}
+            className="px-4 h-9 rounded-xl border border-border-base text-[13px] text-text-body bg-white cursor-pointer hover:bg-surface-card transition-colors"
+          >
+            취소
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={saving}
+            className="px-4 h-9 rounded-xl bg-brand text-white text-[13px] font-semibold border-none cursor-pointer hover:opacity-85 transition-opacity disabled:opacity-50"
+          >
+            {saving ? "저장 중…" : "저장"}
+          </button>
+        </div>
+      </div>
+
+      {/* 스크롤 영역 */}
+      <main
+        className="flex-1 overflow-y-auto px-4 sm:px-6 py-5 pb-20"
+        style={{ maxWidth: "760px", marginInline: "auto", width: "100%" }}
+      >
         <div className="bg-white rounded-2xl border border-border-card px-5 py-5 flex flex-col gap-4">
           <div className="flex items-center gap-3">
             <label className="text-[13px] font-semibold text-text-muted w-14 shrink-0">카테고리</label>
