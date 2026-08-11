@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback } from "react";
-import type { MutableRefObject } from "react";
 import type { SearchResultItem } from "@/data/sampleMockResults";
 import { CATEGORIES, CATEGORY_TAG_MAP } from "@/data/Categories";
 import { REGION_CENTERS } from "@/data/mapConstants";
@@ -30,9 +29,9 @@ export function applyChipFilter(items: SearchResultItem[], chip: string): Search
 interface UseMapSearchParams {
   allPosts: SearchResultItem[];
   chipFilter: string;
-  coordsRef: MutableRefObject<CoordsMap>;
-  filteredItemsRef: MutableRefObject<SearchResultItem[]>;
-  mapObjRef: MutableRefObject<any>;
+  coordsRef: { current: CoordsMap };
+  filteredItemsRef: { current: SearchResultItem[] };
+  mapObjRef: { current: any };
   setFilteredItems: (items: SearchResultItem[]) => void;
   setSelectedItem: (item: SearchResultItem | null) => void;
   setPanelOpen: (open: boolean) => void;
@@ -115,7 +114,9 @@ export function useMapSearch({
 
     if (!mapObjRef.current) { applyAndRender(keywordFiltered); return; }
 
-    const regionKey = Object.keys(REGION_CENTERS).find((key) => q.toLowerCase().includes(key));
+    const regionKey = Object.keys(REGION_CENTERS)
+      .filter((key) => q.toLowerCase().includes(key))
+      .sort((a, b) => b.length - a.length)[0];
     if (regionKey) {
       const { lat, lng, zoom } = REGION_CENTERS[regionKey];
       mapObjRef.current.setCenter(new window.naver.maps.LatLng(lat, lng));

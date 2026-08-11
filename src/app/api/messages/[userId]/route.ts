@@ -26,19 +26,30 @@ export async function GET(
   });
   if (block) return NextResponse.json({ error: "blocked" }, { status: 403 });
 
+  const conversation = {
+    OR: [
+      { senderId: myId, receiverId: partnerId },
+      { senderId: partnerId, receiverId: myId },
+    ],
+  };
+
+  const messagesPromise = since > 0
+    ? prisma.message.findMany({
+        where: { ...conversation, id: { gt: since } },
+        orderBy: { createdAt: "asc" },
+        take: 100,
+        select: { id: true, content: true, createdAt: true, senderId: true },
+      })
+    // 초기 로드: 가장 최근 100개를 desc로 가져온 뒤 시간순으로 뒤집어 반환
+    : prisma.message.findMany({
+        where: conversation,
+        orderBy: { createdAt: "desc" },
+        take: 100,
+        select: { id: true, content: true, createdAt: true, senderId: true },
+      }).then((rows) => rows.reverse());
+
   const [messages, partner] = await Promise.all([
-    prisma.message.findMany({
-      where: {
-        OR: [
-          { senderId: myId, receiverId: partnerId },
-          { senderId: partnerId, receiverId: myId },
-        ],
-        ...(since > 0 ? { id: { gt: since } } : {}),
-      },
-      orderBy: { createdAt: "asc" },
-      take: 100,
-      select: { id: true, content: true, createdAt: true, senderId: true },
-    }),
+    messagesPromise,
     prisma.user.findUnique({
       where: { id: partnerId },
       select: { id: true, name: true, nickname: true, avatarUrl: true },

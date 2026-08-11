@@ -126,9 +126,9 @@ export async function POST(
     }
   }
 
-  const { id: commentId } = await prisma.comment.create({
+  const comment = await prisma.comment.create({
     data: { postId, content, guestName: null, authorId: userId, parentId, isSecret },
-    select: { id: true },
+    select: REPLY_SELECT,
   });
 
   // 알림 생성 (댓글 저장과 분리 — 알림 실패가 댓글 응답에 영향 주지 않도록)
@@ -150,23 +150,18 @@ export async function POST(
       await Promise.all(
         Array.from(recipientIds).map((recipientId) =>
           prisma.notification.create({
-            data: { userId: recipientId, actorId: userId, type: "REPLY", postId, commentId },
+            data: { userId: recipientId, actorId: userId, type: "REPLY", postId, commentId: comment.id },
           }),
         ),
       );
     } else if (post.authorId !== userId) {
       await prisma.notification.create({
-        data: { userId: post.authorId, actorId: userId, type: "COMMENT", postId, commentId },
+        data: { userId: post.authorId, actorId: userId, type: "COMMENT", postId, commentId: comment.id },
       });
     }
   } catch (err) {
     console.error("[comment notification]", err);
   }
-
-  const comment = await prisma.comment.findUnique({
-    where: { id: commentId },
-    select: REPLY_SELECT,
-  });
 
   return NextResponse.json(comment, { status: 201 });
 }

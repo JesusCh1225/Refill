@@ -25,6 +25,11 @@ export async function POST(
   if (!post) return NextResponse.json({ error: "not found" }, { status: 404 });
   if (post.authorId === userId) return NextResponse.json({ error: "cannot report own post" }, { status: 400 });
 
+  const existing = await prisma.report.findFirst({
+    where: { reporterId: userId, communityPostId: postId, reason },
+  });
+  if (existing) return NextResponse.json({ error: "already reported" }, { status: 409 });
+
   await prisma.report.create({
     data: { reporterId: userId, communityPostId: postId, reason: reason.trim().slice(0, 200) },
   });

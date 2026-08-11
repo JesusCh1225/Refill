@@ -62,7 +62,9 @@ export async function POST(req: NextRequest) {
     const userId = await getSessionUserId();
     if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-    const { title, category, content } = await req.json();
+    let body: any;
+    try { body = await req.json(); } catch { return NextResponse.json({ error: "invalid body" }, { status: 400 }); }
+    const { title, category, content } = body;
     if (!title?.trim() || !content?.trim() || !["자유", "문의"].includes(category)) {
       return NextResponse.json({ error: "invalid" }, { status: 400 });
     }
@@ -72,17 +74,13 @@ export async function POST(req: NextRequest) {
 
     const clean = sanitizePostContent(content);
 
-    const created = await prisma.communityPost.create({
+    const post = await prisma.communityPost.create({
       data: {
         title: title.trim().slice(0, 200),
         category,
         content: clean,
         authorId: userId,
       },
-    });
-
-    const post = await prisma.communityPost.findUnique({
-      where: { id: created.id },
       include: {
         author: { select: { id: true, nickname: true, name: true, avatarUrl: true } },
       },

@@ -1,13 +1,18 @@
 import type { SearchResultItem, PostDirection } from "@/data/sampleMockResults";
+import type { PriceType, PostDirection as DBPostDirection } from "@/generated/prisma/enums";
 
 // 글쓰기 폼의 priceType id -> Prisma PriceType enum 값
-export const PRICE_TYPE_MAP: Record<string, string> = {
+export const PRICE_TYPE_MAP: Record<string, PriceType> = {
   free: "FREE",
   monthly: "MONTHLY",
   yearly: "YEARLY",
   per_session: "PER_SESSION",
   negotiable: "NEGOTIABLE",
 };
+
+export function toDBDirection(direction: string): DBPostDirection {
+  return direction === "seek" ? "SEEK" : "OFFER";
+}
 
 // 모든 post 조회 라우트에서 공통으로 사용하는 select 스펙
 export const POST_SELECT = {

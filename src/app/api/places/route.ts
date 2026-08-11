@@ -6,6 +6,8 @@ export interface PlaceResult {
   address: string;
   category: string;
   telephone: string;
+  lat?: number;
+  lng?: number;
 }
 
 const stripHtml = (str: string) => str.replace(/<[^>]+>/g, "");
@@ -35,13 +37,20 @@ export async function GET(req: NextRequest) {
     if (!res.ok) return NextResponse.json([]);
 
     const data = await res.json();
-    const places: PlaceResult[] = (data.items ?? []).map((item: any) => ({
-      name: stripHtml(item.title ?? ""),
-      roadAddress: item.roadAddress ?? "",
-      address: item.address ?? "",
-      category: item.category ?? "",
-      telephone: item.telephone ?? "",
-    }));
+    const places: PlaceResult[] = (data.items ?? []).map((item: any) => {
+      const mapx = parseInt(item.mapx ?? "0", 10);
+      const mapy = parseInt(item.mapy ?? "0", 10);
+      return {
+        name: stripHtml(item.title ?? ""),
+        roadAddress: item.roadAddress ?? "",
+        address: item.address ?? "",
+        category: item.category ?? "",
+        telephone: item.telephone ?? "",
+        // Naver Local Search API: mapx/mapy는 WGS84 경위도 × 10^7
+        lng: mapx ? mapx / 1e7 : undefined,
+        lat: mapy ? mapy / 1e7 : undefined,
+      };
+    });
 
     return NextResponse.json(places);
   } catch {

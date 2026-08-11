@@ -13,11 +13,12 @@ export async function PATCH(
   const partnerId = Number((await params).userId);
   if (isNaN(partnerId)) return NextResponse.json({ error: "invalid" }, { status: 400 });
 
-  await prisma.conversationLeft.upsert({
-    where: { userId_partnerId: { userId: myId, partnerId } },
-    create: { userId: myId, partnerId, leftAt: new Date() },
-    update: { leftAt: new Date() },
-  });
+  // upsert()는 Neon HTTP 어댑터에서 트랜잭션을 사용해 500을 반환함 → raw SQL로 대체
+  await prisma.$executeRaw`
+    INSERT INTO "ConversationLeft" ("userId", "partnerId", "leftAt")
+    VALUES (${myId}, ${partnerId}, NOW())
+    ON CONFLICT ("userId", "partnerId") DO UPDATE SET "leftAt" = NOW()
+  `;
 
   return NextResponse.json({ ok: true });
 }

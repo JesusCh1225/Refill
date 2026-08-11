@@ -133,7 +133,8 @@ export default function ChatPage({ params }: { params: Promise<{ userId: string 
   useEffect(() => {
     if (status !== "authenticated") return;
     let cancelled = false;
-    const timer = setInterval(async () => {
+
+    const poll = async () => {
       const since = lastIdRef.current;
       const res = await fetch(`/api/messages/${userId}?since=${since}`).catch(() => null);
       if (cancelled || !res?.ok) return;
@@ -153,8 +154,25 @@ export default function ChatPage({ params }: { params: Promise<{ userId: string 
         const receivedCount = data.messages.filter((m: Message) => !m.isFromMe).length;
         if (receivedCount > 0 && !cancelled) setNewMsgBubble((prev) => prev + receivedCount);
       }
-    }, 3000);
-    return () => { cancelled = true; clearInterval(timer); };
+    };
+
+    let timer: ReturnType<typeof setInterval> | null = setInterval(poll, 3000);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        poll();
+        if (!timer) timer = setInterval(poll, 3000);
+      } else {
+        if (timer) { clearInterval(timer); timer = null; }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      cancelled = true;
+      if (timer) clearInterval(timer);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, [status, userId]);
 
   const handleSend = async () => {

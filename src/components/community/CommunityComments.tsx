@@ -29,8 +29,11 @@ export default function CommunityComments({ postId, initial }: Props) {
   const [replyingTo, setReplyingTo] = useState<number | null>(null);
   const [replyText, setReplyText] = useState("");
   const [replySaving, setReplySaving] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editText, setEditText] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
 
-  const submit = async (e: React.FormEvent) => {
+  const submit = async (e: { preventDefault(): void }) => {
     e.preventDefault();
     if (!text.trim() || submitting || !session) return;
     setSubmitting(true);
@@ -81,6 +84,41 @@ export default function CommunityComments({ postId, initial }: Props) {
     }
   };
 
+  const startEdit = (id: number, content: string) => {
+    setEditingId(id);
+    setEditText(content);
+    setReplyingTo(null);
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditText("");
+  };
+
+  const saveEdit = async (id: number, parentId?: number) => {
+    if (!editText.trim() || editSaving) return;
+    setEditSaving(true);
+    try {
+      const res = await fetch(`/api/community/${postId}/comments/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: editText.trim() }),
+      });
+      if (!res.ok) return;
+      const updated = await res.json();
+      if (parentId != null) {
+        setComments((prev) => prev.map((c) =>
+          c.id === parentId
+            ? { ...c, replies: c.replies.map((r) => r.id === id ? { ...r, content: updated.content } : r) }
+            : c
+        ));
+      } else {
+        setComments((prev) => prev.map((c) => c.id === id ? { ...c, content: updated.content } : c));
+      }
+      cancelEdit();
+    } finally { setEditSaving(false); }
+  };
+
   return (
     <div className="mt-8">
       <h3 className="text-[15px] font-bold text-text-heading mb-4">댓글 {comments.length}</h3>
@@ -89,11 +127,34 @@ export default function CommunityComments({ postId, initial }: Props) {
       <div className="flex flex-col gap-4 mb-6">
         {comments.map((c) => (
           <div key={c.id}>
-            <CommentRow comment={c} myId={myId} onReply={() => setReplyingTo(replyingTo === c.id ? null : c.id)} onDelete={() => deleteComment(c.id)} />
+            <CommentRow
+              comment={c}
+              myId={myId}
+              onReply={() => setReplyingTo(replyingTo === c.id ? null : c.id)}
+              onDelete={() => deleteComment(c.id)}
+              onEdit={() => startEdit(c.id, c.content)}
+              isEditing={editingId === c.id}
+              editText={editText}
+              onEditTextChange={setEditText}
+              onEditSave={() => saveEdit(c.id)}
+              onEditCancel={cancelEdit}
+              editSaving={editSaving}
+            />
             {/* 답글 */}
             {c.replies.map((r) => (
               <div key={r.id} className="ml-8 mt-2">
-                <CommentRow comment={r} myId={myId} onDelete={() => deleteComment(r.id, c.id)} />
+                <CommentRow
+                  comment={r}
+                  myId={myId}
+                  onDelete={() => deleteComment(r.id, c.id)}
+                  onEdit={() => startEdit(r.id, r.content)}
+                  isEditing={editingId === r.id}
+                  editText={editText}
+                  onEditTextChange={setEditText}
+                  onEditSave={() => saveEdit(r.id, c.id)}
+                  onEditCancel={cancelEdit}
+                  editSaving={editSaving}
+                />
               </div>
             ))}
             {replyingTo === c.id && session && (
@@ -163,13 +224,22 @@ export default function CommunityComments({ postId, initial }: Props) {
   );
 }
 
-function CommentRow({ comment, myId, onReply, onDelete }: {
+function CommentRow({ comment, myId, onReply, onDelete, onEdit, isEditing, editText, onEditTextChange, onEditSave, onEditCancel, editSaving }: {
   comment: CommentData;
   myId?: number;
   onReply?: () => void;
   onDelete: () => void;
+  onEdit: () => void;
+  isEditing: boolean;
+  editText: string;
+  onEditTextChange: (text: string) => void;
+  onEditSave: () => void;
+  onEditCancel: () => void;
+  editSaving: boolean;
 }) {
   const name = comment.author.nickname ?? comment.author.name;
+  const isOwn = myId === comment.author.id;
+
   return (
     <div className="flex gap-3">
       <Link href={`/profile/${comment.author.id}`} className="shrink-0 mt-0.5 hover:opacity-75 transition-opacity">
@@ -180,11 +250,46 @@ function CommentRow({ comment, myId, onReply, onDelete }: {
           <Link href={`/profile/${comment.author.id}`} className="text-[13px] font-semibold text-text-heading hover:text-brand transition-colors">{name}</Link>
           <span className="text-[11px] text-text-placeholder">{new Date(comment.createdAt).toLocaleDateString("ko-KR")}</span>
         </div>
-        <p className="text-[13px] text-text-body leading-relaxed whitespace-pre-wrap">{comment.content}</p>
-        <div className="flex gap-3 mt-1">
-          {onReply && <button onClick={onReply} className="text-[11px] text-text-muted hover:text-brand border-none bg-transparent cursor-pointer p-0">답글</button>}
-          {myId === comment.author.id && <button onClick={onDelete} className="text-[11px] text-red-400 hover:text-red-600 border-none bg-transparent cursor-pointer p-0">삭제</button>}
-        </div>
+
+        {isEditing ? (
+          <div className="flex flex-col gap-1.5 mt-1">
+            <textarea
+              value={editText}
+              onChange={(e) => onEditTextChange(e.target.value.slice(0, 2000))}
+              rows={3}
+              className="w-full px-3 py-2 rounded-lg border border-brand text-[13px] text-text-body focus:outline-none resize-none leading-relaxed"
+              autoFocus
+            />
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] text-text-placeholder">{editText.length} / 2,000자</span>
+              <div className="flex gap-2">
+                <button
+                  onClick={onEditCancel}
+                  disabled={editSaving}
+                  className="px-3 h-7 rounded-lg border border-border-base text-[12px] text-text-muted bg-transparent cursor-pointer hover:bg-surface-card disabled:opacity-40"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={onEditSave}
+                  disabled={editSaving || !editText.trim()}
+                  className="px-3 h-7 rounded-lg bg-brand text-white text-[12px] font-semibold border-none cursor-pointer disabled:opacity-40"
+                >
+                  {editSaving ? "…" : "저장"}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <>
+            <p className="text-[13px] text-text-body leading-relaxed whitespace-pre-wrap">{comment.content}</p>
+            <div className="flex gap-3 mt-1">
+              {onReply && <button onClick={onReply} className="text-[11px] text-text-muted hover:text-brand border-none bg-transparent cursor-pointer p-0">답글</button>}
+              {isOwn && <button onClick={onEdit} className="text-[11px] text-text-muted hover:text-brand border-none bg-transparent cursor-pointer p-0">수정</button>}
+              {isOwn && <button onClick={onDelete} className="text-[11px] text-red-400 hover:text-red-600 border-none bg-transparent cursor-pointer p-0">삭제</button>}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

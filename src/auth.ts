@@ -56,16 +56,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           },
         });
 
-        await prisma.oAuthAccount.create({
-          data: {
-            userId: newUser.id,
-            provider: account.provider,
-            providerAccountId: account.providerAccountId,
-            accessToken: account.access_token ?? undefined,
-            refreshToken: account.refresh_token ?? undefined,
-            expiresAt: account.expires_at ?? undefined,
-          },
-        });
+        try {
+          await prisma.oAuthAccount.create({
+            data: {
+              userId: newUser.id,
+              provider: account.provider,
+              providerAccountId: account.providerAccountId,
+              accessToken: account.access_token ?? undefined,
+              refreshToken: account.refresh_token ?? undefined,
+              expiresAt: account.expires_at ?? undefined,
+            },
+          });
+        } catch (oauthErr) {
+          // OAuthAccount 생성 실패 시 고아 User 행을 정리하고 로그인 거부
+          await prisma.user.delete({ where: { id: newUser.id } }).catch(() => {});
+          throw oauthErr;
+        }
 
         user.id = String(newUser.id);
         return true;

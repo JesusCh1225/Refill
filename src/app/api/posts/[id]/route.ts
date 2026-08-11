@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { POST_SELECT, mapPost, PRICE_TYPE_MAP } from "@/lib/postMapper";
+import { POST_SELECT, mapPost, PRICE_TYPE_MAP, toDBDirection } from "@/lib/postMapper";
 import { syncPostCategories, syncPostHashtags, syncPostLocationTags, syncPostImages } from "@/lib/postRelations";
 import { getSessionUserId } from "@/lib/auth";
 import { isAdminSession } from "@/lib/admin";
@@ -67,11 +67,11 @@ export async function PATCH(
   try {
     let body: any;
     try { body = await req.json(); } catch { return NextResponse.json({ error: "invalid body" }, { status: 400 }); }
-    const { title, description, priceType, priceAmount, priceDisplay, imageEmoji, location, locationTags, tags, keywords, direction, imageUrls } = body;
+    const { title, description, priceType, priceAmount, priceDisplay, imageEmoji, location, locationTags, tags, keywords, direction, imageUrls, lat, lng } = body;
 
     if (!title?.trim()) return NextResponse.json({ error: "title required" }, { status: 400 });
 
-    await (prisma.post.update as any)({
+    await prisma.post.update({
       where: { id: postId },
       data: {
         title: title.trim().slice(0, 100),
@@ -81,7 +81,9 @@ export async function PATCH(
         priceDisplay: priceDisplay?.trim().slice(0, 100),
         imageEmoji: (imageEmoji || "🎵").slice(0, 10),
         location: location?.trim().slice(0, 100),
-        direction: direction === "seek" ? "SEEK" : "OFFER",
+        direction: toDBDirection(direction),
+        lat: typeof lat === "number" ? lat : null,
+        lng: typeof lng === "number" ? lng : null,
       },
     });
 

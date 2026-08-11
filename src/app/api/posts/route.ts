@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { POST_SELECT, mapPost, PRICE_TYPE_MAP } from "@/lib/postMapper";
+import { POST_SELECT, mapPost, PRICE_TYPE_MAP, toDBDirection } from "@/lib/postMapper";
 import { syncPostCategories, syncPostHashtags, syncPostLocationTags, syncPostImages } from "@/lib/postRelations";
 import { getSessionUserId } from "@/lib/auth";
 import { getBlockedIds } from "@/lib/blockFilter";
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
   if (!priceDisplay?.trim()) return NextResponse.json({ error: "price required" }, { status: 400 });
 
   try {
-    const post = await (prisma.post.create as any)({
+    const post = await prisma.post.create({
       data: {
         title: title.trim().slice(0, 100),
         description: description?.trim() || null,
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
         location: location.trim().slice(0, 100),
         lat: typeof lat === "number" ? lat : null,
         lng: typeof lng === "number" ? lng : null,
-        direction: direction === "seek" ? "SEEK" : "OFFER",
+        direction: toDBDirection(direction),
         authorId: userId,
       },
       select: { id: true },

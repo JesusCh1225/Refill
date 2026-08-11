@@ -34,11 +34,12 @@ export async function POST(
   const ids = await getIds(params);
   if (!ids) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  await prisma.userBlock.upsert({
-    where: { blockerId_blockedId: { blockerId: ids.myId, blockedId: ids.targetId } },
-    create: { blockerId: ids.myId, blockedId: ids.targetId },
-    update: {},
-  });
+  // upsert()는 Neon HTTP 어댑터에서 트랜잭션을 사용해 500을 반환함 → raw SQL로 대체
+  await prisma.$executeRaw`
+    INSERT INTO "UserBlock" ("blockerId", "blockedId", "createdAt")
+    VALUES (${ids.myId}, ${ids.targetId}, NOW())
+    ON CONFLICT ("blockerId", "blockedId") DO NOTHING
+  `;
 
   return NextResponse.json({ ok: true });
 }
@@ -51,9 +52,11 @@ export async function DELETE(
   const ids = await getIds(params);
   if (!ids) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  await prisma.userBlock.deleteMany({
-    where: { blockerId: ids.myId, blockedId: ids.targetId },
-  });
+  try {
+    await prisma.userBlock.delete({
+      where: { blockerId_blockedId: { blockerId: ids.myId, blockedId: ids.targetId } },
+    });
+  } catch { /* 이미 차단 해제된 경우 무시 */ }
 
   return NextResponse.json({ ok: true });
 }

@@ -40,6 +40,8 @@ export async function PATCH(
   if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const id = Number((await params).id);
+  if (isNaN(id)) return NextResponse.json({ error: "invalid" }, { status: 400 });
+
   const post = await prisma.communityPost.findUnique({ where: { id }, select: { authorId: true } });
   if (!post) return NextResponse.json({ error: "not found" }, { status: 404 });
   if (post.authorId !== userId) return NextResponse.json({ error: "forbidden" }, { status: 403 });
@@ -76,6 +78,8 @@ export async function DELETE(
   if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const id = Number((await params).id);
+  if (isNaN(id)) return NextResponse.json({ error: "invalid" }, { status: 400 });
+
   const post = await prisma.communityPost.findUnique({ where: { id }, select: { authorId: true } });
   if (!post) return NextResponse.json({ error: "not found" }, { status: 404 });
   if (post.authorId !== userId && !admin) return NextResponse.json({ error: "forbidden" }, { status: 403 });

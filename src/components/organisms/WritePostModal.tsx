@@ -76,6 +76,8 @@ export default function WritePostModal({
   const [title, setTitle] = useState("");
   const [location, setLocation] = useState("");
   const [jibunAddress, setJibunAddress] = useState("");
+  const [selectedLat, setSelectedLat] = useState<number | undefined>(undefined);
+  const [selectedLng, setSelectedLng] = useState<number | undefined>(undefined);
   const [priceType, setPriceType] = useState<string>("monthly");
   const [priceAmount, setPriceAmount] = useState("");
   const [iconMode, setIconMode] = useState<"emoji" | "image">("emoji");
@@ -93,6 +95,8 @@ export default function WritePostModal({
       setDescription(editData.description ?? "");
       setLocation(editData.location);
       setJibunAddress("");
+      setSelectedLat(editData.lat ?? undefined);
+      setSelectedLng(editData.lng ?? undefined);
       setKeywords(editData.keywords ?? []);
       setEmoji(editData.imageEmoji ?? "🎵");
       setImageUrls(editData.imageUrls ?? []);
@@ -105,6 +109,8 @@ export default function WritePostModal({
       setTitle("");
       setLocation("");
       setJibunAddress("");
+      setSelectedLat(undefined);
+      setSelectedLng(undefined);
       setPriceType("monthly");
       setPriceAmount("");
       setEmoji("🎵");
@@ -147,6 +153,8 @@ export default function WritePostModal({
       keywords,
       description: description.trim() || undefined,
       direction,
+      lat: selectedLat,
+      lng: selectedLng,
     };
   };
 
@@ -215,8 +223,8 @@ export default function WritePostModal({
           <Field label="지역" required>
             <LocationSearch
               value={location}
-              onChange={(v) => { setLocation(v); setJibunAddress(""); }}
-              onSelect={(place) => { setLocation(place.roadAddress || place.address); setJibunAddress(place.address); }}
+              onChange={(v) => { setLocation(v); setJibunAddress(""); setSelectedLat(undefined); setSelectedLng(undefined); }}
+              onSelect={(place) => { setLocation(place.roadAddress || place.address); setJibunAddress(place.address); setSelectedLat(place.lat); setSelectedLng(place.lng); }}
               placeholder="예: 상암동 투썸 플레이스, 마포구"
             />
           </Field>

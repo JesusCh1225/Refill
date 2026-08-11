@@ -36,7 +36,9 @@ export async function DELETE(
   const postId = parseInt((await params).postId);
   if (isNaN(postId)) return NextResponse.json({ error: "invalid" }, { status: 400 });
 
-  await prisma.bookmark.deleteMany({ where: { userId, postId } });
+  try {
+    await prisma.bookmark.delete({ where: { userId_postId: { userId, postId } } });
+  } catch { /* 이미 삭제된 북마크 — 무시 */ }
 
   return NextResponse.json({ ok: true });
 }

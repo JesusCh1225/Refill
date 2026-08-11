@@ -43,14 +43,26 @@ export default function ConversationList({ onSelect }: Props) {
       .catch(() => {});
   };
 
-  // 5초 폴링으로 새 메시지/unread 실시간 반영
+  // 5초 폴링으로 새 메시지/unread 실시간 반영 (탭이 숨겨진 경우 폴링 중단)
   useEffect(() => {
     fetchConversations();
-    const timer = setInterval(fetchConversations, 5_000);
+    let timer: ReturnType<typeof setInterval> | null = setInterval(fetchConversations, 5_000);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        fetchConversations();
+        if (!timer) timer = setInterval(fetchConversations, 5_000);
+      } else {
+        if (timer) { clearInterval(timer); timer = null; }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
     // 채팅방에서 읽음 처리 후 즉시 갱신
     window.addEventListener("conversations-refresh", fetchConversations);
     return () => {
-      clearInterval(timer);
+      if (timer) clearInterval(timer);
+      document.removeEventListener("visibilitychange", handleVisibility);
       window.removeEventListener("conversations-refresh", fetchConversations);
     };
   }, []);

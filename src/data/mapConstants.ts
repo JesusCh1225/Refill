@@ -13,4 +13,6 @@ export const REGION_CENTERS: Record<
   송파: { lat: 37.5146, lng: 127.1057, zoom: 14 },
   노원: { lat: 37.6556, lng: 127.0618, zoom: 14 },
   서구: { lat: 37.5456, lng: 126.6759, zoom: 14 },
+  서해구: { lat: 37.5456, lng: 126.6759, zoom: 14 },
+  검단구: { lat: 37.5625, lng: 126.6856, zoom: 14 },
 };

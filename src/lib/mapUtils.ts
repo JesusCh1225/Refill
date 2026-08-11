@@ -93,7 +93,10 @@ export function coordsFromLocation(
   location: string,
   id: number,
 ): { lat: number; lng: number } {
-  const key = Object.keys(REGION_CENTERS).find((k) => location.includes(k));
+  // 가장 긴(더 구체적인) 키를 우선 선택 — "인천 서해구"에서 "인천"보다 "서해구"를 먼저 매칭
+  const key = Object.keys(REGION_CENTERS)
+    .filter((k) => location.includes(k))
+    .sort((a, b) => b.length - a.length)[0];
   const base = key ? REGION_CENTERS[key] : { lat: 37.5665, lng: 126.978 };
   const offset = ((id % 10) - 5) * 0.0002;
   return { lat: base.lat + offset, lng: base.lng + offset };
