@@ -183,6 +183,7 @@ model PostLocationTag {
 
   post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 
+  @@index([postId])
   @@index([tag])
 }
 
@@ -200,10 +201,11 @@ model Comment {
   authorId Int?
   parentId Int?  // null = 최상위 댓글, non-null = 대댓글
 
-  post    Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  author  User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
-  parent  Comment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies Comment[] @relation("CommentReplies")
+  post          Post           @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author        User?          @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  parent        Comment?       @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies       Comment[]      @relation("CommentReplies")
+  notifications Notification[]
 
   @@index([postId])
   @@index([parentId])
@@ -274,6 +276,7 @@ model Message {
   post     Post? @relation(fields: [postId], references: [id])
 
   @@index([receiverId, isRead])
+  @@index([senderId])
 }
 
 // ── 알림 ──────────────────────────────────────────────────────────────────
@@ -288,9 +291,10 @@ model Notification {
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
 
-  user    User  @relation("NotificationsReceived", fields: [userId],  references: [id], onDelete: Cascade)
-  actor   User  @relation("NotificationsSent",     fields: [actorId], references: [id], onDelete: Cascade)
-  post    Post? @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user    User     @relation("NotificationsReceived", fields: [userId],    references: [id], onDelete: Cascade)
+  actor   User     @relation("NotificationsSent",     fields: [actorId],   references: [id], onDelete: Cascade)
+  post    Post?    @relation(fields: [postId],    references: [id], onDelete: Cascade)
+  comment Comment? @relation(fields: [commentId], references: [id], onDelete: SetNull)
 
   @@index([userId, isRead])
   @@index([userId, createdAt])

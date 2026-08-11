@@ -18,6 +18,7 @@ export interface SearchResultItem {
   description?: string;
   author?: string;
   authorId?: number;
+  authorAvatarUrl?: string | null;
   direction: PostDirection;
   lat?: number;
   lng?: number;

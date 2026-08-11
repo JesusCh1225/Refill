@@ -44,7 +44,8 @@ export async function POST(
   if (isNaN(revieweeId)) return NextResponse.json({ error: "invalid id" }, { status: 400 });
   if (reviewerId === revieweeId) return NextResponse.json({ error: "self review not allowed" }, { status: 400 });
 
-  const body = await req.json();
+  let body: any;
+  try { body = await req.json(); } catch { return NextResponse.json({ error: "invalid body" }, { status: 400 }); }
   const rating = Number(body.rating);
   const rawContent = (body.content ?? "").trim();
   if (rawContent.length > 1000) return NextResponse.json({ error: "too long" }, { status: 400 });

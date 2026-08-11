@@ -55,16 +55,35 @@ export async function POST(
   const postId = Number((await params).id);
   if (isNaN(postId)) return NextResponse.json({ error: "invalid" }, { status: 400 });
 
-  const { content, parentId } = await req.json();
+  let body: any;
+  try { body = await req.json(); } catch { return NextResponse.json({ error: "invalid body" }, { status: 400 }); }
+  const { content, parentId } = body;
   if (!content?.trim()) return NextResponse.json({ error: "empty" }, { status: 400 });
   if (content.trim().length > 2000) return NextResponse.json({ error: "too long" }, { status: 400 });
+
+  const post = await prisma.communityPost.findUnique({ where: { id: postId }, select: { id: true } });
+  if (!post) return NextResponse.json({ error: "post not found" }, { status: 404 });
+
+  const resolvedParentId = parentId != null ? Number(parentId) : null;
+  if (resolvedParentId) {
+    const parent = await prisma.communityComment.findUnique({
+      where: { id: resolvedParentId },
+      select: { postId: true, parentId: true },
+    });
+    if (!parent || parent.postId !== postId) {
+      return NextResponse.json({ error: "invalid parent" }, { status: 400 });
+    }
+    if (parent.parentId !== null) {
+      return NextResponse.json({ error: "nested replies not allowed" }, { status: 400 });
+    }
+  }
 
   const created = await prisma.communityComment.create({
     data: {
       content: content.trim(),
       authorId: userId,
       postId,
-      parentId: parentId ?? null,
+      parentId: resolvedParentId,
     },
   });
 

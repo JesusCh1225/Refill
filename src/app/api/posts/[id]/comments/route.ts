@@ -101,7 +101,8 @@ export async function POST(
   const userId = await getSessionUserId();
   if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const body = await req.json();
+  let body: any;
+  try { body = await req.json(); } catch { return NextResponse.json({ error: "invalid body" }, { status: 400 }); }
   const content = (body.content ?? "").trim();
   if (!content) return NextResponse.json({ error: "content required" }, { status: 400 });
   if (content.length > 500) return NextResponse.json({ error: "too long" }, { status: 400 });
@@ -130,33 +131,36 @@ export async function POST(
     select: { id: true },
   });
 
-  // 알림 생성 (자신의 글/댓글에는 알림 안 보냄)
-  if (parentId) {
-    // 스레드 참여자 전원 조회: 최상위 댓글 작성자 + 기존 답글 작성자
-    const [parentComment, existingReplies] = await Promise.all([
-      prisma.comment.findUnique({ where: { id: parentId }, select: { authorId: true } }),
-      prisma.comment.findMany({ where: { parentId }, select: { authorId: true } }),
-    ]);
+  // 알림 생성 (댓글 저장과 분리 — 알림 실패가 댓글 응답에 영향 주지 않도록)
+  try {
+    if (parentId) {
+      const [parentComment, existingReplies] = await Promise.all([
+        prisma.comment.findUnique({ where: { id: parentId }, select: { authorId: true } }),
+        prisma.comment.findMany({ where: { parentId }, select: { authorId: true } }),
+      ]);
 
-    const recipientIds = new Set<number>();
-    if (parentComment?.authorId && parentComment.authorId !== userId) {
-      recipientIds.add(parentComment.authorId);
-    }
-    for (const r of existingReplies) {
-      if (r.authorId && r.authorId !== userId) recipientIds.add(r.authorId);
-    }
+      const recipientIds = new Set<number>();
+      if (parentComment?.authorId && parentComment.authorId !== userId) {
+        recipientIds.add(parentComment.authorId);
+      }
+      for (const r of existingReplies) {
+        if (r.authorId && r.authorId !== userId) recipientIds.add(r.authorId);
+      }
 
-    await Promise.all(
-      Array.from(recipientIds).map((recipientId) =>
-        prisma.notification.create({
-          data: { userId: recipientId, actorId: userId, type: "REPLY", postId, commentId },
-        }),
-      ),
-    );
-  } else if (post.authorId !== userId) {
-    await prisma.notification.create({
-      data: { userId: post.authorId, actorId: userId, type: "COMMENT", postId, commentId },
-    });
+      await Promise.all(
+        Array.from(recipientIds).map((recipientId) =>
+          prisma.notification.create({
+            data: { userId: recipientId, actorId: userId, type: "REPLY", postId, commentId },
+          }),
+        ),
+      );
+    } else if (post.authorId !== userId) {
+      await prisma.notification.create({
+        data: { userId: post.authorId, actorId: userId, type: "COMMENT", postId, commentId },
+      });
+    }
+  } catch (err) {
+    console.error("[comment notification]", err);
   }
 
   const comment = await prisma.comment.findUnique({

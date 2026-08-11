@@ -81,7 +81,8 @@ export default function MusicMapPage() {
   useEffect(() => {
     fetch("/api/posts")
       .then((r) => r.json())
-      .then((posts: SearchResultItem[]) => {
+      .then((data: { posts?: SearchResultItem[] } | SearchResultItem[]) => {
+        const posts = Array.isArray(data) ? data : (data.posts ?? []);
         if (!Array.isArray(posts)) return;
         const coords: CoordsMap = {};
         posts.forEach((post) => {

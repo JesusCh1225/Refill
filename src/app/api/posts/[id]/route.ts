@@ -65,13 +65,16 @@ export async function PATCH(
   if (existing.authorId !== userId) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
   try {
-    const body = await req.json();
+    let body: any;
+    try { body = await req.json(); } catch { return NextResponse.json({ error: "invalid body" }, { status: 400 }); }
     const { title, description, priceType, priceAmount, priceDisplay, imageEmoji, location, locationTags, tags, keywords, direction, imageUrls } = body;
+
+    if (!title?.trim()) return NextResponse.json({ error: "title required" }, { status: 400 });
 
     await (prisma.post.update as any)({
       where: { id: postId },
       data: {
-        title: title?.trim().slice(0, 100),
+        title: title.trim().slice(0, 100),
         description: description?.trim() || null,
         priceType: PRICE_TYPE_MAP[priceType] ?? "NEGOTIABLE",
         priceAmount: priceAmount ? parseInt(priceAmount) || null : null,
@@ -92,9 +95,9 @@ export async function PATCH(
 
     await Promise.all([
       syncPostCategories(postId, Array.isArray(tags) ? tags : []),
-      syncPostHashtags(postId, keywords),
-      syncPostLocationTags(postId, locationTags),
-      syncPostImages(postId, imageUrls),
+      syncPostHashtags(postId, Array.isArray(keywords) ? keywords : []),
+      syncPostLocationTags(postId, Array.isArray(locationTags) ? locationTags : []),
+      syncPostImages(postId, Array.isArray(imageUrls) ? imageUrls : []),
     ]);
 
     const updated = await prisma.post.findUnique({ where: { id: postId }, select: POST_SELECT });

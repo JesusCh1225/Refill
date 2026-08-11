@@ -28,17 +28,17 @@ export async function syncPostHashtags(postId: number, names: string[]) {
   ] as string[];
   if (trimmed.length === 0) return;
 
-  const existing = await prisma.hashtag.findMany({
-    where: { name: { in: trimmed } },
-    select: { id: true, name: true },
-  });
-  const existingNames = new Set(existing.map((h) => h.name));
-  const missing = trimmed.filter((n) => !existingNames.has(n));
-
-  const created = await Promise.all(
-    missing.map((name) => prisma.hashtag.create({ data: { name }, select: { id: true } })),
+  const allHashtags = await Promise.all(
+    trimmed.map((name) =>
+      prisma.hashtag.upsert({
+        where: { name },
+        create: { name },
+        update: {},
+        select: { id: true },
+      }),
+    ),
   );
-  const allIds = [...existing.map((h) => h.id), ...created.map((h) => h.id)];
+  const allIds = allHashtags.map((h) => h.id);
 
   await Promise.all(
     allIds.map((hashtagId) => prisma.postHashtag.create({ data: { postId, hashtagId } })),

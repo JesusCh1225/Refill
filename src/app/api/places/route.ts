@@ -23,24 +23,28 @@ export async function GET(req: NextRequest) {
 
   const url = `https://openapi.naver.com/v1/search/local.json?query=${encodeURIComponent(q)}&display=8&sort=random`;
 
-  const res = await fetch(url, {
-    headers: {
-      "X-Naver-Client-Id": clientId,
-      "X-Naver-Client-Secret": clientSecret,
-    },
-    next: { revalidate: 60 },
-  });
+  try {
+    const res = await fetch(url, {
+      headers: {
+        "X-Naver-Client-Id": clientId,
+        "X-Naver-Client-Secret": clientSecret,
+      },
+      next: { revalidate: 60 },
+    });
 
-  if (!res.ok) return NextResponse.json([]);
+    if (!res.ok) return NextResponse.json([]);
 
-  const data = await res.json();
-  const places: PlaceResult[] = (data.items ?? []).map((item: any) => ({
-    name: stripHtml(item.title ?? ""),
-    roadAddress: item.roadAddress ?? "",
-    address: item.address ?? "",
-    category: item.category ?? "",
-    telephone: item.telephone ?? "",
-  }));
+    const data = await res.json();
+    const places: PlaceResult[] = (data.items ?? []).map((item: any) => ({
+      name: stripHtml(item.title ?? ""),
+      roadAddress: item.roadAddress ?? "",
+      address: item.address ?? "",
+      category: item.category ?? "",
+      telephone: item.telephone ?? "",
+    }));
 
-  return NextResponse.json(places);
+    return NextResponse.json(places);
+  } catch {
+    return NextResponse.json([]);
+  }
 }

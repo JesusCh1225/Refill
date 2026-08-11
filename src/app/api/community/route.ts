@@ -35,14 +35,26 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
-      include: {
+      select: {
+        id: true,
+        title: true,
+        category: true,
+        content: true,
+        createdAt: true,
+        updatedAt: true,
         author: { select: { id: true, nickname: true, name: true, avatarUrl: true } },
         _count: { select: { comments: true, likes: true } },
       },
     }),
   ]);
 
-  return NextResponse.json({ posts, total, page, pageSize: PAGE_SIZE });
+  // 목록에서는 content를 미리보기용 120자로 잘라서 반환 (전체 HTML 전송 방지)
+  const trimmedPosts = posts.map((p) => ({
+    ...p,
+    content: p.content.replace(/<[^>]*>/g, "").slice(0, 120),
+  }));
+
+  return NextResponse.json({ posts: trimmedPosts, total, page, pageSize: PAGE_SIZE });
 }
 
 export async function POST(req: NextRequest) {

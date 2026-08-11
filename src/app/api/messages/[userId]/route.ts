@@ -15,6 +15,17 @@ export async function GET(
   const url = new URL(req.url);
   const since = Number(url.searchParams.get("since") ?? "0");
 
+  // 차단 여부 확인 — 차단된 경우 대화 내용을 읽을 수 없음
+  const block = await prisma.userBlock.findFirst({
+    where: {
+      OR: [
+        { blockerId: myId, blockedId: partnerId },
+        { blockerId: partnerId, blockedId: myId },
+      ],
+    },
+  });
+  if (block) return NextResponse.json({ error: "blocked" }, { status: 403 });
+
   const [messages, partner] = await Promise.all([
     prisma.message.findMany({
       where: {
@@ -57,10 +68,16 @@ export async function POST(
   if (isNaN(partnerId) || partnerId === myId)
     return NextResponse.json({ error: "invalid" }, { status: 400 });
 
-  const { content } = await req.json();
+  let body: any;
+  try { body = await req.json(); } catch { return NextResponse.json({ error: "invalid body" }, { status: 400 }); }
+  const { content } = body;
   if (!content?.trim()) return NextResponse.json({ error: "empty" }, { status: 400 });
   if (content.trim().length > 1000)
     return NextResponse.json({ error: "too long" }, { status: 400 });
+
+  // 수신자 존재 확인
+  const partnerExists = await prisma.user.findUnique({ where: { id: partnerId }, select: { id: true } });
+  if (!partnerExists) return NextResponse.json({ error: "user not found" }, { status: 404 });
 
   // 차단 여부 확인 (상대가 나를 차단했거나 내가 차단한 경우)
   const block = await prisma.userBlock.findFirst({

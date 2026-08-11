@@ -134,16 +134,28 @@ export function useNaverMap({
   }, [containerRef, filteredItemsRef, renderMarkers]);
 
   useEffect(() => {
-    window.__naverMapInit = () => initMap();
+    let cancelled = false;
+    window.__naverMapInit = () => { if (!cancelled) initMap(); };
+
     if (document.getElementById("naver-map-script")) {
       if (window.naver?.maps) initMap();
-      return;
+    } else {
+      const script = document.createElement("script");
+      script.id = "naver-map-script";
+      script.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${process.env.NEXT_PUBLIC_NAVER_CLIENT_ID}&submodules=geocoder&callback=__naverMapInit`;
+      script.async = true;
+      document.head.appendChild(script);
     }
-    const script = document.createElement("script");
-    script.id = "naver-map-script";
-    script.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${process.env.NEXT_PUBLIC_NAVER_CLIENT_ID}&submodules=geocoder&callback=__naverMapInit`;
-    script.async = true;
-    document.head.appendChild(script);
+
+    return () => {
+      cancelled = true;
+      delete (window as any).__naverMapInit;
+      if (mapObjRef.current && window.naver?.maps?.Event) {
+        window.naver.maps.Event.clearInstanceListeners(mapObjRef.current);
+      }
+      markersRef.current.forEach((m) => { try { m.setMap(null); } catch {} });
+      markersRef.current = [];
+    };
   }, [initMap]);
 
   return { mapObjRef, renderMarkers };

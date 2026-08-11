@@ -38,7 +38,9 @@ async function getGeminiSuggestions(query: string): Promise<string[]> {
 const SEARCH_PAGE_SIZE = 50;
 
 export async function POST(req: NextRequest) {
-  const { query, page = 1 } = await req.json();
+  let body: any;
+  try { body = await req.json(); } catch { return NextResponse.json({ error: "invalid body" }, { status: 400 }); }
+  const { query, page = 1 } = body;
   const pageNum = Math.max(1, parseInt(String(page)) || 1);
   const trimmed = (query ?? "").trim();
 

@@ -43,10 +43,14 @@ export async function GET() {
       for (const c of comments) commentMap.set(c.id, { content: c.content, isSecret: c.isSecret });
     }
 
-    const result = notifications.map((n) => ({
-      ...n,
-      comment: n.commentId ? (commentMap.get(n.commentId) ?? null) : null,
-    }));
+    const result = notifications.map((n) => {
+      const comment = n.commentId ? (commentMap.get(n.commentId) ?? null) : null;
+      // 비밀 댓글은 알림 미리보기에서 내용을 숨김 — 클릭해서 게시글에서 확인하도록 유도
+      const safeComment = comment?.isSecret
+        ? { ...comment, content: "비밀 댓글입니다." }
+        : comment;
+      return { ...n, comment: safeComment };
+    });
 
     return NextResponse.json({ notifications: result, unreadCount });
   } catch (err: unknown) {

@@ -9,33 +9,41 @@ const PAGE_SIZE = 50;
 
 // GET /api/posts?q=&category=&direction=&page=
 export async function GET(req: NextRequest) {
-  const { searchParams } = req.nextUrl;
-  const q = (searchParams.get("q") ?? "").slice(0, 100);
-  const category = (searchParams.get("category") ?? "").slice(0, 50);
-  const direction = searchParams.get("direction") ?? "";
-  const page = Math.max(1, parseInt(searchParams.get("page") ?? "1") || 1);
+  try {
+    const { searchParams } = req.nextUrl;
+    const q = (searchParams.get("q") ?? "").slice(0, 100);
+    const category = (searchParams.get("category") ?? "").slice(0, 50);
+    const direction = searchParams.get("direction") ?? "";
+    const page = Math.max(1, parseInt(searchParams.get("page") ?? "1") || 1);
 
-  const userId = await getSessionUserId();
-  const blockedIds = await getBlockedIds(userId);
+    const userId = await getSessionUserId();
+    const blockedIds = await getBlockedIds(userId);
 
-  const posts = await prisma.post.findMany({
-    where: {
-      status: "PUBLISHED",
+    const where = {
+      status: "PUBLISHED" as const,
       ...(blockedIds.length > 0 ? { authorId: { notIn: blockedIds } } : {}),
       ...(q && { title: { contains: q } }),
-      ...(category && {
-        categories: { some: { category: { slug: category } } },
-      }),
-      ...(direction === "offer" && { direction: "OFFER" }),
-      ...(direction === "seek" && { direction: "SEEK" }),
-    },
-    orderBy: { createdAt: "desc" },
-    take: PAGE_SIZE,
-    skip: (page - 1) * PAGE_SIZE,
-    select: POST_SELECT,
-  });
+      ...(category && { categories: { some: { category: { slug: category } } } }),
+      ...(direction === "offer" && { direction: "OFFER" as const }),
+      ...(direction === "seek" && { direction: "SEEK" as const }),
+    };
 
-  return NextResponse.json(posts.map(mapPost));
+    const [posts, total] = await Promise.all([
+      prisma.post.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        take: PAGE_SIZE,
+        skip: (page - 1) * PAGE_SIZE,
+        select: POST_SELECT,
+      }),
+      prisma.post.count({ where }),
+    ]);
+
+    return NextResponse.json({ posts: posts.map(mapPost), total, page, pageSize: PAGE_SIZE });
+  } catch (err) {
+    console.error("[GET /api/posts]", err);
+    return NextResponse.json({ error: "internal" }, { status: 500 });
+  }
 }
 
 // POST /api/posts — 새 게시글 작성 (로그인 필수)

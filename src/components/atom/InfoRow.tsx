@@ -6,15 +6,15 @@ interface InfoRowProps {
 
 export default function InfoRow({ label, value, highlight }: InfoRowProps) {
   return (
-    <div className="flex items-baseline gap-4">
-      <span className="text-[12px] font-semibold text-text-muted w-14 shrink-0">
+    <div className="flex items-center gap-3">
+      <span className="text-[13px] font-semibold text-text-muted w-14 shrink-0">
         {label}
       </span>
       <span
         className={
           highlight
-            ? "text-[20px] font-bold text-text-heading"
-            : "text-[14px] text-text-body"
+            ? "text-[22px] font-bold text-text-heading"
+            : "text-[15px] text-text-body"
         }
       >
         {value}

@@ -132,15 +132,14 @@ export default function ChatPage({ params }: { params: Promise<{ userId: string 
 
   useEffect(() => {
     if (status !== "authenticated") return;
+    let cancelled = false;
     const timer = setInterval(async () => {
       const since = lastIdRef.current;
       const res = await fetch(`/api/messages/${userId}?since=${since}`).catch(() => null);
-      if (!res?.ok) return;
+      if (cancelled || !res?.ok) return;
       const data = await res.json();
-      if (data.messages.length === 0) return;
-      // atBottomRef는 스크롤 이벤트로 실시간 갱신되어 있음
+      if (cancelled || data.messages.length === 0) return;
       const wasAtBottom = atBottomRef.current;
-      // 이미 로컬에 있는 메시지(직접 추가된 내 메시지 등)는 제외해 중복 방지
       setMessages((prev) => {
         const existingIds = new Set(prev.map((m) => m.id));
         const unique = (data.messages as Message[]).filter((m) => !existingIds.has(m.id));
@@ -148,15 +147,14 @@ export default function ChatPage({ params }: { params: Promise<{ userId: string 
       });
       lastIdRef.current = data.messages[data.messages.length - 1].id;
       fetch(`/api/messages/${userId}/read`, { method: "PATCH" })
-        .then(() => window.dispatchEvent(new Event("conversations-refresh")))
+        .then(() => { if (!cancelled) window.dispatchEvent(new Event("conversations-refresh")); })
         .catch(() => {});
-      // 위를 보고 있었다면 버블 표시 (스크롤은 useEffect([messages])가 처리)
       if (!wasAtBottom) {
         const receivedCount = data.messages.filter((m: Message) => !m.isFromMe).length;
-        if (receivedCount > 0) setNewMsgBubble((prev) => prev + receivedCount);
+        if (receivedCount > 0 && !cancelled) setNewMsgBubble((prev) => prev + receivedCount);
       }
     }, 3000);
-    return () => clearInterval(timer);
+    return () => { cancelled = true; clearInterval(timer); };
   }, [status, userId]);
 
   const handleSend = async () => {

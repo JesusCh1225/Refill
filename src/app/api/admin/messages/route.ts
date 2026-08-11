@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
       ? { OR: [{ senderId: { in: userIdFilter } }, { receiverId: { in: userIdFilter } }] }
       : {},
     orderBy: { createdAt: "desc" },
-    take: 10_000,
+    take: 500,
     select: {
       id: true,
       content: true,

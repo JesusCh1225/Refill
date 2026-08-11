@@ -12,8 +12,14 @@ export async function POST(
   const postId = Number((await params).id);
   if (isNaN(postId)) return NextResponse.json({ error: "invalid" }, { status: 400 });
 
-  const { reason } = await req.json();
-  if (!reason?.trim()) return NextResponse.json({ error: "reason required" }, { status: 400 });
+  const VALID_REASONS = ["스팸/광고", "불법 정보", "욕설/혐오", "사기 의심", "기타"];
+
+  let body: any;
+  try { body = await req.json(); } catch { return NextResponse.json({ error: "invalid body" }, { status: 400 }); }
+  const reason = (body.reason ?? "").trim();
+  if (!VALID_REASONS.includes(reason)) {
+    return NextResponse.json({ error: "invalid reason" }, { status: 400 });
+  }
 
   const post = await prisma.communityPost.findUnique({ where: { id: postId }, select: { authorId: true } });
   if (!post) return NextResponse.json({ error: "not found" }, { status: 404 });

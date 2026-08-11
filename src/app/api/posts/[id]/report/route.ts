@@ -14,7 +14,8 @@ export async function POST(
   const postId = Number((await params).id);
   if (isNaN(postId)) return NextResponse.json({ error: "invalid id" }, { status: 400 });
 
-  const body = await req.json();
+  let body: any;
+  try { body = await req.json(); } catch { return NextResponse.json({ error: "invalid body" }, { status: 400 }); }
   const reason = (body.reason ?? "").trim();
   if (!VALID_REASONS.includes(reason)) {
     return NextResponse.json({ error: "invalid reason" }, { status: 400 });

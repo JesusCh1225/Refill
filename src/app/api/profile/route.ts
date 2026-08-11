@@ -61,7 +61,8 @@ export async function PATCH(req: NextRequest) {
   const userId = await getSessionUserId();
   if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const body = await req.json();
+  let body: any;
+  try { body = await req.json(); } catch { return NextResponse.json({ error: "invalid body" }, { status: 400 }); }
   const data: Record<string, string | null> = {};
 
   if ("nickname" in body) {
@@ -77,7 +78,11 @@ export async function PATCH(req: NextRequest) {
     data.contact = body.contact ? String(body.contact).slice(0, 200) : null;
   }
   if ("representativeSong" in body) {
-    data.representativeSong = body.representativeSong ? String(body.representativeSong).slice(0, 500) : null;
+    const val = body.representativeSong ? String(body.representativeSong).trim() : null;
+    if (val && !val.startsWith("https://")) {
+      return NextResponse.json({ error: "유효한 https:// URL을 입력해주세요." }, { status: 400 });
+    }
+    data.representativeSong = val ? val.slice(0, 500) : null;
   }
   if ("licenses" in body) {
     data.licenses = body.licenses ? String(body.licenses).slice(0, 5000) : null;

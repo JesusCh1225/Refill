@@ -20,14 +20,10 @@ const CATEGORY_COLOR: Record<string, string> = {
   "문의": "bg-amber-50 text-amber-600",
 };
 
-function stripHtml(html: string) {
-  return html.replace(/<[^>]*>/g, "").slice(0, 120);
-}
-
 export default function CommunityPostCard({ post }: { post: Post }) {
   const router = useRouter();
   const displayName = post.author.nickname ?? post.author.name;
-  const preview = stripHtml(post.content);
+  const preview = (post.content ?? "").replace(/<[^>]*>/g, "").slice(0, 120);
 
   return (
     <div

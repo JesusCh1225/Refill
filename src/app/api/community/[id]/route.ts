@@ -44,7 +44,9 @@ export async function PATCH(
   if (!post) return NextResponse.json({ error: "not found" }, { status: 404 });
   if (post.authorId !== userId) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
-  const { title, category, content } = await req.json();
+  let parsed: any;
+  try { parsed = await req.json(); } catch { return NextResponse.json({ error: "invalid body" }, { status: 400 }); }
+  const { title, category, content } = parsed;
   if (!title?.trim() || !content?.trim() || !["자유", "문의"].includes(category)) {
     return NextResponse.json({ error: "invalid" }, { status: 400 });
   }

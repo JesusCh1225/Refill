@@ -4,8 +4,10 @@ import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
+import { useCreatePost } from "@/hooks/useCreatePost";
 import type { SearchResultItem } from "@/data/sampleMockResults";
 import Header from "@/components/organisms/Header";
+import Avatar from "@/components/atom/Avatar";
 import AuthorLink from "@/components/atom/AuthorLink";
 import Spinner from "@/components/atom/Spinner";
 import InfoRow from "@/components/atom/InfoRow";
@@ -17,7 +19,6 @@ import CommentSection from "@/components/post/CommentSection";
 import { useBookmarks } from "@/lib/useBookmarks";
 import { dirLabel } from "@/lib/dirLabel";
 import { tagLinkCls, directionBadgeCls } from "@/lib/tagStyles";
-import ChatButton from "@/components/atom/ChatButton";
 
 export default function PostDetailClient({
   params,
@@ -29,25 +30,30 @@ export default function PostDetailClient({
   const { data: session } = useSession();
   const { isBookmarked, toggle: toggleBookmark } = useBookmarks();
   const myUserId = (session?.user as any)?.id as number | undefined;
+  const { createPost } = useCreatePost();
 
   const [item, setItem] = useState<SearchResultItem | null>(null);
   const [postLoading, setPostLoading] = useState(true);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [writeNewOpen, setWriteNewOpen] = useState(false);
+  const [fabOpen, setFabOpen] = useState(false);
   const [postDeletePending, setPostDeletePending] = useState(false);
   const [postDeleting, setPostDeleting] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [mobileReportOpen, setMobileReportOpen] = useState(false);
   const [reportDone, setReportDone] = useState(false);
 
   const REPORT_REASONS = ["스팸/광고", "불법 정보", "욕설/혐오", "사기 의심", "기타"];
 
   const handleReport = async (reason: string) => {
-    await fetch(`/api/posts/${id}/report`, {
+    const res = await fetch(`/api/posts/${id}/report`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ reason }),
     });
     setReportOpen(false);
-    setReportDone(true);
+    setMobileReportOpen(false);
+    if (res.ok) setReportDone(true);
   };
 
   useEffect(() => {
@@ -117,6 +123,11 @@ export default function PostDetailClient({
         editData={item}
         onEditComplete={(updated) => setItem(updated)}
       />
+      <WritePostModal
+        isOpen={writeNewOpen}
+        onClose={() => setWriteNewOpen(false)}
+        onSubmit={async (draft) => { await createPost(draft); setWriteNewOpen(false); }}
+      />
 
       <div className="mx-auto px-3 sm:px-6 pt-5 sm:pt-8 pb-20" style={{ maxWidth: "var(--max-w-hero)" }}>
         {/* 뒤로가기 + 수정/삭제 */}
@@ -158,11 +169,11 @@ export default function PostDetailClient({
             <div>
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="inline-block text-[11px] font-semibold text-brand bg-brand-bg px-2.5 py-0.5 rounded-full">
+                  <span className="inline-block text-[13px] font-semibold text-brand bg-brand-bg px-2.5 py-0.5 rounded-full">
                     {item.category}
                   </span>
                   {item.direction && (
-                    <span className={`inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full ${directionBadgeCls(item.direction)}`}>
+                    <span className={`inline-block text-[12px] font-semibold px-2 py-0.5 rounded-full ${directionBadgeCls(item.direction)}`}>
                       {dirLabel(item.tags, item.direction)}
                     </span>
                   )}
@@ -173,7 +184,7 @@ export default function PostDetailClient({
                   size={22}
                 />
               </div>
-              <h1 className="mt-2 text-[22px] font-bold text-text-heading leading-snug">{item.title}</h1>
+              <h1 className="mt-2 text-[24px] font-bold text-text-heading leading-snug">{item.title}</h1>
             </div>
 
             <hr className="border-border-base" />
@@ -192,20 +203,26 @@ export default function PostDetailClient({
               />
               {item.author && item.authorId && (
                 <div className="flex items-center gap-3">
-                  <span className="text-[12px] font-semibold text-text-muted w-14 shrink-0">작성자</span>
+                  <span className="text-[13px] font-semibold text-text-muted w-14 shrink-0">작성자</span>
                   <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <AuthorLink authorId={item.authorId} name={item.author} className="text-[14px] text-text-body font-medium" />
+                    <Avatar
+                      src={item.authorAvatarUrl}
+                      name={item.author}
+                      className="w-7 h-7 shrink-0"
+                      textClassName="text-[11px]"
+                    />
+                    <AuthorLink authorId={item.authorId} name={item.author} className="text-[15px] text-text-body font-medium" />
                   </div>
-                  {/* 오른쪽: 채팅 + 신고 */}
+                  {/* 오른쪽: 채팅 + 신고 (데스크톱만) */}
                   {!isAuthor && myUserId && (
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="hidden sm:flex items-center gap-2 shrink-0">
                       {reportDone ? (
-                        <span className="text-[12px] text-text-muted">신고 접수됨</span>
+                        <span className="text-[13px] text-text-muted">신고 접수됨</span>
                       ) : (
                         <div className="relative">
                           <button
                             onClick={() => setReportOpen((v) => !v)}
-                            className="px-3 h-7 rounded-lg border border-border-base text-[12px] text-text-muted bg-transparent cursor-pointer hover:border-red-300 hover:text-red-400 transition-colors"
+                            className="px-3 h-7 rounded-lg border border-border-base text-[13px] text-text-muted bg-transparent cursor-pointer hover:border-red-300 hover:text-red-400 transition-colors"
                           >
                             신고
                           </button>
@@ -227,7 +244,12 @@ export default function PostDetailClient({
                           )}
                         </div>
                       )}
-                      <ChatButton userId={item.authorId} label="채팅" />
+                      <button
+                        onClick={() => router.push(`/messages/${item.authorId}`)}
+                        className="px-3 h-7 rounded-lg border border-brand text-brand text-[13px] font-semibold bg-transparent cursor-pointer hover:bg-brand-bg transition-colors shrink-0"
+                      >
+                        채팅
+                      </button>
                     </div>
                   )}
                 </div>
@@ -238,8 +260,8 @@ export default function PostDetailClient({
               <>
                 <hr className="border-border-base" />
                 <div className="flex flex-col gap-2">
-                  <p className="text-[12px] font-semibold text-text-muted">기타 사항</p>
-                  <p className="text-[14px] text-text-body leading-relaxed whitespace-pre-wrap">{item.description}</p>
+                  <p className="text-[13px] font-semibold text-text-muted">기타 사항</p>
+                  <p className="text-[15px] text-text-body leading-relaxed whitespace-pre-wrap">{item.description}</p>
                 </div>
               </>
             )}
@@ -252,7 +274,7 @@ export default function PostDetailClient({
                     <Link
                       key={kw}
                       href={`/musicmap?q=${encodeURIComponent(kw)}`}
-                      className={`px-3 py-1 rounded-full text-[11px] border transition-colors ${tagLinkCls(item.tags)}`}
+                      className={`px-3 py-1 rounded-full text-[13px] border transition-colors ${tagLinkCls(item.tags)}`}
                     >
                       #{kw}
                     </Link>
@@ -264,6 +286,78 @@ export default function PostDetailClient({
         </div>
 
         <CommentSection postId={id} postAuthorId={item.authorId} />
+      </div>
+
+      {/* 모바일 FAB */}
+      <div className="sm:hidden">
+        {fabOpen && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setFabOpen(false)} />
+            <div className="fixed bottom-24 right-4 z-50 flex flex-col items-end gap-2">
+              {session && (
+                <button
+                  onClick={() => { setWriteNewOpen(true); setFabOpen(false); }}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white shadow-lg border border-border-base text-[15px] font-semibold text-text-body cursor-pointer hover:bg-surface-card transition-colors"
+                >
+                  글쓰기
+                </button>
+              )}
+              {!isAuthor && item.authorId && myUserId && (
+                <button
+                  onClick={() => { router.push(`/messages/${item.authorId}`); setFabOpen(false); }}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white shadow-lg border border-border-base text-[15px] font-semibold text-text-body cursor-pointer hover:bg-surface-card transition-colors"
+                >
+                  채팅하기
+                </button>
+              )}
+              {!isAuthor && item.authorId && myUserId && !reportDone && (
+                <button
+                  onClick={() => { setFabOpen(false); setMobileReportOpen(true); }}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white shadow-lg border border-border-base text-[15px] font-semibold text-text-muted cursor-pointer hover:bg-surface-card transition-colors"
+                >
+                  신고
+                </button>
+              )}
+            </div>
+          </>
+        )}
+        <button
+          onClick={() => setFabOpen((v) => !v)}
+          className="fixed bottom-6 right-4 z-50 w-14 h-14 rounded-full bg-brand text-white text-3xl font-light shadow-xl border-none cursor-pointer flex items-center justify-center transition-transform duration-200"
+          style={{ transform: fabOpen ? "rotate(45deg)" : "none" }}
+          aria-label="메뉴"
+        >
+          +
+        </button>
+
+        {/* 모바일 신고 바텀시트 */}
+        {mobileReportOpen && (
+          <>
+            <div className="fixed inset-0 z-40 bg-black/30" onClick={() => setMobileReportOpen(false)} />
+            <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl shadow-xl overflow-hidden">
+              <div className="px-4 py-4 border-b border-border-base">
+                <p className="text-[15px] font-semibold text-center text-text-heading">신고 사유 선택</p>
+              </div>
+              <div className="flex flex-col">
+                {REPORT_REASONS.map((r) => (
+                  <button
+                    key={r}
+                    onClick={() => { handleReport(r); setMobileReportOpen(false); }}
+                    className="w-full text-left px-6 py-4 text-[15px] text-text-body hover:bg-surface-card border-none bg-transparent cursor-pointer border-t border-border-base first:border-t-0"
+                  >
+                    {r}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setMobileReportOpen(false)}
+                  className="w-full px-6 py-4 text-[15px] text-text-muted font-semibold border-none bg-transparent cursor-pointer border-t border-border-base"
+                >
+                  취소
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
