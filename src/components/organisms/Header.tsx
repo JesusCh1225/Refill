@@ -14,10 +14,6 @@ const NAV_LINKS = [
   { href: "/community", label: "커뮤니티", disabled: false },
 ];
 
-interface HeaderProps {
-  onLogoClick?: () => void;
-}
-
 function BellIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -35,7 +31,7 @@ function ChatIcon() {
   );
 }
 
-export default function Header({ onLogoClick }: HeaderProps) {
+export default function Header() {
   const { data: session, status } = useSession();
   const loading = status === "loading";
   const [loginOpen, setLoginOpen] = useState(false);
@@ -81,7 +77,7 @@ export default function Header({ onLogoClick }: HeaderProps) {
         className="relative px-4 sm:px-10 flex items-center justify-between border-b border-border-header bg-white"
         style={{ height: "60px" }}
       >
-        <Logo onClick={onLogoClick} />
+        <Logo />
 
         {/* 데스크톱 네비게이션 */}
         <nav className="hidden sm:flex items-center gap-8">

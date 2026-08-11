@@ -21,8 +21,6 @@ function HomePageContent() {
     router.push(`/?q=${encodeURIComponent(q.trim())}`);
   };
 
-  const handleLogoClick = () => router.push("/");
-
   const handleWriteClick = () => {
     if (requireLogin()) setWriteOpen(true);
   };
@@ -39,14 +37,13 @@ function HomePageContent() {
         key={queryParam}
         initialQuery={queryParam}
         onBack={handleSearch}
-        onLogoClick={handleLogoClick}
       />
     );
   }
 
   return (
     <div className="min-h-screen bg-surface-page text-text-body">
-      <Header onLogoClick={handleLogoClick} />
+      <Header />
       <TitleSection onSearch={handleSearch} />
 
       <button

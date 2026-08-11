@@ -23,7 +23,6 @@ import type { LocationEntry } from "@/components/molecules/LocationPicker";
 interface SearchResultPageProps {
   initialQuery: string;
   onBack: (query: string) => void;
-  onLogoClick: () => void;
 }
 
 function entryTermGroups(e: LocationEntry): string[][] {
@@ -39,7 +38,7 @@ function mostSpecificLocLabel(e: LocationEntry): string {
   return e.dong || e.gu || e.si || "";
 }
 
-export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: SearchResultPageProps) {
+export default function SearchResultPage({ initialQuery, onBack }: SearchResultPageProps) {
   const router = useRouter();
   const { requireLogin, createPost } = useCreatePost();
   const [query, setQuery] = useState(initialQuery);
@@ -190,7 +189,7 @@ export default function SearchResultPage({ initialQuery, onBack, onLogoClick }: 
 
   return (
     <div className="min-h-screen bg-surface-page text-text-body">
-      <Header onLogoClick={onLogoClick} />
+      <Header />
 
       <div className="border-b border-border-header bg-white">
         <div className="mx-auto px-3 sm:px-6 py-4" style={{ maxWidth: "var(--max-w-hero)" }}>
