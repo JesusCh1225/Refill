@@ -2,7 +2,7 @@
 .map-panel-responsive {
   position: absolute;
   background: white;
-  z-index: 20;
+  z-index: 45;
   display: flex;
   flex-direction: column;
   overflow: hidden;

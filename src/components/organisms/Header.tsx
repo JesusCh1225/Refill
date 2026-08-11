@@ -39,7 +39,6 @@ export default function Header({ onLogoClick }: HeaderProps) {
   const { data: session, status } = useSession();
   const loading = status === "loading";
   const [loginOpen, setLoginOpen] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const pathname = usePathname();
@@ -86,7 +85,6 @@ export default function Header({ onLogoClick }: HeaderProps) {
 
         {/* 데스크톱 네비게이션 */}
         <nav className="hidden sm:flex items-center gap-8">
-          <NavLink href="/">검색</NavLink>
           {NAV_LINKS.map((link) =>
             link.disabled ? (
               <div
@@ -159,27 +157,14 @@ export default function Header({ onLogoClick }: HeaderProps) {
           {loading ? (
             <div className="w-8 h-8 rounded-full bg-brand-bg animate-pulse" />
           ) : session ? (
-            <div className="flex items-center gap-2">
-              <Link href="/messages" prefetch={false} className="relative text-text-muted hover:text-text-body transition-colors">
-                <ChatIcon />
-                {unreadMessages > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-4 h-4 px-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center leading-none">
-                    {unreadMessages > 99 ? "99+" : unreadMessages}
-                  </span>
-                )}
-              </Link>
-              <Link href="/notifications" prefetch={false} className="relative text-text-muted hover:text-text-body transition-colors">
-                <BellIcon />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-4 h-4 px-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center leading-none">
-                    {unreadCount > 99 ? "99+" : unreadCount}
-                  </span>
-                )}
-              </Link>
-              <Link href="/profile" prefetch={false} className="hover:opacity-80 transition-opacity">
-                <Avatar src={session.user.image} name={session.user.name ?? "?"} className="w-8 h-8" textClassName="text-sm" />
-              </Link>
-            </div>
+            <Link href="/notifications" prefetch={false} className="relative text-text-muted hover:text-text-body transition-colors">
+              <BellIcon />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-4 h-4 px-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center leading-none">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
+            </Link>
           ) : (
             <button
               onClick={() => setLoginOpen(true)}
@@ -188,82 +173,7 @@ export default function Header({ onLogoClick }: HeaderProps) {
               로그인
             </button>
           )}
-          <button
-            onClick={() => setMenuOpen((v) => !v)}
-            aria-label="메뉴"
-            className="w-9 h-9 flex items-center justify-center rounded-lg text-text-body border-none bg-transparent cursor-pointer hover:bg-surface-card transition-colors"
-          >
-            {menuOpen ? (
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-              >
-                <path d="M18 6L6 18M6 6l12 12" />
-              </svg>
-            ) : (
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-              >
-                <path d="M3 12h18M3 6h18M3 18h18" />
-              </svg>
-            )}
-          </button>
         </div>
-
-        {/* 모바일 드롭다운 메뉴 */}
-        {menuOpen && (
-          <>
-            {/* 외부 클릭 시 닫기 */}
-            <div className="fixed inset-0 z-30" onClick={() => setMenuOpen(false)} />
-            <div className="sm:hidden absolute top-full left-0 right-0 z-40 bg-white border-b border-border-header shadow-lg">
-              <nav className="flex flex-col px-4 py-3 gap-0.5">
-                <Link
-                  href="/musicmap"
-                  onClick={() => setMenuOpen(false)}
-                  className="py-3 px-3 text-sm text-text-body font-medium hover:bg-surface-card rounded-xl transition-colors"
-                >
-                  음악맵
-                </Link>
-                <Link
-                  href="/"
-                  onClick={() => setMenuOpen(false)}
-                  className="py-3 px-3 text-sm text-text-body font-medium hover:bg-surface-card rounded-xl transition-colors"
-                >
-                  검색
-                </Link>
-                <Link
-                  href="/community"
-                  onClick={() => setMenuOpen(false)}
-                  className="py-3 px-3 text-sm text-text-body font-medium hover:bg-surface-card rounded-xl transition-colors"
-                >
-                  커뮤니티
-                </Link>
-                {session && (
-                  <button
-                    onClick={() => {
-                      setMenuOpen(false);
-                      signOut({ callbackUrl: "/" });
-                    }}
-                    className="py-3 px-3 text-sm text-text-muted text-left border-none bg-transparent cursor-pointer hover:bg-surface-card rounded-xl transition-colors"
-                  >
-                    로그아웃
-                  </button>
-                )}
-              </nav>
-            </div>
-          </>
-        )}
       </header>
 
       {loginOpen && <LoginModal onClose={() => setLoginOpen(false)} />}

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { SessionProvider } from "next-auth/react";
 import { ToastProvider } from "@/context/toast";
+import BottomNav from "@/components/organisms/BottomNav";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -71,8 +72,11 @@ export default function RootLayout({
       lang="ko"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-surface-page text-text-body">
-        <SessionProvider><ToastProvider>{children}</ToastProvider></SessionProvider>
+      <body className="min-h-full flex flex-col bg-surface-page text-text-body pb-14 sm:pb-0">
+        <SessionProvider>
+          <ToastProvider>{children}</ToastProvider>
+          <BottomNav />
+        </SessionProvider>
       </body>
     </html>
   );

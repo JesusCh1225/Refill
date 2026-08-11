@@ -36,7 +36,6 @@ export default function PostDetailClient({
   const [postLoading, setPostLoading] = useState(true);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [writeNewOpen, setWriteNewOpen] = useState(false);
-  const [fabOpen, setFabOpen] = useState(false);
   const [postDeletePending, setPostDeletePending] = useState(false);
   const [postDeleting, setPostDeleting] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
@@ -290,49 +289,39 @@ export default function PostDetailClient({
         <CommentSection postId={id} postAuthorId={item.authorId} />
       </div>
 
-      {/* 모바일 FAB */}
-      <div className="sm:hidden">
-        {fabOpen && (
-          <>
-            <div className="fixed inset-0 z-40" onClick={() => setFabOpen(false)} />
-            <div className="fixed bottom-24 right-4 z-50 flex flex-col items-end gap-2">
-              {session && (
-                <button
-                  onClick={() => { setWriteNewOpen(true); setFabOpen(false); }}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white shadow-lg border border-border-base text-[15px] font-semibold text-text-body cursor-pointer hover:bg-surface-card transition-colors"
-                >
-                  글쓰기
-                </button>
-              )}
-              {!isAuthor && item.authorId && myUserId && (
-                <button
-                  onClick={() => { router.push(`/messages/${item.authorId}`); setFabOpen(false); }}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white shadow-lg border border-border-base text-[15px] font-semibold text-text-body cursor-pointer hover:bg-surface-card transition-colors"
-                >
-                  채팅하기
-                </button>
-              )}
-              {!isAuthor && item.authorId && myUserId && !reportDone && (
-                <button
-                  onClick={() => { setFabOpen(false); setMobileReportOpen(true); }}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white shadow-lg border border-border-base text-[15px] font-semibold text-text-muted cursor-pointer hover:bg-surface-card transition-colors"
-                >
-                  신고
-                </button>
-              )}
-            </div>
-          </>
+      {/* 모바일 하단 액션 버튼 */}
+      <div className="sm:hidden fixed bottom-16 right-4 z-50 flex flex-col items-end gap-2">
+        {!isAuthor && myUserId && !reportDone && (
+          <button
+            onClick={() => setMobileReportOpen(true)}
+            className="flex items-center px-4 rounded-full bg-white shadow-md border border-border-base text-[13px] font-medium text-text-muted cursor-pointer hover:bg-surface-card transition-colors"
+            style={{ height: "36px" }}
+          >
+            신고
+          </button>
         )}
-        <button
-          onClick={() => setFabOpen((v) => !v)}
-          className="fixed bottom-6 right-4 z-50 w-14 h-14 rounded-full bg-brand text-white text-3xl font-light shadow-xl border-none cursor-pointer flex items-center justify-center transition-transform duration-200"
-          style={{ transform: fabOpen ? "rotate(45deg)" : "none" }}
-          aria-label="메뉴"
-        >
-          +
-        </button>
+        {!isAuthor && item.authorId && myUserId && (
+          <button
+            onClick={() => router.push(`/messages/${item.authorId}`)}
+            className="flex items-center px-4 rounded-full bg-white shadow-md border border-border-base text-[13px] font-semibold text-text-body cursor-pointer hover:bg-surface-card transition-colors"
+            style={{ height: "36px" }}
+          >
+            채팅하기
+          </button>
+        )}
+        {session && (
+          <button
+            onClick={() => setWriteNewOpen(true)}
+            className="flex items-center gap-1.5 bg-brand text-white text-[13px] font-semibold px-5 rounded-full border-none cursor-pointer hover:opacity-85 transition-opacity shadow-lg"
+            style={{ height: "44px" }}
+          >
+            ✦ 글쓰기
+          </button>
+        )}
+      </div>
 
-        {/* 모바일 신고 바텀시트 */}
+      {/* 모바일 신고 바텀시트 */}
+      <div className="sm:hidden">
         {mobileReportOpen && (
           <>
             <div className="fixed inset-0 z-40 bg-black/30" onClick={() => setMobileReportOpen(false)} />
