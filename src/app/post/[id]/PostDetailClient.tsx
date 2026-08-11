@@ -205,12 +205,14 @@ export default function PostDetailClient({
                 <div className="flex items-center gap-3">
                   <span className="text-[13px] font-semibold text-text-muted w-14 shrink-0">작성자</span>
                   <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <Avatar
-                      src={item.authorAvatarUrl}
-                      name={item.author}
-                      className="w-7 h-7 shrink-0"
-                      textClassName="text-[11px]"
-                    />
+                    <Link href={`/profile/${item.authorId}`} className="shrink-0 hover:opacity-75 transition-opacity">
+                      <Avatar
+                        src={item.authorAvatarUrl}
+                        name={item.author}
+                        className="w-7 h-7"
+                        textClassName="text-[11px]"
+                      />
+                    </Link>
                     <AuthorLink authorId={item.authorId} name={item.author} className="text-[15px] text-text-body font-medium" />
                   </div>
                   {/* 오른쪽: 채팅 + 신고 (데스크톱만) */}

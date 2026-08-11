@@ -67,6 +67,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userId
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [postTab, setPostTab] = useState<"all" | "lesson" | "band" | "trade">("all");
+  const [avatarLightbox, setAvatarLightbox] = useState(false);
 
   // 리뷰 목록 (더보기 포함)
   const [visibleReviews, setVisibleReviews] = useState<ReviewItem[]>([]);
@@ -187,6 +188,28 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userId
     <div className="min-h-screen bg-surface-page text-text-body">
       <Header />
 
+      {/* 프사 확대 라이트박스 */}
+      {avatarLightbox && profile?.avatarUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+          onClick={() => setAvatarLightbox(false)}
+        >
+          <button
+            type="button"
+            onClick={() => setAvatarLightbox(false)}
+            className="absolute top-4 right-4 text-white/70 hover:text-white text-3xl leading-none bg-transparent border-none cursor-pointer"
+          >
+            ×
+          </button>
+          <img
+            src={profile.avatarUrl}
+            alt={displayName}
+            className="max-w-[90vw] max-h-[90vh] rounded-2xl object-contain shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+
       <div className="mx-auto px-3 sm:px-6 pt-5 sm:pt-8 pb-20 flex flex-col gap-5" style={{ maxWidth: "720px" }}>
         {/* 뒤로가기 */}
         <button
@@ -201,7 +224,13 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userId
           <div className="flex items-start gap-4">
             {/* 아바타 */}
             <div className="shrink-0">
-              <Avatar src={profile.avatarUrl} name={displayName} className="w-20 h-20" textClassName="text-3xl" />
+              <button
+                type="button"
+                onClick={() => profile.avatarUrl && setAvatarLightbox(true)}
+                className={`block rounded-full bg-transparent border-none p-0 ${profile.avatarUrl ? "cursor-pointer hover:opacity-80 transition-opacity" : "cursor-default"}`}
+              >
+                <Avatar src={profile.avatarUrl} name={displayName} className="w-20 h-20" textClassName="text-3xl" />
+              </button>
             </div>
 
             <div className="flex-1 min-w-0">
