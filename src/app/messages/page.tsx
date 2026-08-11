@@ -6,11 +6,13 @@ export default function MessagesPage() {
   return (
     <>
       {/* 모바일: 대화 목록 전체 표시 */}
-      <div className="sm:hidden bg-white min-h-full">
-        <div className="px-4 py-4 border-b border-border-base">
+      <div className="sm:hidden flex flex-col h-full bg-white overflow-hidden">
+        <div className="px-4 py-4 border-b border-border-base shrink-0">
           <h1 className="text-[18px] font-bold text-text-heading">채팅</h1>
         </div>
-        <ConversationList />
+        <div className="flex-1 overflow-y-auto pb-14">
+          <ConversationList />
+        </div>
       </div>
 
       {/* 데스크톱: 우측 빈 상태 */}
