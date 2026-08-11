@@ -28,17 +28,19 @@ export async function syncPostHashtags(postId: number, names: string[]) {
   ] as string[];
   if (trimmed.length === 0) return;
 
-  const allHashtags = await Promise.all(
+  // upsert()는 내부적으로 트랜잭션을 사용해 Neon HTTP 모드에서 실패함.
+  // $queryRaw로 단일 INSERT ON CONFLICT 구문을 실행한다.
+  const rows = await Promise.all(
     trimmed.map((name) =>
-      prisma.hashtag.upsert({
-        where: { name },
-        create: { name },
-        update: {},
-        select: { id: true },
-      }),
+      prisma.$queryRaw<{ id: number }[]>`
+        INSERT INTO "Hashtag" (name)
+        VALUES (${name})
+        ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
+        RETURNING id
+      `,
     ),
   );
-  const allIds = allHashtags.map((h) => h.id);
+  const allIds = rows.flatMap((r) => r.map((h) => h.id));
 
   await Promise.all(
     allIds.map((hashtagId) => prisma.postHashtag.create({ data: { postId, hashtagId } })),
