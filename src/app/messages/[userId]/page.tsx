@@ -209,8 +209,7 @@ export default function ChatPage({ params }: { params: Promise<{ userId: string 
   let lastDate = "";
 
   return (
-    /* 모바일: h-[calc(100svh-60px)]로 전체 화면 채움 / 데스크톱: h-full로 우측 패널 채움 */
-    <div className="flex flex-col h-[calc(100svh-60px)] sm:h-full">
+    <div className="flex flex-col h-full">
 
       {/* 채팅 헤더 */}
       <div className="shrink-0 flex items-center gap-3 px-4 py-3 bg-white border-b border-border-base">
