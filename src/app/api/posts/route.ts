@@ -67,36 +67,44 @@ export async function POST(req: NextRequest) {
   if (!priceDisplay?.trim()) return NextResponse.json({ error: "price required" }, { status: 400 });
 
   try {
+    const mappedPriceType = PRICE_TYPE_MAP[priceType] ?? "NEGOTIABLE";
+    const mappedDirection = direction === "seek" ? "SEEK" : "OFFER";
+    console.log("[posts POST] creating post", { title, priceType: mappedPriceType, direction: mappedDirection, authorId: userId });
+
     const post = await (prisma.post.create as any)({
       data: {
         title: title.trim().slice(0, 100),
         description: description?.trim() || null,
-        priceType: PRICE_TYPE_MAP[priceType] ?? "NEGOTIABLE",
+        priceType: mappedPriceType,
         priceAmount: priceAmount ? parseInt(priceAmount) || null : null,
         priceDisplay: priceDisplay.trim().slice(0, 100),
         imageEmoji: (imageEmoji || "🎵").slice(0, 10),
         location: location.trim().slice(0, 100),
         lat: typeof lat === "number" ? lat : null,
         lng: typeof lng === "number" ? lng : null,
-        direction: direction === "seek" ? "SEEK" : "OFFER",
+        direction: mappedDirection,
         authorId: userId,
       },
       select: { id: true },
     });
 
     const postId = post.id;
+    console.log("[posts POST] post created, id:", postId);
 
-    await Promise.all([
-      syncPostCategories(postId, Array.isArray(tags) ? tags : []),
-      syncPostHashtags(postId, Array.isArray(keywords) ? keywords : []),
-      syncPostLocationTags(postId, Array.isArray(locationTags) ? locationTags : []),
-      syncPostImages(postId, Array.isArray(imageUrls) ? imageUrls : []),
-    ]);
+    await syncPostCategories(postId, Array.isArray(tags) ? tags : []);
+    console.log("[posts POST] categories synced");
+    await syncPostHashtags(postId, Array.isArray(keywords) ? keywords : []);
+    console.log("[posts POST] hashtags synced");
+    await syncPostLocationTags(postId, Array.isArray(locationTags) ? locationTags : []);
+    console.log("[posts POST] locationTags synced");
+    await syncPostImages(postId, Array.isArray(imageUrls) ? imageUrls : []);
+    console.log("[posts POST] images synced");
 
     const created = await prisma.post.findUnique({
       where: { id: postId },
       select: POST_SELECT,
     });
+    console.log("[posts POST] findUnique done, found:", !!created);
     return NextResponse.json(mapPost(created!), { status: 201 });
   } catch (err) {
     console.error("[posts POST] error:", err);
