@@ -60,6 +60,7 @@ export default function CommunityEditor({ content, onChange, placeholder }: Prop
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeColor, setActiveColor] = useState<string | null>(null);
   const [textLength, setTextLength] = useState(0);
+  const [, setEditorTick] = useState(0);
   const MAX_TEXT = 10_000;
 
   const editor = useEditor({
@@ -70,6 +71,7 @@ export default function CommunityEditor({ content, onChange, placeholder }: Prop
       onChange(editor.getHTML());
     },
     onTransaction: ({ editor }) => {
+      setEditorTick((v) => v + 1);
       const markColor = editor.getAttributes("textStyle").color ?? null;
       const storedColor =
         (editor.view.state.storedMarks as any)
@@ -110,17 +112,20 @@ export default function CommunityEditor({ content, onChange, placeholder }: Prop
   if (!editor) return null;
 
   return (
-    <div className="border border-border-base rounded-xl overflow-hidden">
-      <Toolbar
-        editor={editor}
-        activeColor={activeColor}
-        onColorClick={(c) => { editor.chain().focus().setColor(c).run(); setActiveColor(c); }}
-        onImageClick={() => fileInputRef.current?.click()}
-        onLinkClick={setLink}
-      />
+    <div className="border border-border-base rounded-xl">
+      {/* overflow-hidden을 wrapper에만 한정 — 외부 overflow-hidden은 sticky를 막으므로 제거 */}
+      <div className="sticky top-0 z-10 rounded-t-xl overflow-hidden shadow-sm">
+        <Toolbar
+          editor={editor}
+          activeColor={activeColor}
+          onColorClick={(c) => { editor.chain().focus().setColor(c).run(); setActiveColor(c); }}
+          onImageClick={() => fileInputRef.current?.click()}
+          onLinkClick={setLink}
+        />
+      </div>
       <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleImageUpload} />
       <EditorContent editor={editor} />
-      <div className={`px-4 py-1.5 border-t border-border-base flex items-center justify-end gap-2 text-[11px] ${
+      <div className={`px-4 py-1.5 border-t border-border-base rounded-b-xl flex items-center justify-end gap-2 text-[11px] ${
         textLength > MAX_TEXT
           ? "bg-red-50 text-red-500 font-semibold"
           : textLength > MAX_TEXT * 0.85
