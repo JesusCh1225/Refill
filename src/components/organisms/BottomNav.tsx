@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
+import LoginModal from "@/components/organisms/LoginModal";
 
 function HomeIcon({ active }: { active: boolean }) {
   return (
@@ -54,6 +55,7 @@ export default function BottomNav() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const [loginOpen, setLoginOpen] = useState(false);
 
   // 1:1 채팅방은 풀스크린 UI이므로 탭바 숨김
   const isMessageThread = /^\/messages\/\d+/.test(pathname);
@@ -85,31 +87,36 @@ export default function BottomNav() {
   ];
 
   return (
-    <nav
-      className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-border-base flex"
-      style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
-    >
-      {tabs.map(({ href, label, exact, Icon, badge }) => {
-        const isActive = active(href, exact);
-        return (
-          <Link
-            key={href}
-            href={href}
-            prefetch={false}
-            className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 transition-colors ${isActive ? "text-brand" : "text-text-muted"}`}
-          >
-            <div className="relative">
-              <Icon active={isActive} />
-              {(badge ?? 0) > 0 && (
-                <span className="absolute -top-1 -right-1.5 min-w-4 h-4 px-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center leading-none">
-                  {badge! > 99 ? "99+" : badge}
-                </span>
-              )}
-            </div>
-            <span className="text-[10px] font-medium leading-none">{label}</span>
-          </Link>
-        );
-      })}
-    </nav>
+    <>
+      <nav
+        className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-border-base flex"
+        style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+      >
+        {tabs.map(({ href, label, exact, Icon, badge }) => {
+          const isActive = active(href, exact);
+          const needsAuth = href === "/messages" && !session;
+          return (
+            <Link
+              key={href}
+              href={needsAuth ? "#" : href}
+              prefetch={false}
+              onClick={needsAuth ? (e) => { e.preventDefault(); setLoginOpen(true); } : undefined}
+              className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 transition-colors ${isActive ? "text-brand" : "text-text-muted"}`}
+            >
+              <div className="relative">
+                <Icon active={isActive} />
+                {(badge ?? 0) > 0 && (
+                  <span className="absolute -top-1 -right-1.5 min-w-4 h-4 px-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center leading-none">
+                    {badge! > 99 ? "99+" : badge}
+                  </span>
+                )}
+              </div>
+              <span className="text-[10px] font-medium leading-none">{label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+      {loginOpen && <LoginModal onClose={() => setLoginOpen(false)} />}
+    </>
   );
 }

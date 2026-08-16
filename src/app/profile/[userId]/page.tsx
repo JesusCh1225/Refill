@@ -10,6 +10,7 @@ import AuthorLink from "@/components/atom/AuthorLink";
 import Spinner from "@/components/atom/Spinner";
 import ChatButton from "@/components/atom/ChatButton";
 import BlockButton from "@/components/atom/BlockButton";
+import LoginModal from "@/components/organisms/LoginModal";
 import { StarRating, InteractiveStars } from "@/components/atom/StarRating";
 
 interface PublicPost {
@@ -73,6 +74,8 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userId
   const [visibleReviews, setVisibleReviews] = useState<ReviewItem[]>([]);
   const [reviewsExhausted, setReviewsExhausted] = useState(false);
   const [reviewsLoading, setReviewsLoading] = useState(false);
+
+  const [loginOpen, setLoginOpen] = useState(false);
 
   // 리뷰 작성 폼
   const [reviewRating, setReviewRating] = useState(0);
@@ -187,6 +190,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userId
   return (
     <div className="min-h-screen bg-surface-page text-text-body">
       <Header />
+      {loginOpen && <LoginModal onClose={() => setLoginOpen(false)} />
 
       {/* 프사 확대 라이트박스 */}
       {avatarLightbox && profile?.avatarUrl && (
@@ -408,7 +412,13 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userId
               {!session ? (
                 <p className="text-[13px] text-text-muted">
                   리뷰를 남기려면{" "}
-                  <Link href="/login" className="text-brand hover:underline font-semibold">로그인</Link>
+                  <button
+                    type="button"
+                    onClick={() => setLoginOpen(true)}
+                    className="text-brand hover:underline font-semibold bg-transparent border-none p-0 cursor-pointer"
+                  >
+                    로그인
+                  </button>
                   이 필요해요.
                 </p>
               ) : reviewSuccess ? (

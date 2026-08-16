@@ -10,6 +10,7 @@ import Avatar from "@/components/atom/Avatar";
 import Spinner from "@/components/atom/Spinner";
 import CommunityComments from "@/components/community/CommunityComments";
 import ChatButton from "@/components/atom/ChatButton";
+import LoginModal from "@/components/organisms/LoginModal";
 
 interface Post {
   id: number;
@@ -41,6 +42,7 @@ export default function CommunityDetailPage({ params }: { params: Promise<{ id: 
   const [deleting, setDeleting] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [reportDone, setReportDone] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
 
   const REPORT_REASONS = ["스팸/광고", "불법 정보", "욕설/혐오", "사기 의심", "기타"];
 
@@ -58,7 +60,7 @@ export default function CommunityDetailPage({ params }: { params: Promise<{ id: 
   }, [id, router]);
 
   const handleLike = async () => {
-    if (!session) { alert("로그인이 필요해요."); return; }
+    if (!session) { setLoginOpen(true); return; }
     const res = await fetch(`/api/community/${id}/like`, { method: "POST" });
     if (res.ok) {
       const { liked: l, count } = await res.json();
@@ -108,6 +110,7 @@ export default function CommunityDetailPage({ params }: { params: Promise<{ id: 
   return (
     <div className="min-h-screen bg-surface-page">
       <Header />
+      {loginOpen && <LoginModal onClose={() => setLoginOpen(false)} />
       <main className="mx-auto px-4 sm:px-6 pt-8 pb-20" style={{ maxWidth: "760px" }}>
         {/* 뒤로 가기 */}
         <Link href="/community" className="inline-flex items-center gap-1 text-[13px] text-text-muted hover:text-brand transition-colors mb-5">

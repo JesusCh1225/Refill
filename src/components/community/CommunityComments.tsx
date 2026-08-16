@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import Avatar from "@/components/atom/Avatar";
+import LoginModal from "@/components/organisms/LoginModal";
 
 interface Author { id: number; nickname: string | null; name: string; avatarUrl: string | null; }
 interface CommentData {
@@ -28,6 +29,7 @@ export default function CommunityComments({ postId, initial }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [replyingTo, setReplyingTo] = useState<number | null>(null);
   const [replyText, setReplyText] = useState("");
+  const [loginOpen, setLoginOpen] = useState(false);
   const [replySaving, setReplySaving] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editText, setEditText] = useState("");
@@ -218,7 +220,19 @@ export default function CommunityComments({ postId, initial }: Props) {
           )}
         </form>
       ) : (
-        <p className="text-[13px] text-text-muted text-center py-3">댓글을 작성하려면 로그인이 필요해요.</p>
+        <>
+          <div className="py-4 text-center rounded-xl bg-surface-card border border-border-base">
+            <p className="text-[13px] text-text-muted mb-3">댓글을 작성하려면 로그인이 필요해요.</p>
+            <button
+              type="button"
+              onClick={() => setLoginOpen(true)}
+              className="inline-block px-5 py-2 rounded-full bg-brand text-white text-[13px] font-semibold border-none cursor-pointer hover:opacity-85 transition-opacity"
+            >
+              로그인하기
+            </button>
+          </div>
+          {loginOpen && <LoginModal onClose={() => setLoginOpen(false)} />}
+        </>
       )}
     </div>
   );

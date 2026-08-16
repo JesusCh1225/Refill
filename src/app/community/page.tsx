@@ -7,6 +7,7 @@ import Header from "@/components/organisms/Header";
 import CommunityPostCard from "@/components/community/CommunityPostCard";
 import PageNumbers from "@/components/atom/PageNumbers";
 import Spinner from "@/components/atom/Spinner";
+import LoginModal from "@/components/organisms/LoginModal";
 
 const CATEGORIES = ["전체", "자유", "문의"];
 
@@ -26,6 +27,7 @@ function CommunityContent() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState(params.get("q") ?? "");
   const [searchInput, setSearchInput] = useState(params.get("q") ?? "");
+  const [loginOpen, setLoginOpen] = useState(false);
 
   const category = params.get("category") ?? "전체";
   const page = Number(params.get("page") ?? "1");
@@ -58,12 +60,13 @@ function CommunityContent() {
   };
 
   const handleWrite = () => {
-    if (!session) { alert("글을 작성하려면 로그인이 필요해요."); return; }
+    if (!session) { setLoginOpen(true); return; }
     router.push("/community/write");
   };
 
   return (
     <main className="mx-auto px-4 sm:px-6 pt-8 pb-20" style={{ maxWidth: "760px" }}>
+      {loginOpen && <LoginModal onClose={() => setLoginOpen(false)} />
       {/* 헤더 */}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-[22px] font-bold text-text-heading">커뮤니티</h1>

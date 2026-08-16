@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import Avatar from "@/components/atom/Avatar";
 import CommentItem, { LockIcon } from "@/components/post/CommentItem";
+import LoginModal from "@/components/organisms/LoginModal";
 import { type CommentData } from "@/types/comment";
 
 interface Props {
@@ -23,6 +24,7 @@ export default function CommentSection({ postId, postAuthorId }: Props) {
   const [replyText, setReplyText] = useState("");
   const [replySecret, setReplySecret] = useState(false);
   const [replySaving, setReplySaving] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
 
   useEffect(() => {
     fetch(`/api/posts/${postId}/comments`)
@@ -154,10 +156,19 @@ export default function CommentSection({ postId, postAuthorId }: Props) {
             </div>
           </form>
         ) : (
-          <div className="py-4 text-center rounded-xl bg-surface-card border border-border-base">
-            <p className="text-[13px] text-text-muted mb-3">댓글을 작성하려면 로그인이 필요해요.</p>
-            <a href="/login" className="inline-block px-5 py-2 rounded-full bg-brand text-white text-[13px] font-semibold hover:opacity-85 transition-opacity">로그인하기</a>
-          </div>
+          <>
+            <div className="py-4 text-center rounded-xl bg-surface-card border border-border-base">
+              <p className="text-[13px] text-text-muted mb-3">댓글을 작성하려면 로그인이 필요해요.</p>
+              <button
+                type="button"
+                onClick={() => setLoginOpen(true)}
+                className="inline-block px-5 py-2 rounded-full bg-brand text-white text-[13px] font-semibold border-none cursor-pointer hover:opacity-85 transition-opacity"
+              >
+                로그인하기
+              </button>
+            </div>
+            {loginOpen && <LoginModal onClose={() => setLoginOpen(false)} />}
+          </>
         )}
       </div>
     </div>

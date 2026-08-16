@@ -2,14 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import { useToast } from "@/context/toast";
 
 export function useBookmarks() {
   const { status } = useSession();
-  const router = useRouter();
   const { showToast } = useToast();
   const [ids, setIds] = useState<Set<number>>(new Set());
+  const [loginRequired, setLoginRequired] = useState(false);
 
   useEffect(() => {
     if (status !== "authenticated") { setIds(new Set()); return; }
@@ -21,22 +20,21 @@ export function useBookmarks() {
 
   const toggle = async (postId: number) => {
     if (status !== "authenticated") {
-      showToast("로그인이 필요한 기능이에요.", "error");
-      router.push("/login");
+      setLoginRequired(true);
       return;
     }
 
     const had = ids.has(postId);
     const next = new Set(ids);
     had ? next.delete(postId) : next.add(postId);
-    setIds(next); // 낙관적 업데이트
+    setIds(next);
 
     const res = await fetch(`/api/bookmarks/${postId}`, {
       method: had ? "DELETE" : "POST",
     }).catch(() => null);
 
     if (!res || !res.ok) {
-      setIds(ids); // 실패 시 롤백
+      setIds(ids);
       showToast("북마크 저장에 실패했어요.", "error");
     }
   };
@@ -44,5 +42,7 @@ export function useBookmarks() {
   return {
     isBookmarked: (id: number) => ids.has(id),
     toggle,
+    loginRequired,
+    clearLoginRequired: () => setLoginRequired(false),
   };
 }

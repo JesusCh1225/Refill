@@ -17,6 +17,7 @@ import WritePostModal from "@/components/organisms/WritePostModal";
 import PostImageCarousel from "@/components/post/PostImageCarousel";
 import CommentSection from "@/components/post/CommentSection";
 import { useBookmarks } from "@/lib/useBookmarks";
+import LoginModal from "@/components/organisms/LoginModal";
 import { dirLabel } from "@/lib/dirLabel";
 import { tagLinkCls, directionBadgeCls } from "@/lib/tagStyles";
 
@@ -28,7 +29,7 @@ export default function PostDetailClient({
   const { id } = use(params);
   const router = useRouter();
   const { data: session } = useSession();
-  const { isBookmarked, toggle: toggleBookmark } = useBookmarks();
+  const { isBookmarked, toggle: toggleBookmark, loginRequired: bookmarkLoginRequired, clearLoginRequired: clearBookmarkLogin } = useBookmarks();
   const myUserId = (session?.user as any)?.id as number | undefined;
   const { createPost } = useCreatePost();
 
@@ -115,6 +116,7 @@ export default function PostDetailClient({
   return (
     <div className="min-h-screen bg-surface-page text-text-body">
       <Header />
+      {bookmarkLoginRequired && <LoginModal onClose={clearBookmarkLogin} />}
       <WritePostModal
         isOpen={editModalOpen}
         onClose={() => setEditModalOpen(false)}

@@ -14,6 +14,7 @@ import type { SearchResultItem, PostDraft } from "@/data/sampleMockResults";
 import { MAIN_CATEGORIES, tagsAndDirToMainCatId } from "@/data/Categories";
 import { SLIDER_MAX, NEGOTIABLE_PRICE, parsePrice } from "@/data/postOptions";
 import { useBookmarks } from "@/lib/useBookmarks";
+import LoginModal from "@/components/organisms/LoginModal";
 import { useCreatePost } from "@/hooks/useCreatePost";
 import { wordVariants } from "@/lib/textMatching";
 import { parseLocationFromQuery } from "@/lib/locationParser";
@@ -63,7 +64,7 @@ export default function SearchResultPage({ initialQuery, onBack }: SearchResultP
 
   const queryRef = useRef(initialQuery);
   const lastApiQueryRef = useRef("");
-  const { isBookmarked, toggle: toggleBookmark } = useBookmarks();
+  const { isBookmarked, toggle: toggleBookmark, loginRequired: bookmarkLoginRequired, clearLoginRequired: clearBookmarkLogin } = useBookmarks();
 
   const handleSetQuery = (q: string) => { queryRef.current = q; setQuery(q); };
   const handleSearch = (voiceQuery?: string) => onBack(voiceQuery ?? queryRef.current);
@@ -190,6 +191,7 @@ export default function SearchResultPage({ initialQuery, onBack }: SearchResultP
   return (
     <div className="min-h-screen bg-surface-page text-text-body">
       <Header />
+      {bookmarkLoginRequired && <LoginModal onClose={clearBookmarkLogin} />}
 
       <div className="border-b border-border-header bg-white">
         <div className="mx-auto px-3 sm:px-6 py-4" style={{ maxWidth: "var(--max-w-hero)" }}>
