@@ -11,10 +11,13 @@ import InfoTab from "@/components/profile/InfoTab";
 import PostsTab from "@/components/profile/PostsTab";
 import type { ProfilePost } from "@/components/profile/PostsTab";
 import BookmarksTab from "@/components/profile/BookmarksTab";
+import LikesTab from "@/components/profile/LikesTab";
+import type { LikedPost } from "@/components/profile/LikesTab";
+import LoginModal from "@/components/organisms/LoginModal";
 import type { SearchResultItem } from "@/data/sampleMockResults";
 import { ACCEPT_IMAGE, ALLOWED_IMAGE_TYPES } from "@/lib/uploadValidator";
 
-type Tab = "info" | "posts" | "bookmarks";
+type Tab = "info" | "posts" | "bookmarks" | "likes";
 
 interface UserProfile {
   id: number;
@@ -35,6 +38,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "info", label: "내 정보" },
   { id: "posts", label: "작성한 글" },
   { id: "bookmarks", label: "북마크" },
+  { id: "likes", label: "좋아요" },
 ];
 
 export default function ProfilePage() {
@@ -50,6 +54,7 @@ export default function ProfilePage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [myPosts, setMyPosts] = useState<ProfilePost[]>([]);
   const [myBookmarks, setMyBookmarks] = useState<SearchResultItem[]>([]);
+  const [myLikes, setMyLikes] = useState<LikedPost[]>([]);
   const [deletingPost, setDeletingPost] = useState<{ id: number; type: "map" | "community" } | null>(null);
   const [postDeleteLoading, setPostDeleteLoading] = useState(false);
 
@@ -58,9 +63,6 @@ export default function ProfilePage() {
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (status === "unauthenticated") router.replace("/");
-  }, [status, router]);
 
   // 커스텀 아바타가 있을 때만 세션에 동기화 (없으면 OAuth 사진 그대로 유지)
   useEffect(() => {
@@ -85,6 +87,10 @@ export default function ProfilePage() {
     fetch("/api/bookmarks?full=1")
       .then((r) => r.json())
       .then((data) => Array.isArray(data) && setMyBookmarks(data))
+      .catch(() => {});
+    fetch("/api/profile/likes")
+      .then((r) => r.json())
+      .then((data) => Array.isArray(data) && setMyLikes(data))
       .catch(() => {});
   }, [status]);
 
@@ -189,7 +195,27 @@ export default function ProfilePage() {
     }
   };
 
-  if (status === "loading" || !profile) {
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen bg-surface-page">
+        <Header />
+        <div className="flex items-center justify-center py-40">
+          <Spinner />
+        </div>
+      </div>
+    );
+  }
+
+  if (status === "unauthenticated") {
+    return (
+      <div className="min-h-screen bg-surface-page">
+        <Header />
+        <LoginModal onClose={() => router.replace("/")} />
+      </div>
+    );
+  }
+
+  if (!profile) {
     return (
       <div className="min-h-screen bg-surface-page">
         <Header />
@@ -265,6 +291,7 @@ export default function ProfilePage() {
           />
         )}
         {tab === "bookmarks" && <BookmarksTab bookmarks={myBookmarks} />}
+        {tab === "likes" && <LikesTab likes={myLikes} />}
       </div>
     </div>
   );

@@ -74,15 +74,16 @@ export async function POST(req: NextRequest) {
 
     const clean = sanitizePostContent(content);
 
-    const post = await prisma.communityPost.create({
-      data: {
-        title: title.trim().slice(0, 200),
-        category,
-        content: clean,
-        authorId: userId,
-      },
-      include: {
+    const { id: postId } = await prisma.communityPost.create({
+      data: { title: title.trim().slice(0, 200), category, content: clean, authorId: userId },
+      select: { id: true },
+    });
+    const post = await prisma.communityPost.findUnique({
+      where: { id: postId },
+      select: {
+        id: true, title: true, category: true, content: true, createdAt: true, updatedAt: true,
         author: { select: { id: true, nickname: true, name: true, avatarUrl: true } },
+        _count: { select: { comments: true, likes: true } },
       },
     });
 

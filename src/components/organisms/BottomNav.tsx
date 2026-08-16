@@ -78,7 +78,7 @@ export default function BottomNav() {
 
   const tabs = [
     { href: "/", label: "홈", exact: true, Icon: HomeIcon },
-    { href: "/musicmap", label: "뮤직맵", Icon: MapIcon },
+    { href: "/musicmap", label: "음악맵", Icon: MapIcon },
     { href: "/community", label: "커뮤니티", Icon: CommunityIcon },
     { href: "/messages", label: "채팅", Icon: ChatIcon, badge: session ? unreadMessages : 0 },
     { href: "/profile", label: "MY", exact: true, Icon: MyIcon },

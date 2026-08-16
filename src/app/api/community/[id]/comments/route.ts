@@ -78,13 +78,12 @@ export async function POST(
     }
   }
 
-  const comment = await prisma.communityComment.create({
-    data: {
-      content: content.trim(),
-      authorId: userId,
-      postId,
-      parentId: resolvedParentId,
-    },
+  const { id: commentId } = await prisma.communityComment.create({
+    data: { content: content.trim(), authorId: userId, postId, parentId: resolvedParentId },
+    select: { id: true },
+  });
+  const comment = await prisma.communityComment.findUnique({
+    where: { id: commentId },
     include: {
       author: { select: { id: true, nickname: true, name: true, avatarUrl: true } },
       replies: { include: { author: { select: { id: true, nickname: true, name: true, avatarUrl: true } } } },
