@@ -9,7 +9,7 @@ import Spinner from "@/components/atom/Spinner";
 
 export default function CommunityWritePage() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { status } = useSession();
 
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("자유");

@@ -110,7 +110,7 @@ export default function CommunityDetailPage({ params }: { params: Promise<{ id: 
   return (
     <div className="min-h-screen bg-surface-page">
       <Header />
-      {loginOpen && <LoginModal onClose={() => setLoginOpen(false)} />
+      {loginOpen && <LoginModal onClose={() => setLoginOpen(false)} />}
       <main className="mx-auto px-4 sm:px-6 pt-8 pb-20" style={{ maxWidth: "760px" }}>
         {/* 뒤로 가기 */}
         <Link href="/community" className="inline-flex items-center gap-1 text-[13px] text-text-muted hover:text-brand transition-colors mb-5">

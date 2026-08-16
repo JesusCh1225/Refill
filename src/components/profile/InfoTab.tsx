@@ -5,20 +5,13 @@ import Link from "next/link";
 import InfoField from "@/components/atom/InfoField";
 import EditableField from "@/components/atom/EditableField";
 import Avatar from "@/components/atom/Avatar";
+import { parseList } from "@/lib/format";
 
 const PROVIDER_LABEL: Record<string, string> = {
   kakao: "카카오",
   naver: "네이버",
 };
 
-function parseList(json: string | null): string[] {
-  if (!json) return [];
-  try {
-    return JSON.parse(json) as string[];
-  } catch {
-    return [];
-  }
-}
 
 interface ListFieldProps {
   title: string;

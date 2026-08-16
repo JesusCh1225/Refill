@@ -66,7 +66,7 @@ function CommunityContent() {
 
   return (
     <main className="mx-auto px-4 sm:px-6 pt-8 pb-20" style={{ maxWidth: "760px" }}>
-      {loginOpen && <LoginModal onClose={() => setLoginOpen(false)} />
+      {loginOpen && <LoginModal onClose={() => setLoginOpen(false)} />}
       {/* 헤더 */}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-[22px] font-bold text-text-heading">커뮤니티</h1>

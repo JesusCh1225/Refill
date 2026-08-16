@@ -7,6 +7,7 @@ import Link from "next/link";
 import Avatar from "@/components/atom/Avatar";
 import Spinner from "@/components/atom/Spinner";
 import BlockButton from "@/components/atom/BlockButton";
+import { formatDate } from "@/lib/format";
 
 interface Message {
   id: number;
@@ -26,9 +27,6 @@ function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
 }
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" });
-}
 
 /** 두 메시지가 같은 발신자 + 같은 분(minute) 안에 있는지 */
 function sameMinuteGroup(a: Message, b: Message): boolean {

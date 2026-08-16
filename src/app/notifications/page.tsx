@@ -38,7 +38,7 @@ function notiMessage(n: NotificationItem) {
 }
 
 export default function NotificationsPage() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);

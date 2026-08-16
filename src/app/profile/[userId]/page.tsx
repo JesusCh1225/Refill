@@ -12,6 +12,7 @@ import ChatButton from "@/components/atom/ChatButton";
 import BlockButton from "@/components/atom/BlockButton";
 import LoginModal from "@/components/organisms/LoginModal";
 import { StarRating, InteractiveStars } from "@/components/atom/StarRating";
+import { formatDate, parseList } from "@/lib/format";
 
 interface PublicPost {
   id: number;
@@ -50,14 +51,6 @@ interface PublicProfile {
   reviewCount: number;
 }
 
-function parseList(json: string | null): string[] {
-  if (!json) return [];
-  try { return JSON.parse(json) as string[]; } catch { return []; }
-}
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" });
-}
 
 export default function PublicProfilePage({ params }: { params: Promise<{ userId: string }> }) {
   const { userId } = use(params);
@@ -190,7 +183,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userId
   return (
     <div className="min-h-screen bg-surface-page text-text-body">
       <Header />
-      {loginOpen && <LoginModal onClose={() => setLoginOpen(false)} />
+      {loginOpen && <LoginModal onClose={() => setLoginOpen(false)} />}
 
       {/* 프사 확대 라이트박스 */}
       {avatarLightbox && profile?.avatarUrl && (

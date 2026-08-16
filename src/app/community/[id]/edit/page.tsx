@@ -114,9 +114,9 @@ export default function CommunityEditPage({ params }: { params: Promise<{ id: st
 
           <div>
             <label className="text-[13px] font-semibold text-text-muted block mb-2">내용</label>
-            {content !== "" || !loading ? (
+            {content !== "" && (
               <CommunityEditor content={content} onChange={setContent} placeholder="내용을 입력하세요" />
-            ) : null}
+            )}
           </div>
 
           {error && <p className="text-[12px] text-red-500">{error}</p>}

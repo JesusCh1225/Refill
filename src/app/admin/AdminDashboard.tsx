@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Avatar from "@/components/atom/Avatar";
 import Spinner from "@/components/atom/Spinner";
+import { useToast } from "@/context/toast";
 
 type Tab = "posts" | "users" | "chats";
 type PostType = "community" | "map";
@@ -116,6 +117,7 @@ const CATEGORY_FILTERS: { value: CategoryFilter; label: string }[] = [
 ];
 
 function CommunityPostsList() {
+  const { showToast } = useToast();
   const [posts, setPosts] = useState<CommunityPostItem[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -144,7 +146,7 @@ function CommunityPostsList() {
     setDeleting(id);
     const res = await fetch(`/api/community/${id}`, { method: "DELETE" });
     if (res.ok) { setPosts((p) => p.filter((x) => x.id !== id)); setTotal((t) => t - 1); }
-    else alert("삭제 실패");
+    else showToast("삭제에 실패했어요.", "error");
     setDeleting(null);
   };
 
@@ -211,6 +213,7 @@ function CommunityPostsList() {
 }
 
 function MapPostsList() {
+  const { showToast } = useToast();
   const [posts, setPosts] = useState<MapPostItem[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -232,7 +235,7 @@ function MapPostsList() {
     setDeleting(id);
     const res = await fetch(`/api/posts/${id}`, { method: "DELETE" });
     if (res.ok) { setPosts((p) => p.filter((x) => x.id !== id)); setTotal((t) => t - 1); }
-    else alert("삭제 실패");
+    else showToast("삭제에 실패했어요.", "error");
     setDeleting(null);
   };
 
@@ -558,6 +561,7 @@ function ChatLogsTab() {
 // ── 회원 탭 ────────────────────────────────────────────────────────────────
 
 function UsersTab() {
+  const { showToast } = useToast();
   const router = useRouter();
   const [users, setUsers] = useState<UserItem[]>([]);
   const [total, setTotal] = useState(0);
@@ -581,7 +585,7 @@ function UsersTab() {
     setDeleting(id);
     const res = await fetch(`/api/admin/users/${id}`, { method: "DELETE" });
     if (res.ok) { setUsers((p) => p.filter((u) => u.id !== id)); setTotal((t) => t - 1); }
-    else alert("삭제 실패");
+    else showToast("삭제에 실패했어요.", "error");
     setDeleting(null);
   };
 

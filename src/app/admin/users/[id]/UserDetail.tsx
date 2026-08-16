@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import Avatar from "@/components/atom/Avatar";
 import Spinner from "@/components/atom/Spinner";
+import { useToast } from "@/context/toast";
 
 type Section = "communityPosts" | "mapPosts" | "communityComments" | "mapComments";
 
@@ -157,6 +158,7 @@ export default function UserDetail({ userId }: { userId: number }) {
 }
 
 function CommunityPostsSection({ userId }: { userId: number }) {
+  const { showToast } = useToast();
   const [items, setItems] = useState<CommunityPostItem[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -178,7 +180,7 @@ function CommunityPostsSection({ userId }: { userId: number }) {
     setDeleting(id);
     const res = await fetch(`/api/community/${id}`, { method: "DELETE" });
     if (res.ok) { setItems((p) => p.filter((x) => x.id !== id)); setTotal((t) => t - 1); }
-    else alert("삭제 실패");
+    else showToast("삭제에 실패했어요.", "error");
     setDeleting(null);
   };
 
@@ -213,6 +215,7 @@ function CommunityPostsSection({ userId }: { userId: number }) {
 }
 
 function MapPostsSection({ userId }: { userId: number }) {
+  const { showToast } = useToast();
   const [items, setItems] = useState<MapPostItem[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -234,7 +237,7 @@ function MapPostsSection({ userId }: { userId: number }) {
     setDeleting(id);
     const res = await fetch(`/api/posts/${id}`, { method: "DELETE" });
     if (res.ok) { setItems((p) => p.filter((x) => x.id !== id)); setTotal((t) => t - 1); }
-    else alert("삭제 실패");
+    else showToast("삭제에 실패했어요.", "error");
     setDeleting(null);
   };
 
@@ -270,6 +273,7 @@ function MapPostsSection({ userId }: { userId: number }) {
 }
 
 function CommunityCommentsSection({ userId }: { userId: number }) {
+  const { showToast } = useToast();
   const [items, setItems] = useState<CommunityCommentItem[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -291,7 +295,7 @@ function CommunityCommentsSection({ userId }: { userId: number }) {
     setDeleting(item.id);
     const res = await fetch(`/api/community/${item.post.id}/comments/${item.id}`, { method: "DELETE" });
     if (res.ok) { setItems((p) => p.filter((x) => x.id !== item.id)); setTotal((t) => t - 1); }
-    else alert("삭제 실패");
+    else showToast("삭제에 실패했어요.", "error");
     setDeleting(null);
   };
 
@@ -322,6 +326,7 @@ function CommunityCommentsSection({ userId }: { userId: number }) {
 }
 
 function MapCommentsSection({ userId }: { userId: number }) {
+  const { showToast } = useToast();
   const [items, setItems] = useState<MapCommentItem[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -343,7 +348,7 @@ function MapCommentsSection({ userId }: { userId: number }) {
     setDeleting(item.id);
     const res = await fetch(`/api/posts/${item.postId}/comments/${item.id}`, { method: "DELETE" });
     if (res.ok) { setItems((p) => p.filter((x) => x.id !== item.id)); setTotal((t) => t - 1); }
-    else alert("삭제 실패");
+    else showToast("삭제에 실패했어요.", "error");
     setDeleting(null);
   };
 
