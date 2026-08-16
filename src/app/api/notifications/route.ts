@@ -9,8 +9,11 @@ const NOTIFICATION_SELECT = {
   createdAt: true,
   postId: true,
   commentId: true,
+  communityPostId: true,
+  communityCommentId: true,
   actor: { select: { id: true, name: true, nickname: true, avatarUrl: true } },
   post: { select: { title: true } },
+  communityPost: { select: { title: true } },
 } as const;
 
 // GET /api/notifications — 내 알림 목록
@@ -29,7 +32,7 @@ export async function GET() {
       prisma.notification.count({ where: { userId, isRead: false } }),
     ]);
 
-    // commentId로 댓글 내용 별도 조회 (Notification 모델에 comment 관계 없음)
+    // 맵 댓글 내용 조회
     const commentIds = notifications
       .map((n) => n.commentId)
       .filter((id): id is number => id !== null);
@@ -43,13 +46,29 @@ export async function GET() {
       for (const c of comments) commentMap.set(c.id, { content: c.content, isSecret: c.isSecret });
     }
 
+    // 커뮤니티 댓글 내용 조회
+    const communityCommentIds = notifications
+      .map((n) => n.communityCommentId)
+      .filter((id): id is number => id !== null);
+
+    const communityCommentMap = new Map<number, { content: string }>();
+    if (communityCommentIds.length > 0) {
+      const communityComments = await prisma.communityComment.findMany({
+        where: { id: { in: communityCommentIds } },
+        select: { id: true, content: true },
+      });
+      for (const c of communityComments) communityCommentMap.set(c.id, { content: c.content });
+    }
+
     const result = notifications.map((n) => {
       const comment = n.commentId ? (commentMap.get(n.commentId) ?? null) : null;
-      // 비밀 댓글은 알림 미리보기에서 내용을 숨김 — 클릭해서 게시글에서 확인하도록 유도
       const safeComment = comment?.isSecret
         ? { ...comment, content: "비밀 댓글입니다." }
         : comment;
-      return { ...n, comment: safeComment };
+      const communityComment = n.communityCommentId
+        ? (communityCommentMap.get(n.communityCommentId) ?? null)
+        : null;
+      return { ...n, comment: safeComment, communityComment };
     });
 
     return NextResponse.json({ notifications: result, unreadCount });

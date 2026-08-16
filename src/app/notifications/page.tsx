@@ -10,14 +10,18 @@ import Spinner from "@/components/atom/Spinner";
 
 interface NotificationItem {
   id: number;
-  type: "COMMENT" | "REPLY";
+  type: "COMMENT" | "REPLY" | "COMMUNITY_COMMENT" | "COMMUNITY_REPLY";
   isRead: boolean;
   createdAt: string;
   postId: number | null;
   commentId: number | null;
+  communityPostId: number | null;
+  communityCommentId: number | null;
   actor: { id: number; name: string; nickname: string | null; avatarUrl: string | null };
   post: { title: string } | null;
+  communityPost: { title: string } | null;
   comment: { content: string | null; isSecret: boolean } | null;
+  communityComment: { content: string } | null;
 }
 
 function timeAgo(iso: string) {
@@ -34,6 +38,8 @@ function notiMessage(n: NotificationItem) {
   const actor = n.actor.nickname ?? n.actor.name;
   if (n.type === "COMMENT") return `${actor}님이 내 게시글에 댓글을 남겼어요.`;
   if (n.type === "REPLY") return `${actor}님이 내 댓글에 답글을 남겼어요.`;
+  if (n.type === "COMMUNITY_COMMENT") return `${actor}님이 내 게시글에 댓글을 남겼어요.`;
+  if (n.type === "COMMUNITY_REPLY") return `${actor}님이 내 댓글에 답글을 남겼어요.`;
   return "";
 }
 
@@ -47,8 +53,6 @@ export default function NotificationsPage() {
     if (status === "unauthenticated") { router.replace("/"); return; }
     if (status !== "authenticated") return;
 
-    // PATCH(전체 읽음)와 GET(목록)을 병렬로 실행 — 둘 다 완료된 뒤에야 화면이 interactive해짐
-    // → 사용자가 다음 페이지로 이동할 때 Header가 DB를 재조회해도 unreadCount = 0 보장
     Promise.all([
       fetch("/api/notifications", { method: "PATCH" }),
       fetch("/api/notifications").then((r) => r.json()),
@@ -67,7 +71,28 @@ export default function NotificationsPage() {
       await fetch(`/api/notifications/${n.id}`, { method: "PATCH" });
       setNotifications((prev) => prev.map((item) => item.id === n.id ? { ...item, isRead: true } : item));
     }
-    if (n.postId) router.push(`/post/${n.postId}`);
+    if (n.type === "COMMUNITY_COMMENT" || n.type === "COMMUNITY_REPLY") {
+      if (n.communityPostId) router.push(`/community/${n.communityPostId}`);
+    } else {
+      if (n.postId) router.push(`/post/${n.postId}`);
+    }
+  };
+
+  const getPreviewContent = (n: NotificationItem) => {
+    if (n.communityComment) {
+      const text = n.communityComment.content;
+      return `"${text.slice(0, 60)}${text.length > 60 ? "…" : ""}"`;
+    }
+    if (n.comment) {
+      if (n.comment.isSecret) return "🔒 비밀 댓글입니다.";
+      const text = n.comment.content ?? "";
+      return `"${text.slice(0, 60)}${text.length > 60 ? "…" : ""}"`;
+    }
+    return null;
+  };
+
+  const getPostTitle = (n: NotificationItem) => {
+    return n.communityPost?.title ?? n.post?.title ?? null;
   };
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
@@ -105,40 +130,38 @@ export default function NotificationsPage() {
             </div>
           ) : (
             <ul className="divide-y divide-border-header">
-              {notifications.map((n) => (
-                <li key={n.id}>
-                  <button
-                    onClick={() => handleClick(n)}
-                    className={`w-full text-left flex items-start gap-3 px-4 py-4 hover:bg-surface-card transition-colors cursor-pointer border-none ${n.isRead ? "bg-white" : "bg-brand-bg"}`}
-                  >
-                    {!n.isRead && (
-                      <span className="mt-2 shrink-0 w-2 h-2 rounded-full bg-brand" />
-                    )}
-                    <Avatar
-                      src={n.actor.avatarUrl}
-                      name={n.actor.nickname ?? n.actor.name}
-                      className={`w-9 h-9 shrink-0 ${n.isRead ? "" : ""}`}
-                      textClassName="text-sm"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[13px] text-text-body leading-snug">{notiMessage(n)}</p>
-                      {n.comment && (
-                        <p className="text-[12px] text-text-muted mt-1 truncate">
-                          {n.comment.isSecret
-                            ? "🔒 비밀 댓글입니다."
-                            : `"${n.comment.content?.slice(0, 60) ?? ""}${(n.comment.content?.length ?? 0) > 60 ? "…" : ""}"`}
-                        </p>
+              {notifications.map((n) => {
+                const preview = getPreviewContent(n);
+                const postTitle = getPostTitle(n);
+                return (
+                  <li key={n.id}>
+                    <button
+                      onClick={() => handleClick(n)}
+                      className={`w-full text-left flex items-start gap-3 px-4 py-4 hover:bg-surface-card transition-colors cursor-pointer border-none ${n.isRead ? "bg-white" : "bg-brand-bg"}`}
+                    >
+                      {!n.isRead && (
+                        <span className="mt-2 shrink-0 w-2 h-2 rounded-full bg-brand" />
                       )}
-                      {n.post && (
-                        <p className="text-[11px] text-text-placeholder mt-0.5 truncate">
-                          {n.post.title}
-                        </p>
-                      )}
-                      <p className="text-[11px] text-text-placeholder mt-0.5">{timeAgo(n.createdAt)}</p>
-                    </div>
-                  </button>
-                </li>
-              ))}
+                      <Avatar
+                        src={n.actor.avatarUrl}
+                        name={n.actor.nickname ?? n.actor.name}
+                        className="w-9 h-9 shrink-0"
+                        textClassName="text-sm"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] text-text-body leading-snug">{notiMessage(n)}</p>
+                        {preview && (
+                          <p className="text-[12px] text-text-muted mt-1 truncate">{preview}</p>
+                        )}
+                        {postTitle && (
+                          <p className="text-[11px] text-text-placeholder mt-0.5 truncate">{postTitle}</p>
+                        )}
+                        <p className="text-[11px] text-text-placeholder mt-0.5">{timeAgo(n.createdAt)}</p>
+                      </div>
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>

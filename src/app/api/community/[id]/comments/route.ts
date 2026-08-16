@@ -61,21 +61,28 @@ export async function POST(
   if (!content?.trim()) return NextResponse.json({ error: "empty" }, { status: 400 });
   if (content.trim().length > 2000) return NextResponse.json({ error: "too long" }, { status: 400 });
 
-  const post = await prisma.communityPost.findUnique({ where: { id: postId }, select: { id: true } });
+  const post = await prisma.communityPost.findUnique({ where: { id: postId }, select: { id: true, authorId: true } });
   if (!post) return NextResponse.json({ error: "post not found" }, { status: 404 });
 
   const resolvedParentId = parentId != null ? Number(parentId) : null;
+  let parentComment: { authorId: number | null; postId: number; parentId: number | null } | null = null;
+  let existingReplies: { authorId: number | null }[] = [];
+
   if (resolvedParentId) {
-    const parent = await prisma.communityComment.findUnique({
+    parentComment = await prisma.communityComment.findUnique({
       where: { id: resolvedParentId },
-      select: { postId: true, parentId: true },
+      select: { postId: true, parentId: true, authorId: true },
     });
-    if (!parent || parent.postId !== postId) {
+    if (!parentComment || parentComment.postId !== postId) {
       return NextResponse.json({ error: "invalid parent" }, { status: 400 });
     }
-    if (parent.parentId !== null) {
+    if (parentComment.parentId !== null) {
       return NextResponse.json({ error: "nested replies not allowed" }, { status: 400 });
     }
+    existingReplies = await prisma.communityComment.findMany({
+      where: { parentId: resolvedParentId, authorId: { not: userId } },
+      select: { authorId: true },
+    });
   }
 
   const { id: commentId } = await prisma.communityComment.create({
@@ -89,6 +96,30 @@ export async function POST(
       replies: { include: { author: { select: { id: true, nickname: true, name: true, avatarUrl: true } } } },
     },
   });
+
+  // 알림 생성
+  try {
+    if (resolvedParentId && parentComment) {
+      const recipientIds = new Set<number>();
+      if (parentComment.authorId && parentComment.authorId !== userId) recipientIds.add(parentComment.authorId);
+      for (const r of existingReplies) {
+        if (r.authorId && r.authorId !== userId) recipientIds.add(r.authorId);
+      }
+      await Promise.all(
+        Array.from(recipientIds).map((recipientId) =>
+          prisma.notification.create({
+            data: { userId: recipientId, actorId: userId, type: "COMMUNITY_REPLY", communityPostId: postId, communityCommentId: commentId },
+          }),
+        ),
+      );
+    } else if (post.authorId !== userId) {
+      await prisma.notification.create({
+        data: { userId: post.authorId, actorId: userId, type: "COMMUNITY_COMMENT", communityPostId: postId, communityCommentId: commentId },
+      });
+    }
+  } catch (err) {
+    console.error("[community comment notification]", err);
+  }
 
   return NextResponse.json(comment, { status: 201 });
 }

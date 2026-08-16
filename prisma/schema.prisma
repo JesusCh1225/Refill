@@ -282,19 +282,23 @@ model Message {
 // ── 알림 ──────────────────────────────────────────────────────────────────
 
 model Notification {
-  id        Int      @id @default(autoincrement())
-  userId    Int                           // 수신자
-  actorId   Int                           // 발생자 (댓글 작성자 등)
-  type      String   @db.VarChar(20)      // COMMENT | REPLY
-  postId    Int?
-  commentId Int?
-  isRead    Boolean  @default(false)
-  createdAt DateTime @default(now())
+  id                 Int      @id @default(autoincrement())
+  userId             Int                           // 수신자
+  actorId            Int                           // 발생자 (댓글 작성자 등)
+  type               String   @db.VarChar(20)      // COMMENT | REPLY | COMMUNITY_COMMENT | COMMUNITY_REPLY
+  postId             Int?
+  commentId          Int?
+  communityPostId    Int?
+  communityCommentId Int?
+  isRead             Boolean  @default(false)
+  createdAt          DateTime @default(now())
 
-  user    User     @relation("NotificationsReceived", fields: [userId],    references: [id], onDelete: Cascade)
-  actor   User     @relation("NotificationsSent",     fields: [actorId],   references: [id], onDelete: Cascade)
-  post    Post?    @relation(fields: [postId],    references: [id], onDelete: Cascade)
-  comment Comment? @relation(fields: [commentId], references: [id], onDelete: SetNull)
+  user             User              @relation("NotificationsReceived", fields: [userId],             references: [id], onDelete: Cascade)
+  actor            User              @relation("NotificationsSent",     fields: [actorId],            references: [id], onDelete: Cascade)
+  post             Post?             @relation(fields: [postId],             references: [id], onDelete: Cascade)
+  comment          Comment?          @relation(fields: [commentId],          references: [id], onDelete: SetNull)
+  communityPost    CommunityPost?    @relation(fields: [communityPostId],    references: [id], onDelete: Cascade)
+  communityComment CommunityComment? @relation(fields: [communityCommentId], references: [id], onDelete: SetNull)
 
   @@index([userId, isRead])
   @@index([userId, createdAt])
@@ -311,10 +315,11 @@ model CommunityPost {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  author   User               @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  comments CommunityComment[]
-  likes    CommunityLike[]
-  reports  Report[]
+  author        User               @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments      CommunityComment[]
+  likes         CommunityLike[]
+  reports       Report[]
+  notifications Notification[]
 
   @@index([createdAt])
   @@index([category])
@@ -329,10 +334,11 @@ model CommunityComment {
   parentId  Int?
   createdAt DateTime @default(now())
 
-  author  User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  post    CommunityPost     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  parent  CommunityComment?  @relation("CommunityReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies CommunityComment[] @relation("CommunityReplies")
+  author        User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  post          CommunityPost     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parent        CommunityComment?  @relation("CommunityReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies       CommunityComment[] @relation("CommunityReplies")
+  notifications Notification[]
 
   @@index([postId])
 }
