@@ -72,10 +72,10 @@ export default function CommunityWritePage() {
 
       {/* 스크롤 영역 */}
       <main
-        className="flex-1 overflow-y-auto px-4 sm:px-6 py-5 pb-20"
+        className="flex-1 overflow-y-auto px-4 sm:px-6 pb-20"
         style={{ maxWidth: "760px", marginInline: "auto", width: "100%" }}
       >
-        <div className="bg-white rounded-2xl border border-border-card px-5 py-5 flex flex-col gap-4">
+        <div className="mt-5 bg-white rounded-2xl border border-border-card px-5 py-5 flex flex-col gap-4">
           {/* 카테고리 */}
           <div className="flex items-center gap-3">
             <label className="text-[13px] font-semibold text-text-muted w-14 shrink-0">카테고리</label>
