@@ -19,10 +19,14 @@ async function getGeminiSuggestions(query: string): Promise<string[]> {
         body: JSON.stringify({
           contents: [{
             parts: [{
-              text: `음악 레슨·밴드합주·악기거래 플랫폼에서 사용자가 [${safeQuery}](으)로 검색했는데 결과가 없었습니다. 관련된 검색 키워드 3~5개를 추천해주세요. 키워드만 콤마로 구분해서 답해주세요. 예: 드럼 레슨,드럼 강습,타악기 레슨`,
+              text: `음악 레슨·밴드합주·악기거래 플랫폼에서 사용자가 [${safeQuery}](으)로 검색했는데 결과가 없었습니다.
+다음 두 가지를 합쳐 총 4~6개 키워드를 추천해주세요.
+1) 비슷한 표현·동의어 (예: 바이올린 레슨 → 바이올린 강습, 바이올린 수업)
+2) 더 넓은 상위 카테고리 (예: 바이올린 → 현악기 레슨 / 드럼 → 타악기 레슨 / 색소폰 → 관악기 레슨 / 기타 → 통기타 레슨)
+키워드만 콤마로 구분해서 답해주세요. 예: 바이올린 강습,바이올린 수업,현악기 레슨,현악기 강습`,
             }],
           }],
-          generationConfig: { temperature: 0.3, maxOutputTokens: 80 },
+          generationConfig: { temperature: 0.3, maxOutputTokens: 120 },
         }),
       }
     );

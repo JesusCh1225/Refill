@@ -102,52 +102,83 @@ export async function parseSearchQuery(query: string): Promise<ParsedQuery> {
   // 지역 감지는 항상 실행
   const regions = await extractRegions(q);
 
-  // 1단계: dict로 먼저 시도 (AI 호출 없음)
+  if (q.length < 2) {
+    return { regions, instruments: [], services: [], keywords: [], direction: null };
+  }
+
+  // 1단계: dict로 먼저 시도
   const dictInstruments = extractFromDict(q, INSTRUMENT_DICT);
   const dictServices = extractFromDict(q, SERVICE_DICT);
   const dictFound = dictInstruments.length > 0 || dictServices.length > 0;
 
+  // dict에서 매칭된 원문 키 수집
+  const matchedDictKeys = new Set(
+    [...Object.keys(INSTRUMENT_DICT), ...Object.keys(SERVICE_DICT)]
+      .filter((key) => q.includes(key))
+      .map((key) => key.toLowerCase()),
+  );
+
+  // dict/지역으로 처리되지 않은 단어 (오타 가능성)
+  const leftoverWords = q
+    .split(/\s+/)
+    .filter((w) => w.length >= 2)
+    .filter((w) => !matchedDictKeys.has(w.toLowerCase()))
+    .filter((w) => !regions.some((r) => r.keywords.includes(w)));
+
   let instruments: string[];
   let services: string[];
   let direction: "OFFER" | "SEEK" | null;
-  let recognizedTerms: Set<string>;
+  let processedWords: Set<string>; // unrecognized 계산에서 제외할 단어들
 
-  if (q.length < 2 || dictFound) {
-    // dict 결과 사용 — AI 호출 안 함
+  if (dictFound && leftoverWords.length === 0) {
+    // dict 완전 매칭 — AI 불필요
     instruments = dictInstruments;
     services = dictServices;
     direction = detectDirection(q);
-    // 밴드/합주는 구인·구직 양방향 모두 유의미해서 direction 필터 안 함
-    if (services.some((s) => ["밴드", "합주"].includes(s))) direction = null;
-    // dict에서 매칭된 원문 키 수집 (unrecognized 계산용)
-    recognizedTerms = new Set(
-      [...Object.keys(INSTRUMENT_DICT), ...Object.keys(SERVICE_DICT)]
-        .filter((key) => q.includes(key))
-        .map((key) => key.toLowerCase()),
-    );
+    processedWords = matchedDictKeys;
+  } else if (dictFound && leftoverWords.length > 0) {
+    // dict 일부 매칭 + 미인식 단어 존재 → leftover만 AI로 처리
+    const aiResult = await parseWithAI(leftoverWords.join(" "));
+    instruments = [...new Set([
+      ...dictInstruments,
+      ...(aiResult ? expandKeywords(aiResult.instruments, INSTRUMENT_DICT) : []),
+    ])];
+    services = [...new Set([
+      ...dictServices,
+      ...(aiResult ? expandKeywords(aiResult.services, SERVICE_DICT) : []),
+    ])];
+    direction = detectDirection(q) ?? (aiResult?.direction ?? null);
+    // leftover 단어들은 AI가 처리했으므로 unrecognized에서 제외
+    processedWords = new Set([
+      ...matchedDictKeys,
+      ...leftoverWords.map((w) => w.toLowerCase()),
+      ...(aiResult ? [...aiResult.instruments, ...aiResult.services].map((s) => s.toLowerCase()) : []),
+    ]);
   } else {
-    // dict에서 못 찾음 → 오타·미등록 악기 가능성 → AI 호출
+    // dict에서 아무것도 못 찾음 → 전체 쿼리로 AI 호출
     const aiResult = await parseWithAI(q);
     if (aiResult) {
       instruments = expandKeywords(aiResult.instruments, INSTRUMENT_DICT);
       services = expandKeywords(aiResult.services, SERVICE_DICT);
-      const hasBand = aiResult.services.some((s) => ["밴드", "합주"].includes(s));
-      direction = hasBand ? null : aiResult.direction;
-      recognizedTerms = new Set([...aiResult.instruments, ...aiResult.services].map((s) => s.toLowerCase()));
+      direction = aiResult.direction;
+      processedWords = new Set([...aiResult.instruments, ...aiResult.services].map((s) => s.toLowerCase()));
     } else {
       instruments = [];
       services = [];
       direction = null;
-      recognizedTerms = new Set();
+      processedWords = new Set();
     }
   }
 
+  // 밴드/합주는 구인·구직 양방향 모두 유의미해서 direction 필터 안 함
+  if (services.some((s) => ["밴드", "합주"].includes(s))) direction = null;
+
   const contentKeywords = [...new Set([...instruments, ...services])];
 
-  // dict/AI 모두 인식 못한 토큰 → raw 키워드로 추가 (미등록 악기명 등)
+  // 처리되지 않은 토큰 → raw 키워드로 추가 (완전히 미등록된 악기명 등)
   const unrecognized = q
     .split(/\s+/)
-    .filter((w) => w.length >= 2 && !recognizedTerms.has(w.toLowerCase()))
+    .filter((w) => w.length >= 2 && !processedWords.has(w.toLowerCase()))
     .filter((w) => !regions.some((r) => r.keywords.includes(w)));
 
   const keywords =
