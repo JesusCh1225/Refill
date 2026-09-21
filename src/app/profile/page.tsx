@@ -14,7 +14,7 @@ import BookmarksTab from "@/components/profile/BookmarksTab";
 import LikesTab from "@/components/profile/LikesTab";
 import type { LikedPost } from "@/components/profile/LikesTab";
 import LoginModal from "@/components/organisms/LoginModal";
-import type { SearchResultItem } from "@/data/sampleMockResults";
+import type { SearchResultItem } from "@/data/postTypes";
 import { ACCEPT_IMAGE, ALLOWED_IMAGE_TYPES } from "@/lib/uploadValidator";
 
 type Tab = "info" | "posts" | "bookmarks" | "likes";

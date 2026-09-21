@@ -11,8 +11,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       clientSecret: process.env.KAKAO_CLIENT_SECRET!,
     }),
     Naver({
-      clientId: process.env.NAVER_SEARCH_CLIENT_ID!,
-      clientSecret: process.env.NAVER_SEARCH_CLIENT_SECRET!,
+      clientId: process.env.NAVER_OAUTH_CLIENT_ID!,
+      clientSecret: process.env.NAVER_OAUTH_CLIENT_SECRET!,
     }),
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,

@@ -1,4 +1,4 @@
-import type { SearchResultItem } from "@/data/sampleMockResults";
+import type { SearchResultItem } from "@/data/postTypes";
 import { REGION_CENTERS } from "@/data/mapConstants";
 
 export type CoordsMap = Record<number, { lat: number; lng: number }>;

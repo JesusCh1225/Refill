@@ -229,8 +229,7 @@ export default function PrivacyPage() {
               <span className="font-semibold">서비스명:</span> Refill
             </p>
             <p>
-              <span className="font-semibold">문의:</span> alslql1234@gmail.com{" "}
-              {/* TODO: 운영자 이메일 */}
+              <span className="font-semibold">문의:</span> alslql1234@gmail.com
             </p>
           </div>
         </Section>

@@ -1,4 +1,4 @@
-import type { SearchResultItem, PostDirection } from "@/data/sampleMockResults";
+import type { SearchResultItem, PostDirection } from "@/data/postTypes";
 import type { PriceType, PostDirection as DBPostDirection } from "@/generated/prisma/enums";
 
 // 글쓰기 폼의 priceType id -> Prisma PriceType enum 값

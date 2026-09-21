@@ -12,8 +12,8 @@ async function revokeKakao(accessToken: string) {
 }
 
 async function revokeNaver(accessToken: string) {
-  const clientId = process.env.NAVER_SEARCH_CLIENT_ID ?? "";
-  const clientSecret = process.env.NAVER_SEARCH_CLIENT_SECRET ?? "";
+  const clientId = process.env.NAVER_OAUTH_CLIENT_ID ?? "";
+  const clientSecret = process.env.NAVER_OAUTH_CLIENT_SECRET ?? "";
   await fetch("https://nid.naver.com/oauth2.0/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },

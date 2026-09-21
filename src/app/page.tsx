@@ -8,7 +8,7 @@ import TitleSection from "@/components/organisms/TitleSection";
 import SearchResultPage from "@/components/organisms/SearchResultPage";
 import WritePostModal from "@/components/organisms/WritePostModal";
 import { useCreatePost } from "@/hooks/useCreatePost";
-import type { PostDraft } from "@/data/sampleMockResults";
+import type { PostDraft } from "@/data/postTypes";
 
 function HomePageContent() {
   const searchParams = useSearchParams();

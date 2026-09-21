@@ -1,16 +1,10 @@
 /**
- * 네이버 지도 api를 활용한 지역 검색
- * 아직 실제 api를 연동하지는 않았음.
- * 실제 데이터도 없기 때문에 smapleMockResult의 locationTags 필드를 활용해서 지역 매칭하는 방식으로 구현.
- * 연결 후 작업 재개할 예정 (2026.05.15)
- *
- * AI로 교체 시 ->
- * extractRegions 함수 전체를 AI API 호출로 대체.
- *
+ * 네이버 Geocoding API를 활용한 지역 검색
+ * 환경변수: NEXT_PUBLIC_NAVER_MAPS_CLIENT_ID, NAVER_MAPS_CLIENT_SECRET
  */
 
-const NAVER_CLIENT_ID = process.env.NEXT_PUBLIC_NAVER_CLIENT_ID ?? "";
-const NAVER_CLIENT_SECRET = process.env.NAVER_SEARCH_CLIENT_SECRET ?? "";
+const NAVER_CLIENT_ID = process.env.NEXT_PUBLIC_NAVER_MAPS_CLIENT_ID ?? "";
+const NAVER_CLIENT_SECRET = process.env.NAVER_MAPS_CLIENT_SECRET ?? "";
 
 const NAVER_GEOCODING_URL =
   "https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode";
@@ -22,23 +16,23 @@ export interface RegionResult {
 
 // 지오코딩 API 없이도 약칭 → 공식명 양방향 검색 가능하도록
 const REGION_FULL_NAMES: Record<string, string> = {
-  "서울": "서울특별시",
-  "인천": "인천광역시",
-  "부산": "부산광역시",
-  "대구": "대구광역시",
-  "광주": "광주광역시",
-  "대전": "대전광역시",
-  "울산": "울산광역시",
-  "세종": "세종특별자치시",
-  "경기": "경기도",
-  "강원": "강원특별자치도",
-  "충북": "충청북도",
-  "충남": "충청남도",
-  "전북": "전북특별자치도",
-  "전남": "전라남도",
-  "경북": "경상북도",
-  "경남": "경상남도",
-  "제주": "제주특별자치도",
+  서울: "서울특별시",
+  인천: "인천광역시",
+  부산: "부산광역시",
+  대구: "대구광역시",
+  광주: "광주광역시",
+  대전: "대전광역시",
+  울산: "울산광역시",
+  세종: "세종특별자치시",
+  경기: "경기도",
+  강원: "강원특별자치도",
+  충북: "충청북도",
+  충남: "충청남도",
+  전북: "전북특별자치도",
+  전남: "전라남도",
+  경북: "경상북도",
+  경남: "경상남도",
+  제주: "제주특별자치도",
 };
 
 function extractRegionCandidates(query: string): string[] {
@@ -78,7 +72,10 @@ async function searchRegionFromNaver(
 ): Promise<RegionResult | null> {
   if (!NAVER_CLIENT_ID || !NAVER_CLIENT_SECRET) {
     const fullName = REGION_FULL_NAMES[keyword];
-    return { name: keyword, keywords: [...new Set([keyword, ...(fullName ? [fullName] : [])])] };
+    return {
+      name: keyword,
+      keywords: [...new Set([keyword, ...(fullName ? [fullName] : [])])],
+    };
   }
 
   try {
@@ -118,15 +115,14 @@ async function searchRegionFromNaver(
     };
   } catch {
     const fullName = REGION_FULL_NAMES[keyword];
-    return { name: keyword, keywords: [...new Set([keyword, ...(fullName ? [fullName] : [])])] };
+    return {
+      name: keyword,
+      keywords: [...new Set([keyword, ...(fullName ? [fullName] : [])])],
+    };
   }
 }
 
-/**
- * 검색어에서 지역 키워드를 추출합니다.
- *
- * AI로 교체 시 이 함수를 AI API 호출로 대체.
- */
+/** 검색어에서 지역 키워드를 추출합니다. */
 export async function extractRegions(query: string): Promise<RegionResult[]> {
   const candidates = extractRegionCandidates(query);
   if (candidates.length === 0) return [];

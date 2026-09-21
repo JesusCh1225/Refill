@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@/components/organisms/Header";
-import type { SearchResultItem, PostDraft } from "@/data/sampleMockResults";
+import type { SearchResultItem, PostDraft } from "@/data/postTypes";
 import { coordsFromLocation, type CoordsMap } from "@/lib/mapUtils";
 import { useNaverMap } from "@/hooks/useNaverMap";
 import { useCreatePost } from "@/hooks/useCreatePost";

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useCreatePost } from "@/hooks/useCreatePost";
-import type { SearchResultItem } from "@/data/sampleMockResults";
+import type { SearchResultItem } from "@/data/postTypes";
 import Header from "@/components/organisms/Header";
 import Avatar from "@/components/atom/Avatar";
 import AuthorLink from "@/components/atom/AuthorLink";

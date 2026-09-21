@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
-import type { SearchResultItem } from "@/data/sampleMockResults";
+import type { SearchResultItem } from "@/data/postTypes";
 import { CATEGORIES, CATEGORY_TAG_MAP } from "@/data/Categories";
 import { REGION_CENTERS } from "@/data/mapConstants";
 import { extractKeywords, type CoordsMap } from "@/lib/mapUtils";

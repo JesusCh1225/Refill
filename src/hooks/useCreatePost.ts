@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { useToast } from "@/context/toast";
-import type { PostDraft, SearchResultItem } from "@/data/sampleMockResults";
+import type { PostDraft, SearchResultItem } from "@/data/postTypes";
 
 export function useCreatePost() {
   const { status: authStatus } = useSession();

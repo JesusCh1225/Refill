@@ -10,7 +10,7 @@ import NearbySearchBanner, { type GeoState } from "@/components/organisms/Nearby
 import ResultItem from "@/components/atom/ResultItem";
 import SearchBar from "@/components/molecules/SearchBar";
 import WritePostModal from "@/components/organisms/WritePostModal";
-import type { SearchResultItem, PostDraft } from "@/data/sampleMockResults";
+import type { SearchResultItem, PostDraft } from "@/data/postTypes";
 import { MAIN_CATEGORIES, tagsAndDirToMainCatId } from "@/data/Categories";
 import { SLIDER_MAX, NEGOTIABLE_PRICE, parsePrice } from "@/data/postOptions";
 import { useBookmarks } from "@/lib/useBookmarks";

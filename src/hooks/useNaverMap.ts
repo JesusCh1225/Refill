@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useCallback, useEffect, RefObject } from "react";
-import type { SearchResultItem } from "@/data/sampleMockResults";
+import type { SearchResultItem } from "@/data/postTypes";
 import { buildClusters, CoordsMap } from "@/lib/mapUtils";
 
 interface UseNaverMapOptions {
@@ -87,25 +87,21 @@ export function useNaverMap({
     mapObjRef.current = map;
     renderMarkers(filteredItemsRef.current, map);
 
-    // 사용자 인터랙션 준비 완료 플래그 — 지오로케이션 이동이 끝난 뒤에 세움
+    // 지오로케이션으로 지도가 이동하는 동안 bounds-change가 발화되지 않도록 방어
     let interactionReady = false;
     const setReady = () => {
-      // 지도 애니메이션이 끝날 시간을 줌
       setTimeout(() => { interactionReady = true; }, 600);
     };
 
-    // 줌 변경: 마커 재렌더 + 준비된 경우에만 bounds-change 알림
     window.naver.maps.Event.addListener(map, "zoom_changed", () => {
       renderMarkers(filteredItemsRef.current, map);
       if (interactionReady) onBoundsChangeRef.current?.();
     });
 
-    // 드래그 종료: 항상 bounds-change 알림 (준비된 경우에만)
     window.naver.maps.Event.addListener(map, "drag_end", () => {
       if (interactionReady) onBoundsChangeRef.current?.();
     });
 
-    // 위치 권한 요청
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         ({ coords: { latitude: lat, longitude: lng } }) => {
@@ -142,7 +138,7 @@ export function useNaverMap({
     } else {
       const script = document.createElement("script");
       script.id = "naver-map-script";
-      script.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${process.env.NEXT_PUBLIC_NAVER_CLIENT_ID}&submodules=geocoder&callback=__naverMapInit`;
+      script.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${process.env.NEXT_PUBLIC_NAVER_MAPS_CLIENT_ID}&submodules=geocoder&callback=__naverMapInit`;
       script.async = true;
       document.head.appendChild(script);
     }

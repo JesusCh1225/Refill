@@ -16,6 +16,29 @@ interface AIParsed {
   direction: "OFFER" | "SEEK" | null;
 }
 
+async function correctTypo(query: string): Promise<string> {
+  const clientId = process.env.NAVER_SEARCH_CLIENT_ID;
+  const clientSecret = process.env.NAVER_SEARCH_CLIENT_SECRET;
+  if (!clientId || !clientSecret) return query;
+
+  try {
+    const res = await fetch(
+      `https://naverapihub.apigw.ntruss.com/search/v1/errata?query=${encodeURIComponent(query)}`,
+      {
+        headers: {
+          "X-NCP-APIGW-API-KEY-ID": clientId,
+          "X-NCP-APIGW-API-KEY": clientSecret,
+        },
+      },
+    );
+    if (!res.ok) return query;
+    const data = await res.json();
+    return (data.errata as string) || query;
+  } catch {
+    return query;
+  }
+}
+
 async function parseWithAI(query: string): Promise<AIParsed | null> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return null;
@@ -97,7 +120,9 @@ function detectDirection(q: string): "OFFER" | "SEEK" | null {
 }
 
 export async function parseSearchQuery(query: string): Promise<ParsedQuery> {
-  const q = query.trim();
+  const raw = query.trim();
+  // Errata API로 오타 1차 교정 후 처리 (실패 시 원본 사용)
+  const q = raw.length >= 2 ? await correctTypo(raw) : raw;
 
   // 지역 감지는 항상 실행
   const regions = await extractRegions(q);

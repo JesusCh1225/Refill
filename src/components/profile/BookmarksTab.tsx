@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { SearchResultItem } from "@/data/sampleMockResults";
+import type { SearchResultItem } from "@/data/postTypes";
 
 interface Props {
   bookmarks: SearchResultItem[];

@@ -8,9 +8,9 @@ import RpInput from "@/components/atom/RpInput";
 import LocationSearch from "@/components/molecules/LocationSearch";
 import RpTextarea from "@/components/atom/RpTextarea";
 import Field from "@/components/atom/Field";
-import { ALL_KEYWORDS } from "@/data/sampleMockResults";
+import { ALL_KEYWORDS } from "@/data/postTypes";
 import { PRICE_TYPES, generatePriceDisplay } from "@/data/postOptions";
-import type { PostDraft, PostDirection, SearchResultItem } from "@/data/sampleMockResults";
+import type { PostDraft, PostDirection, SearchResultItem } from "@/data/postTypes";
 
 interface WritePostModalProps {
   isOpen: boolean;

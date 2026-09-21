@@ -23,13 +23,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "search provider not configured" }, { status: 500 });
   }
 
-  const url = `https://openapi.naver.com/v1/search/local.json?query=${encodeURIComponent(q)}&display=8&sort=random`;
+  const url = `https://naverapihub.apigw.ntruss.com/search/v1/local?query=${encodeURIComponent(q)}&display=5&sort=random`;
 
   try {
     const res = await fetch(url, {
       headers: {
-        "X-Naver-Client-Id": clientId,
-        "X-Naver-Client-Secret": clientSecret,
+        "X-NCP-APIGW-API-KEY-ID": clientId,
+        "X-NCP-APIGW-API-KEY": clientSecret,
       },
       next: { revalidate: 60 },
     });
@@ -38,17 +38,19 @@ export async function GET(req: NextRequest) {
 
     const data = await res.json();
     const places: PlaceResult[] = (data.items ?? []).map((item: any) => {
-      const mapx = parseInt(item.mapx ?? "0", 10);
-      const mapy = parseInt(item.mapy ?? "0", 10);
+      const rawX = parseFloat(item.mapx ?? "0");
+      const rawY = parseFloat(item.mapy ?? "0");
+      // API HUB는 실수 WGS84값 반환; 구 API는 정수 × 10^7 — 180 초과 시 변환
+      const lng = rawX ? (rawX > 180 ? rawX / 1e7 : rawX) : undefined;
+      const lat = rawY ? (rawY > 90 ? rawY / 1e7 : rawY) : undefined;
       return {
         name: stripHtml(item.title ?? ""),
         roadAddress: item.roadAddress ?? "",
         address: item.address ?? "",
         category: item.category ?? "",
         telephone: item.telephone ?? "",
-        // Naver Local Search API: mapx/mapy는 WGS84 경위도 × 10^7
-        lng: mapx ? mapx / 1e7 : undefined,
-        lat: mapy ? mapy / 1e7 : undefined,
+        lng,
+        lat,
       };
     });
 
