@@ -7,7 +7,7 @@ export interface CommentData {
   parentId: number | null;
   createdAt: string;
   updatedAt: string;
-  author: { name: string; nickname: string | null } | null;
+  author: { name: string; nickname: string | null; avatarUrl: string | null } | null;
   replies?: CommentData[];
 }
 

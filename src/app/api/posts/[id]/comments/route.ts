@@ -12,7 +12,7 @@ const REPLY_SELECT = {
   parentId: true,
   createdAt: true,
   updatedAt: true,
-  author: { select: { name: true, nickname: true } },
+  author: { select: { name: true, nickname: true, avatarUrl: true } },
 } as const;
 
 const COMMENT_SELECT = {
@@ -32,7 +32,7 @@ type RawComment = {
   parentId: number | null;
   createdAt: Date;
   updatedAt: Date;
-  author: { name: string; nickname: string | null } | null;
+  author: { name: string; nickname: string | null; avatarUrl: string | null } | null;
   replies?: RawComment[];
 };
 
@@ -78,7 +78,7 @@ export async function GET(
       ...c,
       content: isBlocked ? "차단한 사용자입니다." : c.content,
       author: isBlocked
-        ? (c.author ? { name: "차단된 사용자", nickname: null } : null)
+        ? (c.author ? { name: "차단된 사용자", nickname: null, avatarUrl: null } : null)
         : c.author,
       replies: c.replies?.map(maskBlocked),
     };

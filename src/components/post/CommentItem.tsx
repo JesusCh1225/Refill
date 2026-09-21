@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import AuthorLink from "@/components/atom/AuthorLink";
+import Avatar from "@/components/atom/Avatar";
 import ConfirmDeleteButton from "@/components/atom/ConfirmDeleteButton";
 import { type CommentData, displayAuthor, isEdited, formatDate } from "@/types/comment";
 
@@ -87,6 +88,7 @@ export default function CommentItem({
       {/* 헤더 */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2 flex-wrap">
+          <Avatar src={c.author?.avatarUrl} name={displayAuthor(c)} className="w-7 h-7 shrink-0" textClassName="text-xs" />
           {isHidden ? (
             <span className="text-[13px] font-semibold text-text-muted">작성자</span>
           ) : (
@@ -145,6 +147,7 @@ export default function CommentItem({
               <li key={r.id} className="py-2.5 flex flex-col gap-1.5 border-b border-border-base last:border-none">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2 flex-wrap">
+                    <Avatar src={r.author?.avatarUrl} name={displayAuthor(r)} className="w-6 h-6 shrink-0" textClassName="text-[10px]" />
                     {rHidden ? (
                       <span className="text-[12px] font-semibold text-text-muted">작성자</span>
                     ) : (
