@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { SearchResultItem } from "@/data/postTypes";
+import { trimAddressToDong } from "@/lib/locationUtils";
 
 interface Props {
   bookmarks: SearchResultItem[];
@@ -24,7 +25,7 @@ export default function BookmarksTab({ bookmarks }: Props) {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[14px] font-semibold text-text-heading truncate">{post.title}</p>
-                  <p className="text-[12px] text-text-muted mt-0.5">{post.location} · {post.timeAgo}</p>
+                  <p className="text-[12px] text-text-muted mt-0.5">{trimAddressToDong(post.location)} · {post.timeAgo}</p>
                 </div>
                 <span className="text-[13px] font-semibold text-brand shrink-0">{post.price}</span>
               </Link>

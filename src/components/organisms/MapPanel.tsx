@@ -3,6 +3,7 @@ import type { SearchResultItem } from "@/data/postTypes";
 import { dirLabel } from "@/lib/dirLabel";
 import { haversineKm as distKm, fmtDist } from "@/lib/nearbySearch";
 import { tagChipCls, directionBadgeCls } from "@/lib/tagStyles";
+import { trimAddressToDong } from "@/lib/locationUtils";
 
 interface MapPanelProps {
   isOpen: boolean;
@@ -77,7 +78,7 @@ export default function MapPanel({
 
             <div className="flex flex-col gap-1">
               <p className="text-[16px] font-bold text-text-heading">{selectedItem.price}</p>
-              <p className="text-2xs text-text-muted">{selectedItem.location} · {selectedItem.timeAgo}</p>
+              <p className="text-2xs text-text-muted">{trimAddressToDong(selectedItem.location)} · {selectedItem.timeAgo}</p>
               {selectedItem.author && (
                 <p className="text-2xs text-text-muted">
                   작성자 <span className="font-semibold text-text-body">{selectedItem.author}</span>

@@ -66,8 +66,12 @@ export async function POST(
       return NextResponse.json({ error: "이미 리뷰를 남겼어요." }, { status: 409 });
     }
 
-    const review = await prisma.review.create({
+    const { id: reviewId } = await prisma.review.create({
       data: { reviewerId, revieweeId, rating, content, postId },
+      select: { id: true },
+    });
+    const review = await prisma.review.findUnique({
+      where: { id: reviewId },
       select: {
         id: true,
         rating: true,

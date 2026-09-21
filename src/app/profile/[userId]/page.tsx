@@ -2,6 +2,7 @@
 
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { trimAddressToDong } from "@/lib/locationUtils";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import Header from "@/components/organisms/Header";
@@ -346,7 +347,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userId
                   <div className="flex-1 min-w-0">
                     <p className="text-[14px] font-semibold text-text-heading group-hover:text-brand truncate">{post.title}</p>
                     <p className="text-[12px] text-text-muted">
-                      {post.categories[0]?.category.name ?? ""} · {post.location} · {formatDate(post.createdAt)}
+                      {post.categories[0]?.category.name ?? ""} · {trimAddressToDong(post.location)} · {formatDate(post.createdAt)}
                     </p>
                   </div>
                   <span className="text-[14px] font-bold text-text-heading shrink-0">{post.priceDisplay}</span>

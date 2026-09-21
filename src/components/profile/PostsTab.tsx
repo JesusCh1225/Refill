@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { trimAddressToDong } from "@/lib/locationUtils";
 
 export type ProfilePost =
   | { type: "map"; id: number; title: string; imageEmoji: string; location: string; price: string; timeAgo: string; createdAt: string }
@@ -77,7 +78,7 @@ export default function PostsTab({
                           <span className="text-[10px] font-semibold text-brand bg-brand-bg px-1.5 py-0.5 rounded shrink-0">음악맵</span>
                           <p className="text-[14px] font-semibold text-text-heading truncate">{post.title}</p>
                         </div>
-                        <p className="text-[12px] text-text-muted">{post.location} · {post.timeAgo}</p>
+                        <p className="text-[12px] text-text-muted">{trimAddressToDong(post.location)} · {post.timeAgo}</p>
                       </div>
                       <span className="text-[13px] font-semibold text-brand shrink-0 mr-2">{post.price}</span>
                     </Link>

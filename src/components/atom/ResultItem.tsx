@@ -1,6 +1,7 @@
 import BookmarkButton from "@/components/atom/BookmarkButton";
 import { dirLabel } from "@/lib/dirLabel";
 import { directionBadgeCls } from "@/lib/tagStyles";
+import { trimAddressToDong } from "@/lib/locationUtils";
 
 interface ResultItemProps {
   title: string;
@@ -60,7 +61,7 @@ export default function ResultItem({
         <div>
           <p className="text-[16px] sm:text-[19px] font-bold text-text-heading">{price}</p>
           <p className="text-[12px] sm:text-[13px] text-text-muted mt-0.5">
-            {location} · {timeAgo}
+            {trimAddressToDong(location)} · {timeAgo}
             {distanceLabel && (
               <span className="ml-1.5 font-semibold text-brand">📍 {distanceLabel}</span>
             )}

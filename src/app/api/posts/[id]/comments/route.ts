@@ -126,10 +126,13 @@ export async function POST(
     }
   }
 
-  const comment = await prisma.comment.create({
+  // create와 select를 분리 — Neon HTTP 어댑터가 implicit transaction 미지원
+  const { id: commentId } = await prisma.comment.create({
     data: { postId, content, guestName: null, authorId: userId, parentId, isSecret },
-    select: REPLY_SELECT,
+    select: { id: true },
   });
+  const comment = await prisma.comment.findUnique({ where: { id: commentId }, select: REPLY_SELECT });
+  if (!comment) return NextResponse.json({ error: "comment not found" }, { status: 500 });
 
   // 알림 생성 (댓글 저장과 분리 — 알림 실패가 댓글 응답에 영향 주지 않도록)
   try {
