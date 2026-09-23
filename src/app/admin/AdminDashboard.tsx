@@ -6,7 +6,7 @@ import Avatar from "@/components/atom/Avatar";
 import Spinner from "@/components/atom/Spinner";
 import { useToast } from "@/context/toast";
 
-type Tab = "posts" | "users" | "chats";
+type Tab = "posts" | "users" | "chats" | "danger";
 type PostType = "community" | "map";
 
 interface CommunityPostItem {
@@ -66,15 +66,17 @@ export default function AdminDashboard() {
       <h1 className="text-[22px] font-bold text-text-heading mb-6">관리자 대시보드</h1>
 
       <div className="flex gap-1 mb-6 border-b border-border-base">
-        {(["posts", "users", "chats"] as Tab[]).map((t) => (
+        {(["posts", "users", "chats", "danger"] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
             className={`px-4 py-2 text-[14px] font-semibold border-none bg-transparent cursor-pointer transition-colors ${
-              tab === t ? "text-brand border-b-2 border-brand -mb-px" : "text-text-muted hover:text-text-body"
+              tab === t
+                ? t === "danger" ? "text-red-500 border-b-2 border-red-400 -mb-px" : "text-brand border-b-2 border-brand -mb-px"
+                : "text-text-muted hover:text-text-body"
             }`}
           >
-            {t === "posts" ? "게시글" : t === "users" ? "회원" : "채팅 로그"}
+            {t === "posts" ? "게시글" : t === "users" ? "회원" : t === "chats" ? "채팅 로그" : "위험 작업"}
           </button>
         ))}
       </div>
@@ -82,6 +84,7 @@ export default function AdminDashboard() {
       {tab === "posts" && <PostsTab />}
       {tab === "users" && <UsersTab />}
       {tab === "chats" && <ChatLogsTab />}
+      {tab === "danger" && <DangerZone />}
     </main>
   );
 }
@@ -459,16 +462,10 @@ function ChatLogsTab() {
 
   useEffect(() => { load(page, q); }, [page, q, load]);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setPage(1);
-    setQ(inputQ.trim());
-  };
-
   return (
     <div>
       {/* 검색 */}
-      <form onSubmit={handleSearch} className="flex gap-2 mb-5">
+      <form onSubmit={(e) => { e.preventDefault(); setPage(1); setQ(inputQ.trim()); }} className="flex gap-2 mb-5">
         <input
           type="text"
           value={inputQ}
@@ -635,6 +632,68 @@ function UsersTab() {
         </div>
       )}
       <Pagination page={page} totalPages={Math.ceil(total / 20)} onChange={(p) => { setPage(p); load(p); }} />
+    </div>
+  );
+}
+
+function DangerZone() {
+  const { showToast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
+
+  const handleClearAll = async () => {
+    if (!confirmed) { setConfirmed(true); return; }
+    if (!confirm("정말로 모든 데이터를 삭제할까요?\n사용자 계정, 게시글, 채팅, 커뮤니티 글이 전부 삭제됩니다.\n이 작업은 되돌릴 수 없습니다.")) {
+      setConfirmed(false);
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/clear-db", { method: "POST" });
+      if (res.ok) {
+        showToast("모든 데이터가 삭제되었습니다.", "info");
+        setConfirmed(false);
+      } else {
+        showToast("삭제에 실패했어요.", "error");
+        setConfirmed(false);
+      }
+    } catch {
+      showToast("네트워크 오류가 발생했어요.", "error");
+      setConfirmed(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="bg-red-50 border border-red-200 rounded-xl p-5">
+        <h2 className="text-[16px] font-bold text-red-600 mb-1">전체 데이터 초기화</h2>
+        <p className="text-[13px] text-red-500 mb-4 leading-relaxed">
+          모든 사용자 계정, 게시글, 댓글, 채팅, 커뮤니티 글을 삭제합니다.
+          <br />
+          이 작업은 <strong>되돌릴 수 없습니다.</strong> 배포 전 더미 데이터 정리 용도로만 사용하세요.
+        </p>
+        <button
+          onClick={handleClearAll}
+          disabled={loading}
+          className={`px-5 h-10 rounded-lg text-[13px] font-semibold border-none cursor-pointer transition-colors disabled:opacity-50 ${
+            confirmed
+              ? "bg-red-600 text-white hover:bg-red-700"
+              : "bg-red-100 text-red-600 hover:bg-red-200"
+          }`}
+        >
+          {loading ? "삭제 중…" : confirmed ? "한 번 더 클릭하면 삭제됩니다" : "전체 데이터 삭제"}
+        </button>
+        {confirmed && !loading && (
+          <button
+            onClick={() => setConfirmed(false)}
+            className="ml-3 px-4 h-10 rounded-lg text-[13px] font-semibold bg-white text-text-muted border border-border-base cursor-pointer hover:bg-surface-card transition-colors"
+          >
+            취소
+          </button>
+        )}
+      </div>
     </div>
   );
 }
