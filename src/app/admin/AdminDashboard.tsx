@@ -565,16 +565,20 @@ function UsersTab() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<number | null>(null);
+  const [q, setQ] = useState("");
+  const [inputQ, setInputQ] = useState("");
 
-  const load = useCallback(async (p: number) => {
+  const load = useCallback(async (p: number, query: string) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/users?page=${p}`);
+      const params = new URLSearchParams({ page: String(p) });
+      if (query) params.set("q", query);
+      const res = await fetch(`/api/admin/users?${params}`);
       if (res.ok) { const d = await res.json(); setUsers(d.users); setTotal(d.total); }
     } finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { load(page); }, [page, load]);
+  useEffect(() => { load(page, q); }, [page, q, load]);
 
   const del = async (e: React.MouseEvent, id: number, name: string) => {
     e.stopPropagation();
@@ -586,11 +590,35 @@ function UsersTab() {
     setDeleting(null);
   };
 
-  if (loading) return <div className="flex justify-center py-16"><Spinner /></div>;
-
   return (
     <div>
-      <p className="text-[13px] text-text-muted mb-3">전체 {total}명</p>
+      {/* 검색 */}
+      <form onSubmit={(e) => { e.preventDefault(); setPage(1); setQ(inputQ.trim()); }} className="flex gap-2 mb-5">
+        <input
+          type="text"
+          value={inputQ}
+          onChange={(e) => setInputQ(e.target.value)}
+          placeholder="이름 · 닉네임 · 이메일로 검색"
+          className="flex-1 px-4 h-10 rounded-xl border border-border-base text-[14px] text-text-body placeholder:text-text-placeholder focus:outline-none focus:border-brand transition-colors"
+        />
+        <button type="submit" className="px-5 h-10 rounded-xl bg-brand text-white text-[13px] font-semibold border-none cursor-pointer hover:opacity-85 transition-opacity">
+          검색
+        </button>
+        {q && (
+          <button type="button" onClick={() => { setInputQ(""); setQ(""); setPage(1); }}
+            className="px-4 h-10 rounded-xl border border-border-base text-[13px] text-text-muted bg-white cursor-pointer hover:bg-surface-card transition-colors">
+            초기화
+          </button>
+        )}
+      </form>
+
+      {loading ? (
+        <div className="flex justify-center py-16"><Spinner /></div>
+      ) : (
+      <>
+      <p className="text-[13px] text-text-muted mb-3">
+        {q ? `"${q}" 검색 결과 ` : "전체 "}{total}명
+      </p>
       {users.length === 0 ? (
         <p className="text-center text-text-muted py-16 text-[14px]">회원이 없어요.</p>
       ) : (
@@ -631,27 +659,78 @@ function UsersTab() {
           })}
         </div>
       )}
-      <Pagination page={page} totalPages={Math.ceil(total / 20)} onChange={(p) => { setPage(p); load(p); }} />
+      <Pagination page={page} totalPages={Math.ceil(total / 20)} onChange={(p) => setPage(p)} />
+      </>
+      )}
     </div>
   );
 }
 
+type ClearTarget = "posts" | "community" | "messages" | "reviews" | "reports" | "notifications" | "users";
+
+const CLEAR_OPTIONS: { value: ClearTarget; label: string; desc: string; danger?: boolean }[] = [
+  { value: "posts",         label: "지도글",       desc: "게시글·댓글·좋아요·북마크·이미지·해시태그" },
+  { value: "community",     label: "커뮤니티 글",  desc: "커뮤니티 게시글·댓글·좋아요" },
+  { value: "messages",      label: "채팅·메시지",  desc: "1:1 채팅 메시지·대화 기록" },
+  { value: "reviews",       label: "리뷰",         desc: "사용자 간 거래 후기" },
+  { value: "reports",       label: "신고 내역",    desc: "게시글·커뮤니티 신고 기록" },
+  { value: "notifications", label: "알림",         desc: "모든 알림 기록" },
+  { value: "users",         label: "회원 계정",    desc: "전체 회원 + 위 항목 전부 포함", danger: true },
+];
+
 function DangerZone() {
   const { showToast } = useToast();
-  const [loading, setLoading] = useState(false);
+  const [seqLoading, setSeqLoading] = useState(false);
+  const [selected, setSelected] = useState<Set<ClearTarget>>(new Set());
   const [confirmed, setConfirmed] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleClearAll = async () => {
+  const handleResetSequences = async () => {
+    if (!confirm("게시글·댓글·메시지 등의 ID 시퀀스를 초기화할까요?\n빈 테이블은 다음 등록 시 ID 1부터 시작합니다.")) return;
+    setSeqLoading(true);
+    try {
+      const res = await fetch("/api/admin/reset-sequences", { method: "POST" });
+      if (res.ok) showToast("시퀀스가 초기화되었습니다.", "info");
+      else showToast("초기화에 실패했어요.", "error");
+    } catch {
+      showToast("네트워크 오류가 발생했어요.", "error");
+    } finally {
+      setSeqLoading(false);
+    }
+  };
+
+  const toggle = (v: ClearTarget) => {
+    setConfirmed(false);
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(v)) next.delete(v); else next.add(v);
+      return next;
+    });
+  };
+
+  const handleDelete = async () => {
+    if (selected.size === 0) return;
     if (!confirmed) { setConfirmed(true); return; }
-    if (!confirm("정말로 모든 데이터를 삭제할까요?\n사용자 계정, 게시글, 채팅, 커뮤니티 글이 전부 삭제됩니다.\n이 작업은 되돌릴 수 없습니다.")) {
+    const labels = CLEAR_OPTIONS.filter((o) => selected.has(o.value)).map((o) => o.label).join(", ");
+    if (!confirm(`선택한 항목을 삭제할까요?\n\n[ ${labels} ]\n\n이 작업은 되돌릴 수 없습니다.`)) {
       setConfirmed(false);
       return;
     }
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/clear-db", { method: "POST" });
+      const res = await fetch("/api/admin/clear-db", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targets: Array.from(selected) }),
+      });
       if (res.ok) {
-        showToast("모든 데이터가 삭제되었습니다.", "info");
+        const { deleted } = await res.json();
+        const summary = Object.entries(deleted as Record<string, number>)
+          .filter(([, n]) => n > 0)
+          .map(([k, n]) => `${k}: ${n}`)
+          .join(", ");
+        showToast(`삭제 완료${summary ? ` (${summary})` : ""}`, "info");
+        setSelected(new Set());
         setConfirmed(false);
       } else {
         showToast("삭제에 실패했어요.", "error");
@@ -667,32 +746,87 @@ function DangerZone() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="bg-red-50 border border-red-200 rounded-xl p-5">
-        <h2 className="text-[16px] font-bold text-red-600 mb-1">전체 데이터 초기화</h2>
-        <p className="text-[13px] text-red-500 mb-4 leading-relaxed">
-          모든 사용자 계정, 게시글, 댓글, 채팅, 커뮤니티 글을 삭제합니다.
+      {/* 시퀀스 초기화 */}
+      <div className="bg-amber-50 border border-amber-200 rounded-xl p-5">
+        <h2 className="text-[16px] font-bold text-amber-700 mb-1">ID 시퀀스 초기화</h2>
+        <p className="text-[13px] text-amber-600 mb-4 leading-relaxed">
+          게시글·댓글·메시지 등 콘텐츠 테이블의 자동증가 ID를 리셋합니다.
           <br />
-          이 작업은 <strong>되돌릴 수 없습니다.</strong> 배포 전 더미 데이터 정리 용도로만 사용하세요.
+          데이터를 모두 지운 뒤 실행하면 다음 등록 시 ID가 1부터 시작됩니다.
         </p>
         <button
-          onClick={handleClearAll}
-          disabled={loading}
-          className={`px-5 h-10 rounded-lg text-[13px] font-semibold border-none cursor-pointer transition-colors disabled:opacity-50 ${
-            confirmed
-              ? "bg-red-600 text-white hover:bg-red-700"
-              : "bg-red-100 text-red-600 hover:bg-red-200"
-          }`}
+          onClick={handleResetSequences}
+          disabled={seqLoading}
+          className="px-5 h-10 rounded-lg text-[13px] font-semibold border-none cursor-pointer transition-colors bg-amber-100 text-amber-700 hover:bg-amber-200 disabled:opacity-50"
         >
-          {loading ? "삭제 중…" : confirmed ? "한 번 더 클릭하면 삭제됩니다" : "전체 데이터 삭제"}
+          {seqLoading ? "초기화 중…" : "시퀀스 초기화"}
         </button>
-        {confirmed && !loading && (
+      </div>
+
+      {/* 선택적 데이터 삭제 */}
+      <div className="bg-red-50 border border-red-200 rounded-xl p-5">
+        <h2 className="text-[16px] font-bold text-red-600 mb-1">데이터 선택 삭제</h2>
+        <p className="text-[13px] text-red-500 mb-4">
+          삭제할 항목을 선택하세요. 이 작업은 <strong>되돌릴 수 없습니다.</strong>
+        </p>
+
+        <div className="flex flex-col gap-2 mb-5">
+          {CLEAR_OPTIONS.map((opt) => {
+            const checked = selected.has(opt.value);
+            return (
+              <label
+                key={opt.value}
+                className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors select-none ${
+                  checked
+                    ? opt.danger
+                      ? "border-red-400 bg-red-100"
+                      : "border-red-300 bg-red-100/60"
+                    : "border-border-base bg-white hover:border-red-200"
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() => toggle(opt.value)}
+                  className="mt-0.5 accent-red-500 w-4 h-4 shrink-0"
+                />
+                <div>
+                  <p className={`text-[14px] font-semibold ${opt.danger ? "text-red-600" : "text-text-heading"}`}>
+                    {opt.label}
+                    {opt.danger && <span className="ml-1.5 text-[11px] font-normal bg-red-200 text-red-700 px-1.5 py-0.5 rounded-full">위험</span>}
+                  </p>
+                  <p className="text-[12px] text-text-muted mt-0.5">{opt.desc}</p>
+                </div>
+              </label>
+            );
+          })}
+        </div>
+
+        <div className="flex items-center gap-3">
           <button
-            onClick={() => setConfirmed(false)}
-            className="ml-3 px-4 h-10 rounded-lg text-[13px] font-semibold bg-white text-text-muted border border-border-base cursor-pointer hover:bg-surface-card transition-colors"
+            onClick={handleDelete}
+            disabled={selected.size === 0 || loading}
+            className={`px-5 h-10 rounded-lg text-[13px] font-semibold border-none cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+              confirmed
+                ? "bg-red-600 text-white hover:bg-red-700"
+                : "bg-red-100 text-red-600 hover:bg-red-200"
+            }`}
           >
-            취소
+            {loading
+              ? "삭제 중…"
+              : confirmed
+              ? "한 번 더 클릭하면 삭제됩니다"
+              : `선택 항목 삭제 (${selected.size}개)`}
           </button>
-        )}
+          {confirmed && !loading && (
+            <button
+              onClick={() => setConfirmed(false)}
+              className="px-4 h-10 rounded-lg text-[13px] font-semibold bg-white text-text-muted border border-border-base cursor-pointer hover:bg-surface-card transition-colors"
+            >
+              취소
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
