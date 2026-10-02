@@ -14,25 +14,27 @@ function extractProfile(
   const p = profile as Record<string, any>;
 
   if (provider === "naver") {
-    // Naver: user.name = 실명, profile.response.nickname = 닉네임
+    // NextAuth Naver: user.name = profile.response.nickname (닉네임)
+    // 실명은 raw profile.response.name에 따로 존재
     return {
-      realName: user.name?.trim() || null,
-      oauthNickname: (p?.response?.nickname as string)?.trim() || null,
+      realName: (p?.response?.name as string)?.trim() || null,
+      oauthNickname: user.name?.trim() || null,
     };
   }
 
   if (provider === "kakao") {
-    // Kakao: user.name = 닉네임, profile.kakao_account.name = 실명
+    // NextAuth Kakao: user.name = profile.kakao_account.profile.nickname (닉네임)
+    // 실명은 profile.kakao_account.name (별도 동의 필요, 없을 수 있음)
     return {
       realName: (p?.kakao_account?.name as string)?.trim() || null,
       oauthNickname: user.name?.trim() || null,
     };
   }
 
-  // Google: user.name = 실명, 별도 닉네임 없음
+  // Google: 실명/닉네임 구분 없이 user.name을 둘 다 사용
   return {
     realName: user.name?.trim() || null,
-    oauthNickname: null,
+    oauthNickname: user.name?.trim() || null,
   };
 }
 
