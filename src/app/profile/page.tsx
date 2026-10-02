@@ -268,6 +268,7 @@ export default function ProfilePage() {
         {tab === "info" && (
           <InfoTab
             profile={profile}
+            oauthImage={session?.user?.image}
             nicknameInput={nicknameInput}
             onNicknameChange={setNicknameInput}
             onNicknameSave={handleNicknameSave}

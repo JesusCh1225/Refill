@@ -5,6 +5,37 @@ import Google from "next-auth/providers/google";
 import { prisma } from "@/lib/prisma";
 import { generateUniqueNickname } from "@/lib/randomNickname";
 
+// provider별 실명/닉네임 분리
+function extractProfile(
+  provider: string,
+  user: { name?: string | null },
+  profile: unknown,
+): { realName: string | null; oauthNickname: string | null } {
+  const p = profile as Record<string, any>;
+
+  if (provider === "naver") {
+    // Naver: user.name = 실명, profile.response.nickname = 닉네임
+    return {
+      realName: user.name?.trim() || null,
+      oauthNickname: (p?.response?.nickname as string)?.trim() || null,
+    };
+  }
+
+  if (provider === "kakao") {
+    // Kakao: user.name = 닉네임, profile.kakao_account.name = 실명
+    return {
+      realName: (p?.kakao_account?.name as string)?.trim() || null,
+      oauthNickname: user.name?.trim() || null,
+    };
+  }
+
+  // Google: user.name = 실명, 별도 닉네임 없음
+  return {
+    realName: user.name?.trim() || null,
+    oauthNickname: null,
+  };
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Kakao({
@@ -24,7 +55,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
 
   callbacks: {
-    async signIn({ user, account }) {
+    async signIn({ user, account, profile }) {
       if (!account) return false;
 
       try {
@@ -50,15 +81,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return true;
         }
 
-        const providedName = user.name?.trim();
-        const finalName = providedName
-          ? providedName
+        const { realName, oauthNickname } = extractProfile(account.provider, user, profile);
+
+        // 닉네임: OAuth 제공 → 없으면 랜덤 생성 (nickname 필드 중복 체크)
+        const displayNickname = oauthNickname
+          ? oauthNickname
           : await generateUniqueNickname(
-              (n) => prisma.user.findFirst({ where: { name: n }, select: { id: true } }).then(Boolean),
+              (n) => prisma.user.findFirst({ where: { nickname: n }, select: { id: true } }).then(Boolean),
             );
+
         const newUser = await prisma.user.create({
           data: {
-            name: finalName.slice(0, 50),
+            name: (realName ?? "").slice(0, 50),
+            nickname: displayNickname.slice(0, 50),
             email: user.email ? user.email.slice(0, 255) : undefined,
           },
         });
@@ -75,7 +110,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             },
           });
         } catch (oauthErr) {
-          // OAuthAccount 생성 실패 시 고아 User 행을 정리하고 로그인 거부
           await prisma.user.delete({ where: { id: newUser.id } }).catch(() => {});
           throw oauthErr;
         }
@@ -96,10 +130,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           select: { avatarUrl: true, name: true, nickname: true },
         });
         if (dbUser?.avatarUrl) token.picture = dbUser.avatarUrl;
-        // OAuth가 이름을 제공하지 않는 경우(카카오 등) DB name 사용
+        // 헤더/세션에 표시될 이름: 닉네임 우선, 없으면 실명
         token.name = dbUser?.nickname ?? dbUser?.name ?? token.name;
       }
-      // 이미 로그인된 세션 중 token.name이 null인 경우 DB에서 복구
+      // 기존 세션에 token.name이 없으면 DB에서 복구
       if (!token.name && token.userId) {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.userId as number },

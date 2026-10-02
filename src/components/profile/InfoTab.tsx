@@ -333,6 +333,7 @@ interface UserProfile {
 
 interface Props {
   profile: UserProfile;
+  oauthImage?: string | null;
   nicknameInput: string;
   onNicknameChange: (v: string) => void;
   onNicknameSave: () => void;
@@ -353,6 +354,7 @@ interface Props {
 
 export default function InfoTab({
   profile,
+  oauthImage,
   nicknameInput,
   onNicknameChange,
   onNicknameSave,
@@ -369,6 +371,7 @@ export default function InfoTab({
 }: Props) {
   const savedNickname = profile.nickname ?? profile.name;
   const displayName = profile.nickname ?? profile.name;
+  const avatarSrc = profile.avatarUrl ?? oauthImage ?? null;
 
   return (
     <div className="bg-white rounded-2xl border border-border-card px-4 py-5 sm:px-8 sm:py-7 flex flex-col gap-6">
@@ -385,7 +388,7 @@ export default function InfoTab({
               title="사진 변경"
             >
               <Avatar
-                src={profile.avatarUrl}
+                src={avatarSrc}
                 name={displayName}
                 className="w-20 h-20"
                 textClassName="text-3xl"
@@ -520,8 +523,8 @@ export default function InfoTab({
       <section className="flex flex-col gap-4">
         <h2 className="text-[14px] font-bold text-text-heading">로그인 정보</h2>
         <div className="flex flex-col gap-3">
-          <InfoField label="이름" value={profile.name} />
-          {profile.nickname && <InfoField label="닉네임" value={profile.nickname} />}
+          {profile.name && <InfoField label="이름" value={profile.name} />}
+          <InfoField label="닉네임" value={(profile.nickname ?? profile.name) || "-"} />
           {profile.email && <InfoField label="이메일" value={profile.email} />}
           <InfoField
             label="가입일"
