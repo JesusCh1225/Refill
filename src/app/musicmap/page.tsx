@@ -185,7 +185,7 @@ export default function MusicMapPage() {
 
         <MapSearchBar value={searchInput} onChange={setSearchInput} onSearch={() => handleSearch(searchInput)} onClear={() => handleClear(setSearchInput)} />
 
-        <div className="absolute z-10 left-4 right-16 md:right-auto flex gap-1.5 overflow-x-auto" style={{ top: "72px", scrollbarWidth: "none" }}>
+        <div className="absolute z-10 left-4 right-4 md:right-auto flex gap-1.5 overflow-x-auto" style={{ top: "72px", maxWidth: "420px", scrollbarWidth: "none" }}>
           {CHIP_FILTERS.map(({ id, label }) => (
             <FilterChip key={id} active={chipFilter === id} onClick={() => handleChipFilter(id)}>
               {label}

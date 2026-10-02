@@ -32,18 +32,13 @@ export default function PrivacyPage() {
             서비스는 소셜 로그인(Google·카카오·네이버)을 통해, 그리고 회원이
             직접 입력하는 방식으로 아래 정보를 수집합니다.
           </p>
-          <table className="w-full text-[12px] border border-border-card rounded-lg overflow-hidden">
+          <div className="overflow-x-auto -mx-1">
+          <table className="w-full text-[12px] border border-border-card rounded-lg overflow-hidden min-w-120">
             <thead className="bg-surface-card">
               <tr>
-                <th className="text-left px-3 py-2 font-semibold text-text-heading border-b border-border-card">
-                  항목
-                </th>
-                <th className="text-left px-3 py-2 font-semibold text-text-heading border-b border-border-card">
-                  수집 방법
-                </th>
-                <th className="text-left px-3 py-2 font-semibold text-text-heading border-b border-border-card">
-                  수집 목적
-                </th>
+                <th className="text-left px-3 py-2 font-semibold text-text-heading border-b border-border-card">항목</th>
+                <th className="text-left px-3 py-2 font-semibold text-text-heading border-b border-border-card">수집 방법</th>
+                <th className="text-left px-3 py-2 font-semibold text-text-heading border-b border-border-card">수집 목적</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border-card">
@@ -53,9 +48,7 @@ export default function PrivacyPage() {
                 <td className="px-3 py-2">회원 식별, 프로필 표시</td>
               </tr>
               <tr>
-                <td className="px-3 py-2">
-                  이메일 주소 (제공하는 소셜 계정에 한함)
-                </td>
+                <td className="px-3 py-2">이메일 주소 (제공하는 소셜 계정에 한함)</td>
                 <td className="px-3 py-2">소셜 로그인 시 자동 수집</td>
                 <td className="px-3 py-2">회원 식별</td>
               </tr>
@@ -65,16 +58,12 @@ export default function PrivacyPage() {
                 <td className="px-3 py-2">계정 연동·인증 유지</td>
               </tr>
               <tr>
-                <td className="px-3 py-2">
-                  소개글, 연락처, 대표 음원 링크
-                </td>
+                <td className="px-3 py-2">소개글, 연락처, 대표 음원 링크</td>
                 <td className="px-3 py-2">회원 직접 입력 (선택)</td>
                 <td className="px-3 py-2">프로필 정보 표시</td>
               </tr>
               <tr>
-                <td className="px-3 py-2">
-                  서비스 이용 기록 (게시물, 댓글, 북마크 등)
-                </td>
+                <td className="px-3 py-2">서비스 이용 기록 (게시물, 댓글, 북마크 등)</td>
                 <td className="px-3 py-2">서비스 이용 중 생성</td>
                 <td className="px-3 py-2">서비스 제공</td>
               </tr>
@@ -85,6 +74,7 @@ export default function PrivacyPage() {
               </tr>
             </tbody>
           </table>
+          </div>
         </Section>
 
         <Section title="2. 개인정보의 이용 목적">
@@ -120,18 +110,13 @@ export default function PrivacyPage() {
 
         <Section title="5. 개인정보 처리 위탁">
           서비스는 원활한 운영을 위해 아래 업체에 개인정보 처리를 위탁합니다.
-          <table className="w-full text-[12px] border border-border-card rounded-lg overflow-hidden mt-3">
+          <div className="overflow-x-auto -mx-1 mt-3">
+          <table className="w-full text-[12px] border border-border-card rounded-lg overflow-hidden min-w-120">
             <thead className="bg-surface-card">
               <tr>
-                <th className="text-left px-3 py-2 font-semibold text-text-heading border-b border-border-card">
-                  수탁 업체
-                </th>
-                <th className="text-left px-3 py-2 font-semibold text-text-heading border-b border-border-card">
-                  위탁 업무
-                </th>
-                <th className="text-left px-3 py-2 font-semibold text-text-heading border-b border-border-card">
-                  국외 이전
-                </th>
+                <th className="text-left px-3 py-2 font-semibold text-text-heading border-b border-border-card">수탁 업체</th>
+                <th className="text-left px-3 py-2 font-semibold text-text-heading border-b border-border-card">위탁 업무</th>
+                <th className="text-left px-3 py-2 font-semibold text-text-heading border-b border-border-card">국외 이전</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border-card">
@@ -164,6 +149,7 @@ export default function PrivacyPage() {
               </tr>
             </tbody>
           </table>
+          </div>
           <p className="mt-3 text-text-muted">
             국외 이전 업체(Vercel, Neon, Google)는 해당 업체의 개인정보
             보호정책에 따라 정보를 보호합니다. Google의 개인정보처리방침은{" "}

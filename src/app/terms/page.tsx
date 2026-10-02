@@ -36,7 +36,7 @@ export default function TermsPage() {
 
         <Section title="제4조 (회원 가입)">
           <ol className="list-decimal list-inside space-y-1.5">
-            <li>회원 가입은 카카오 또는 네이버 소셜 로그인을 통해 이루어집니다.</li>
+            <li>회원 가입은 Google, 카카오, 네이버 등의 소셜 로그인을 통해 이루어집니다.</li>
             <li>만 14세 미만인 자는 서비스에 가입할 수 없습니다.</li>
             <li>회원은 가입 시 제공된 정보가 정확함을 보증하며, 변경 사항이 있을 경우 즉시 수정해야 합니다.</li>
           </ol>
