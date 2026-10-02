@@ -63,6 +63,21 @@ export default function PrivacyPage() {
                 <td className="px-3 py-2">프로필 정보 표시</td>
               </tr>
               <tr>
+                <td className="px-3 py-2">전화번호</td>
+                <td className="px-3 py-2">회원 직접 입력 (선택) 또는 소셜 로그인 연동</td>
+                <td className="px-3 py-2">본인 확인, 레슨·거래 문의 연락</td>
+              </tr>
+              <tr>
+                <td className="px-3 py-2">자격·면허, 경력</td>
+                <td className="px-3 py-2">회원 직접 입력 (선택)</td>
+                <td className="px-3 py-2">프로필 신뢰도 표시</td>
+              </tr>
+              <tr>
+                <td className="px-3 py-2">게시물 등록 위치 정보 (주소, 위도·경도)</td>
+                <td className="px-3 py-2">회원 직접 입력 또는 지도 선택</td>
+                <td className="px-3 py-2">음악맵 게시물 위치 표시</td>
+              </tr>
+              <tr>
                 <td className="px-3 py-2">서비스 이용 기록 (게시물, 댓글, 북마크 등)</td>
                 <td className="px-3 py-2">서비스 이용 중 생성</td>
                 <td className="px-3 py-2">서비스 제공</td>

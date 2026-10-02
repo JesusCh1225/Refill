@@ -103,7 +103,10 @@ export default function ProfilePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ nickname: nicknameInput.trim() }),
       });
-      if (res.ok) setProfile((p) => p ? { ...p, nickname: nicknameInput.trim() } : p);
+      if (res.ok) {
+        setProfile((p) => p ? { ...p, nickname: nicknameInput.trim() } : p);
+        await update({ name: nicknameInput.trim() });
+      }
     } finally {
       setSaving(false);
     }

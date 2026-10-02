@@ -98,8 +98,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         });
         if (dbUser?.avatarUrl) token.picture = dbUser.avatarUrl;
       }
-      if (trigger === "update" && "image" in (session ?? {})) {
-        token.picture = (session as any).image ?? null;
+      if (trigger === "update") {
+        const s = (session ?? {}) as Record<string, unknown>;
+        if ("image" in s) token.picture = (s.image as string) ?? null;
+        if ("name" in s) token.name = s.name as string;
       }
       return token;
     },
