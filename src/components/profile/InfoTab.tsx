@@ -521,6 +521,7 @@ export default function InfoTab({
         <h2 className="text-[14px] font-bold text-text-heading">로그인 정보</h2>
         <div className="flex flex-col gap-3">
           <InfoField label="이름" value={profile.name} />
+          {profile.nickname && <InfoField label="닉네임" value={profile.nickname} />}
           {profile.email && <InfoField label="이메일" value={profile.email} />}
           <InfoField
             label="가입일"
