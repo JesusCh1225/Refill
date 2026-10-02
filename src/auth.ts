@@ -3,6 +3,7 @@ import Kakao from "next-auth/providers/kakao";
 import Naver from "next-auth/providers/naver";
 import Google from "next-auth/providers/google";
 import { prisma } from "@/lib/prisma";
+import { generateUniqueNickname } from "@/lib/randomNickname";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
@@ -49,9 +50,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return true;
         }
 
+        const providedName = user.name?.trim();
+        const finalName = providedName
+          ? providedName
+          : await generateUniqueNickname(
+              (n) => prisma.user.findFirst({ where: { name: n }, select: { id: true } }).then(Boolean),
+            );
         const newUser = await prisma.user.create({
           data: {
-            name: (user.name ?? "사용자").slice(0, 50),
+            name: finalName.slice(0, 50),
             email: user.email ? user.email.slice(0, 255) : undefined,
           },
         });
