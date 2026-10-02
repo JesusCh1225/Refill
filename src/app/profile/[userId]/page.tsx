@@ -272,12 +272,29 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userId
           )}
 
           {/* 연락처 */}
-          {profile.contact && (
-            <div className="flex items-start gap-2 border-t border-border-base pt-4">
-              <span className="text-[13px] font-semibold text-text-muted w-14 shrink-0">연락처</span>
-              <p className="text-[14px] text-text-body leading-relaxed whitespace-pre-wrap break-all">{profile.contact}</p>
-            </div>
-          )}
+          {profile.contact && (() => {
+            const contacts = (() => {
+              try { return JSON.parse(profile.contact!) as string[]; } catch { return [profile.contact!]; }
+            })().filter(Boolean);
+            if (!contacts.length) return null;
+            return (
+              <div className="flex items-start gap-2 border-t border-border-base pt-4">
+                <span className="text-[13px] font-semibold text-text-muted w-14 shrink-0">연락처</span>
+                <div className="flex flex-col gap-1">
+                  {contacts.map((c, i) =>
+                    /^https?:\/\//i.test(c) ? (
+                      <a key={i} href={c} target="_blank" rel="noopener noreferrer"
+                        className="text-[14px] text-brand hover:underline break-all">
+                        🔗 {c}
+                      </a>
+                    ) : (
+                      <span key={i} className="text-[14px] text-text-body break-all">{c}</span>
+                    )
+                  )}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* 대표 음원 */}
           {profile.representativeSong && (

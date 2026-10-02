@@ -98,6 +98,115 @@ function ListField({
   );
 }
 
+function isUrl(str: string) {
+  return /^https?:\/\//i.test(str.trim());
+}
+
+function parseContactList(json: string | null): string[] {
+  if (!json) return [];
+  try { return JSON.parse(json) as string[]; } catch { return [json]; }
+}
+
+interface ContactListFieldProps {
+  initialJson: string | null;
+  onSave: (json: string) => Promise<void>;
+}
+
+function ContactListField({ initialJson, onSave }: ContactListFieldProps) {
+  const [items, setItems] = useState<string[]>(() => parseContactList(initialJson));
+  const [saving, setSaving] = useState(false);
+  const initial = parseContactList(initialJson);
+  const isDirty = JSON.stringify(items) !== JSON.stringify(initial);
+
+  const update = (idx: number, val: string) =>
+    setItems((prev) => prev.map((it, i) => (i === idx ? val : it)));
+  const remove = (idx: number) =>
+    setItems((prev) => prev.filter((_, i) => i !== idx));
+  const add = () => setItems((prev) => [...prev, ""]);
+  const handleSave = async () => {
+    setSaving(true);
+    const cleaned = items.filter((it) => it.trim());
+    try {
+      await onSave(JSON.stringify(cleaned));
+      setItems(cleaned);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <section className="flex flex-col gap-3">
+      <div>
+        <h2 className="text-[14px] font-bold text-text-heading">연락처</h2>
+        <p className="text-[12px] text-text-muted mt-0.5">
+          인스타그램, 카카오 오픈채팅, 전화번호 등을 입력하세요.
+        </p>
+      </div>
+      <div className="flex flex-col gap-2">
+        {items.map((it, i) => (
+          <div key={i} className="flex gap-2">
+            <input
+              type="text"
+              value={it}
+              onChange={(e) => update(i, e.target.value)}
+              placeholder="예: 인스타 @my_account / 카카오 오픈채팅 링크"
+              maxLength={300}
+              className="flex-1 h-9 px-3 rounded-lg border border-border-base text-[13px] text-text-body placeholder:text-text-placeholder focus:outline-none focus:border-brand transition-colors"
+            />
+            <button
+              type="button"
+              onClick={() => remove(i)}
+              className="w-9 h-9 rounded-lg border border-border-base text-text-muted text-[14px] bg-transparent cursor-pointer hover:border-red-300 hover:text-red-400 transition-colors shrink-0"
+            >
+              ✕
+            </button>
+          </div>
+        ))}
+        {items.length < 10 && (
+          <button
+            type="button"
+            onClick={add}
+            className="self-start px-3 h-8 rounded-lg border border-dashed border-border-base text-[12px] text-text-muted bg-transparent cursor-pointer hover:border-brand hover:text-brand transition-colors"
+          >
+            + 연락처 추가
+          </button>
+        )}
+      </div>
+      {/* 저장된 항목 미리보기 (링크 클릭 가능) */}
+      {!isDirty && items.filter(Boolean).length > 0 && (
+        <div className="flex flex-col gap-1 px-1">
+          {items.filter(Boolean).map((it, i) =>
+            isUrl(it) ? (
+              <a
+                key={i}
+                href={it}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[12px] text-brand hover:underline truncate"
+              >
+                🔗 {it}
+              </a>
+            ) : (
+              <span key={i} className="text-[12px] text-text-muted truncate">
+                {it}
+              </span>
+            )
+          )}
+        </div>
+      )}
+      <div className="flex justify-end">
+        <button
+          onClick={handleSave}
+          disabled={saving || !isDirty}
+          className="px-4 h-9 rounded-lg bg-brand text-white text-[12px] font-semibold border-none cursor-pointer hover:opacity-85 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {saving ? "저장중…" : "저장"}
+        </button>
+      </div>
+    </section>
+  );
+}
+
 interface BlockedUser {
   id: number;
   name: string;
@@ -359,13 +468,8 @@ export default function InfoTab({
 
       <hr className="border-border-base" />
 
-      <EditableField
-        title="연락처"
-        description="인스타그램, 카카오 오픈채팅, 전화번호 등을 입력하세요."
-        type="text"
-        initialValue={profile.contact ?? ""}
-        placeholder="예: 인스타 @my_account / 카카오 오픈채팅 링크"
-        maxLength={200}
+      <ContactListField
+        initialJson={profile.contact}
         onSave={(v) => onProfileFieldSave("contact", v)}
       />
 
