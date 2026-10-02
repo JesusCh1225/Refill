@@ -17,7 +17,7 @@ model User {
   phone              String?  @db.VarChar(20)
   avatarUrl          String?  @db.VarChar(500)
   bio                String?  @db.Text
-  contact            String?  @db.VarChar(200)
+  contact            String?  @db.Text
   representativeSong String?  @db.VarChar(500)
   licenses           String?  @db.Text
   career             String?  @db.Text
@@ -92,7 +92,7 @@ model PostHashtag {
   @@id([postId, hashtagId])
 }
 
-// ── 게시글 ────────────────────────────────────────────────────────────────
+// ── 열거형 ────────────────────────────────────────────────────────────────
 
 enum PriceType {
   FREE        // 무료
@@ -112,6 +112,21 @@ enum PostDirection {
   OFFER // 합니다 / 팝니다
   SEEK  // 구합니다 / 삽니다
 }
+
+enum NotificationType {
+  COMMENT
+  REPLY
+  COMMUNITY_COMMENT
+  COMMUNITY_REPLY
+}
+
+enum ReportStatus {
+  PENDING
+  RESOLVED
+  DISMISSED
+}
+
+// ── 게시글 ────────────────────────────────────────────────────────────────
 
 model Post {
   id           Int           @id @default(autoincrement())
@@ -209,6 +224,7 @@ model Comment {
 
   @@index([postId])
   @@index([parentId])
+  @@index([authorId])
 }
 
 // ── 좋아요 ────────────────────────────────────────────────────────────────
@@ -223,6 +239,7 @@ model Like {
   post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@id([userId, postId])
+  @@index([postId])
 }
 
 // ── 북마크 ────────────────────────────────────────────────────────────────
@@ -237,6 +254,7 @@ model Bookmark {
   post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@id([userId, postId])
+  @@index([postId])
 }
 
 // ── 리뷰/평점 ─────────────────────────────────────────────────────────────
@@ -257,6 +275,7 @@ model Review {
   post     Post? @relation(fields: [postId],  references: [id],     onDelete: SetNull)
 
   @@unique([reviewerId, revieweeId, postId])
+  @@index([revieweeId])
 }
 
 // ── 메시지 ────────────────────────────────────────────────────────────────
@@ -273,10 +292,10 @@ model Message {
 
   sender   User  @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
   receiver User  @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
-  post     Post? @relation(fields: [postId], references: [id])
+  post     Post? @relation(fields: [postId], references: [id], onDelete: SetNull)
 
+  @@index([senderId, receiverId])
   @@index([receiverId, isRead])
-  @@index([senderId])
 }
 
 // ── 알림 ──────────────────────────────────────────────────────────────────
@@ -285,7 +304,7 @@ model Notification {
   id                 Int      @id @default(autoincrement())
   userId             Int                           // 수신자
   actorId            Int                           // 발생자 (댓글 작성자 등)
-  type               String   @db.VarChar(20)      // COMMENT | REPLY | COMMUNITY_COMMENT | COMMUNITY_REPLY
+  type               NotificationType
   postId             Int?
   commentId          Int?
   communityPostId    Int?
@@ -391,7 +410,7 @@ model Report {
   postId          Int?
   communityPostId Int?
   reason          String   @db.VarChar(200)
-  status          String   @default("PENDING") @db.VarChar(20)
+  status          ReportStatus @default(PENDING)
   createdAt       DateTime @default(now())
 
   reporter      User           @relation(fields: [reporterId],      references: [id], onDelete: Cascade)
@@ -399,4 +418,5 @@ model Report {
   communityPost CommunityPost? @relation(fields: [communityPostId], references: [id], onDelete: Cascade)
 
   @@index([status])
+  @@index([reporterId])
 }

@@ -7,10 +7,11 @@ import { useSession } from "next-auth/react";
 import Header from "@/components/organisms/Header";
 import Avatar from "@/components/atom/Avatar";
 import Spinner from "@/components/atom/Spinner";
+import type { NotificationType } from "@/generated/prisma";
 
 interface NotificationItem {
   id: number;
-  type: "COMMENT" | "REPLY" | "COMMUNITY_COMMENT" | "COMMUNITY_REPLY";
+  type: NotificationType;
   isRead: boolean;
   createdAt: string;
   postId: number | null;
