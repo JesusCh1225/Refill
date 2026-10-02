@@ -91,12 +91,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user, trigger, session }) {
       if (user?.id) {
         token.userId = parseInt(user.id);
-        // 커스텀 아바타가 있으면 OAuth 프로필 이미지 대신 사용
         const dbUser = await prisma.user.findUnique({
           where: { id: parseInt(user.id) },
-          select: { avatarUrl: true },
+          select: { avatarUrl: true, name: true, nickname: true },
         });
         if (dbUser?.avatarUrl) token.picture = dbUser.avatarUrl;
+        // OAuth가 이름을 제공하지 않는 경우(카카오 등) DB name 사용
+        token.name = dbUser?.nickname ?? dbUser?.name ?? token.name;
+      }
+      // 이미 로그인된 세션 중 token.name이 null인 경우 DB에서 복구
+      if (!token.name && token.userId) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.userId as number },
+          select: { name: true, nickname: true },
+        });
+        token.name = dbUser?.nickname ?? dbUser?.name ?? undefined;
       }
       if (trigger === "update") {
         const s = (session ?? {}) as Record<string, unknown>;

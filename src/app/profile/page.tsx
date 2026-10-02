@@ -43,7 +43,7 @@ const TABS: { id: Tab; label: string }[] = [
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { status, update } = useSession();
+  const { data: session, status, update } = useSession();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const avatarSyncedRef = useRef(false);
   const [tab, setTab] = useState<Tab>("info");
@@ -248,7 +248,7 @@ export default function ProfilePage() {
       <input ref={fileInputRef} type="file" accept={ACCEPT_IMAGE} className="hidden" onChange={handleFileChange} />
 
       <div className="mx-auto px-3 sm:px-6 pt-5 sm:pt-8 pb-20" style={{ maxWidth: "720px" }}>
-        <ProfileHeader profile={profile} onAvatarClick={triggerAvatarChange} />
+        <ProfileHeader profile={profile} oauthImage={session?.user?.image} onAvatarClick={triggerAvatarChange} />
 
         {/* 탭 */}
         <div className="flex gap-1 mb-6 bg-white rounded-2xl border border-border-card p-1.5">
