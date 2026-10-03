@@ -250,6 +250,15 @@ export default function ProfilePage() {
       <div className="mx-auto px-3 sm:px-6 pt-5 sm:pt-8 pb-20" style={{ maxWidth: "720px" }}>
         <ProfileHeader profile={profile} oauthImage={session?.user?.image} onAvatarClick={triggerAvatarChange} />
 
+        <div className="flex justify-end mb-4 sm:hidden">
+          <button
+            onClick={() => signOut({ callbackUrl: "/" })}
+            className="text-[12px] text-text-muted hover:text-text-body transition-colors border border-border-base rounded-full px-4 py-1.5 bg-white cursor-pointer"
+          >
+            로그아웃
+          </button>
+        </div>
+
         {/* 탭 */}
         <div className="flex gap-1 mb-6 bg-white rounded-2xl border border-border-card p-1.5">
           {TABS.map((t) => (
