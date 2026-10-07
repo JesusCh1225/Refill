@@ -42,8 +42,20 @@ export default function PostDetailClient({
   const [reportOpen, setReportOpen] = useState(false);
   const [mobileReportOpen, setMobileReportOpen] = useState(false);
   const [reportDone, setReportDone] = useState(false);
+  const [liked, setLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
 
   const REPORT_REASONS = ["스팸/광고", "불법 정보", "욕설/혐오", "사기 의심", "기타"];
+
+  const handleLike = async () => {
+    if (!session) return;
+    const res = await fetch(`/api/posts/${id}/like`, { method: "POST" });
+    if (res.ok) {
+      const { liked: l, count } = await res.json();
+      setLiked(l);
+      setLikeCount(count);
+    }
+  };
 
   const handleReport = async (reason: string) => {
     const res = await fetch(`/api/posts/${id}/report`, {
@@ -59,7 +71,10 @@ export default function PostDetailClient({
   useEffect(() => {
     fetch(`/api/posts/${id}`)
       .then((r) => { if (!r.ok) throw new Error("not found"); return r.json(); })
-      .then((data: SearchResultItem) => setItem(data))
+      .then((data: SearchResultItem) => {
+        setItem(data);
+        setLikeCount(data.likeCount ?? 0);
+      })
       .catch(() => setItem(null))
       .finally(() => setPostLoading(false));
   }, [id]);
@@ -202,6 +217,19 @@ export default function PostDetailClient({
                     })
                   : item.timeAgo}
               />
+              {(item.viewCount != null || likeCount > 0) && (
+                <div className="flex items-center gap-4">
+                  {item.viewCount != null && (
+                    <span className="text-[13px] text-text-muted">조회 {item.viewCount.toLocaleString()}</span>
+                  )}
+                  <button
+                    onClick={handleLike}
+                    className={`flex items-center gap-1.5 text-[13px] transition-colors cursor-pointer bg-transparent border-none ${liked ? "text-red-500" : "text-text-muted hover:text-red-400"}`}
+                  >
+                    ♥ {likeCount.toLocaleString()}
+                  </button>
+                </div>
+              )}
               {item.author && item.authorId && (
                 <div className="flex items-center gap-3">
                   <span className="text-[13px] font-semibold text-text-muted w-14 shrink-0">작성자</span>

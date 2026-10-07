@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { POST_SELECT, mapPost } from "@/lib/postMapper";
 import { getSessionUserId } from "@/lib/auth";
 import { getBlockedIds } from "@/lib/blockFilter";
+import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 async function getGeminiSuggestions(query: string): Promise<string[]> {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -42,6 +43,9 @@ async function getGeminiSuggestions(query: string): Promise<string[]> {
 const SEARCH_PAGE_SIZE = 50;
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
+  if (!checkRateLimit(`search:${ip}`, 30, 60_000)) return rateLimitResponse();
+
   let body: any;
   try { body = await req.json(); } catch { return NextResponse.json({ error: "invalid body" }, { status: 400 }); }
   const { query, page = 1 } = body;

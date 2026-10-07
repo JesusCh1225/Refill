@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionUserId } from "@/lib/auth";
 import { sanitizePostContent } from "@/lib/sanitize";
 import { getBlockedIds } from "@/lib/blockFilter";
+import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 const MAX_CONTENT_LENGTH = 50_000;
 
@@ -61,6 +62,7 @@ export async function POST(req: NextRequest) {
   try {
     const userId = await getSessionUserId();
     if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    if (!checkRateLimit(`community:${userId}`, 10, 60_000)) return rateLimitResponse();
 
     let body: any;
     try { body = await req.json(); } catch { return NextResponse.json({ error: "invalid body" }, { status: 400 }); }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { del } from "@vercel/blob";
 import { prisma } from "@/lib/prisma";
 import { POST_SELECT, mapPost, PRICE_TYPE_MAP, toDBDirection } from "@/lib/postMapper";
 import { syncPostCategories, syncPostHashtags, syncPostLocationTags, syncPostImages } from "@/lib/postRelations";
@@ -13,10 +14,24 @@ export async function GET(
   const postId = Number((await params).id);
   if (isNaN(postId)) return NextResponse.json({ error: "invalid id" }, { status: 400 });
 
-  const post = await prisma.post.findFirst({
+  const userId = await getSessionUserId();
+  const admin = await isAdminSession();
+
+  let post = await prisma.post.findFirst({
     where: { id: postId, status: "PUBLISHED" },
     select: POST_SELECT,
   });
+
+  // 작성자 또는 관리자는 HIDDEN 게시글도 조회 가능
+  if (!post) {
+    const hidden = await prisma.post.findFirst({
+      where: { id: postId, status: "HIDDEN" },
+      select: { ...POST_SELECT, authorId: true },
+    });
+    if (hidden && (hidden.authorId === userId || admin)) {
+      post = hidden;
+    }
+  }
 
   if (!post) return NextResponse.json({ error: "not found" }, { status: 404 });
 
@@ -87,6 +102,12 @@ export async function PATCH(
       },
     });
 
+    // 기존 이미지 URL 수집 후 Blob에서 삭제
+    const oldImages = await prisma.postImage.findMany({ where: { postId }, select: { url: true } });
+    const blobUrls = oldImages
+      .map((img) => img.url)
+      .filter((url) => url.includes(".blob.vercel-storage.com"));
+
     // 기존 관계 전부 비우고 새로 생성
     await Promise.all([
       prisma.postCategory.deleteMany({ where: { postId } }),
@@ -94,6 +115,11 @@ export async function PATCH(
       prisma.postLocationTag.deleteMany({ where: { postId } }),
       prisma.postImage.deleteMany({ where: { postId } }),
     ]);
+
+    // Blob 파일 삭제 (fire-and-forget, 실패해도 응답에 영향 없음)
+    if (blobUrls.length > 0) {
+      Promise.all(blobUrls.map((url) => del(url))).catch(() => {});
+    }
 
     await Promise.all([
       syncPostCategories(postId, Array.isArray(tags) ? tags : []),

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUserId } from "@/lib/auth";
+import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 const REVIEWS_PAGE_SIZE = 10;
 
@@ -39,6 +40,7 @@ export async function POST(
 ) {
   const reviewerId = await getSessionUserId();
   if (!reviewerId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  if (!checkRateLimit(`review:${reviewerId}`, 5, 60_000)) return rateLimitResponse();
 
   const revieweeId = Number((await params).id);
   if (isNaN(revieweeId)) return NextResponse.json({ error: "invalid id" }, { status: 400 });
@@ -57,6 +59,20 @@ export async function POST(
   }
 
   try {
+    // 댓글 이력 확인 (해당 게시글 또는 해당 사용자의 게시글에 댓글을 남긴 적 있어야 리뷰 가능)
+    const hasInteraction = postId
+      ? await prisma.comment.findFirst({
+          where: { authorId: reviewerId, postId },
+          select: { id: true },
+        })
+      : await prisma.comment.findFirst({
+          where: { authorId: reviewerId, post: { authorId: revieweeId } },
+          select: { id: true },
+        });
+    if (!hasInteraction) {
+      return NextResponse.json({ error: "해당 사용자의 게시글에 댓글을 남긴 이후 리뷰를 작성할 수 있어요." }, { status: 403 });
+    }
+
     // 중복 확인
     const existing = await prisma.review.findFirst({
       where: { reviewerId, revieweeId, postId },
@@ -101,8 +117,8 @@ export async function DELETE(
   const reviewId = Number(new URL(req.url).searchParams.get("reviewId"));
   if (isNaN(reviewId)) return NextResponse.json({ error: "invalid reviewId" }, { status: 400 });
 
-  const review = await prisma.review.findUnique({ where: { id: reviewId }, select: { reviewerId: true } });
-  if (!review || review.reviewerId !== reviewerId) {
+  const review = await prisma.review.findUnique({ where: { id: reviewId }, select: { reviewerId: true, revieweeId: true } });
+  if (!review || review.reviewerId !== reviewerId || review.revieweeId !== revieweeId) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 

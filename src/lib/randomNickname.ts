@@ -33,6 +33,14 @@ export async function generateUniqueNickname(
     const withNum = `${candidate}${i}`;
     if (!(await exists(withNum))) return withNum;
   }
-  // 극히 드문 경우 새 랜덤 베이스로 재시도
-  return generateUniqueNickname(exists);
+  // 극히 드문 경우: 새 랜덤 베이스로 최대 10회 재시도 (재귀 대신 루프)
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const fresh = generateRandomNickname();
+    if (!(await exists(fresh))) return fresh;
+    for (let i = 2; i <= 99; i++) {
+      const withNum = `${fresh}${i}`;
+      if (!(await exists(withNum))) return withNum;
+    }
+  }
+  return `사용자${Date.now()}`;
 }

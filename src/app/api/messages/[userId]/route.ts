@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUserId } from "@/lib/auth";
+import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 export async function GET(
   req: NextRequest,
@@ -74,6 +75,7 @@ export async function POST(
 ) {
   const myId = await getSessionUserId();
   if (!myId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  if (!checkRateLimit(`msg:${myId}`, 30, 60_000)) return rateLimitResponse();
 
   const partnerId = Number((await params).userId);
   if (isNaN(partnerId) || partnerId === myId)
@@ -105,6 +107,9 @@ export async function POST(
     data: { content: content.trim(), senderId: myId, receiverId: partnerId },
     select: { id: true, content: true, createdAt: true, senderId: true },
   });
+
+  // 채팅방을 나간 뒤 새 메시지를 보내면 나간 기록 삭제 (재입장 처리)
+  await prisma.conversationLeft.deleteMany({ where: { userId: myId, partnerId } }).catch(() => {});
 
   return NextResponse.json({
     ...msg,

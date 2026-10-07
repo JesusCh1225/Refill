@@ -12,9 +12,13 @@ export async function GET(req: NextRequest) {
   const full = req.nextUrl.searchParams.get("full") === "1";
 
   if (full) {
+    const page = Math.max(1, Number(new URL(req.url).searchParams.get("page") ?? "1"));
+    const PAGE_SIZE = 20;
     const bookmarks = await prisma.bookmark.findMany({
       where: { userId, post: { status: "PUBLISHED" } },
       orderBy: { createdAt: "desc" },
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
       select: { post: { select: POST_SELECT } },
     });
     return NextResponse.json(bookmarks.map((b) => mapPost(b.post)));

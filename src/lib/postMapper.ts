@@ -29,11 +29,13 @@ export const POST_SELECT = {
   direction: true,
   createdAt: true,
   authorId: true,
-  author: { select: { name: true, nickname: true, avatarUrl: true } },
+  author: { select: { name: true, nickname: true, avatarUrl: true, oauthImageUrl: true } },
   categories: { select: { category: { select: { slug: true, name: true } } } },
   hashtags: { select: { hashtag: { select: { name: true } } } },
   locationTags: { select: { tag: true } },
   images: { select: { url: true, order: true }, orderBy: { order: "asc" as const } },
+  viewCount: true,
+  _count: { select: { likes: true } },
 } as const;
 
 export type PostRow = {
@@ -50,11 +52,13 @@ export type PostRow = {
   direction: string;
   createdAt: Date;
   authorId: number;
-  author: { name: string; nickname: string | null; avatarUrl: string | null } | null;
+  author: { name: string; nickname: string | null; avatarUrl: string | null; oauthImageUrl: string | null } | null;
   categories: Array<{ category: { slug: string; name: string } }>;
   hashtags: Array<{ hashtag: { name: string } }>;
   locationTags: Array<{ tag: string }>;
   images: Array<{ url: string; order: number }>;
+  viewCount: number;
+  _count: { likes: number };
 };
 
 export function timeAgo(date: Date): string {
@@ -88,7 +92,7 @@ export function mapPost(post: PostRow): SearchResultItem {
     description: post.description ?? undefined,
     author: post.author ? (post.author.nickname || post.author.name) : undefined,
     authorId: post.authorId,
-    authorAvatarUrl: post.author?.avatarUrl ?? undefined,
+    authorAvatarUrl: post.author?.avatarUrl ?? post.author?.oauthImageUrl ?? undefined,
     direction: post.direction.toLowerCase() as PostDirection,
     lat: post.lat ?? undefined,
     lng: post.lng ?? undefined,
@@ -97,5 +101,7 @@ export function mapPost(post: PostRow): SearchResultItem {
     priceType: post.priceType.toLowerCase(),
     priceAmount: post.priceAmount,
     createdAt: post.createdAt.toISOString(),
+    viewCount: post.viewCount,
+    likeCount: post._count.likes,
   };
 }
