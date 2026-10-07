@@ -32,7 +32,7 @@ interface ReviewItem {
   content: string | null;
   createdAt: string;
   postId: number | null;
-  reviewer: { id: number; name: string; nickname: string | null; avatarUrl: string | null };
+  reviewer: { id: number; name: string; nickname: string | null; avatarUrl: string | null; oauthImageUrl: string | null };
 }
 
 interface PublicProfile {
@@ -40,6 +40,7 @@ interface PublicProfile {
   name: string;
   nickname: string | null;
   avatarUrl: string | null;
+  oauthImageUrl: string | null;
   bio: string | null;
   contact: string | null;
   representativeSong: string | null;
@@ -227,7 +228,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userId
                 onClick={() => profile.avatarUrl && setAvatarLightbox(true)}
                 className={`block rounded-full bg-transparent border-none p-0 ${profile.avatarUrl ? "cursor-pointer hover:opacity-80 transition-opacity" : "cursor-default"}`}
               >
-                <Avatar src={profile.avatarUrl} name={displayName} className="w-20 h-20" textClassName="text-3xl" />
+                <Avatar src={profile.avatarUrl ?? profile.oauthImageUrl} name={displayName} className="w-20 h-20" textClassName="text-3xl" />
               </button>
             </div>
 
@@ -396,7 +397,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userId
                 {visibleReviews.map((rv) => (
                   <li key={rv.id} className="py-4 flex flex-col gap-1.5">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <Avatar src={rv.reviewer.avatarUrl} name={rv.reviewer.nickname ?? rv.reviewer.name} className="w-7 h-7 shrink-0" textClassName="text-[11px]" />
+                      <Avatar src={rv.reviewer.avatarUrl ?? rv.reviewer.oauthImageUrl} name={rv.reviewer.nickname ?? rv.reviewer.name} className="w-7 h-7 shrink-0" textClassName="text-[11px]" />
                       <AuthorLink authorId={rv.reviewer.id} name={rv.reviewer.nickname ?? rv.reviewer.name} className="text-[13px] font-semibold text-text-heading" />
                       <StarRating rating={rv.rating} size={13} />
                       <span className="text-[11px] text-text-muted ml-auto">{formatDate(rv.createdAt)}</span>

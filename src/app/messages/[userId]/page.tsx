@@ -21,6 +21,7 @@ interface Partner {
   name: string;
   nickname: string | null;
   avatarUrl: string | null;
+  oauthImageUrl: string | null;
 }
 
 function formatTime(iso: string) {
@@ -238,7 +239,7 @@ export default function ChatPage({ params }: { params: Promise<{ userId: string 
         </button>
         {partner ? (
           <Link href={`/profile/${partner.id}`} className="flex items-center gap-2.5 hover:opacity-75 transition-opacity flex-1 min-w-0">
-            <Avatar src={partner.avatarUrl} name={partnerName} className="w-8 h-8" textClassName="text-[12px]" />
+            <Avatar src={partner.avatarUrl ?? partner.oauthImageUrl} name={partnerName} className="w-8 h-8" textClassName="text-[12px]" />
             <span className="text-[15px] font-bold text-text-heading truncate">{partnerName}</span>
           </Link>
         ) : (
@@ -355,7 +356,7 @@ export default function ChatPage({ params }: { params: Promise<{ userId: string 
                 <div className="flex flex-row items-end gap-1.5">
                   <div className="w-8 h-8 shrink-0 flex items-end">
                     {isLastInGroup ? (
-                      <Avatar src={partner?.avatarUrl ?? null} name={partnerName} className="w-8 h-8" textClassName="text-[10px]" />
+                      <Avatar src={partner?.avatarUrl ?? partner?.oauthImageUrl ?? null} name={partnerName} className="w-8 h-8" textClassName="text-[10px]" />
                     ) : null}
                   </div>
                   <div

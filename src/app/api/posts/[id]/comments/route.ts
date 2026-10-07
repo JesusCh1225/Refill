@@ -12,7 +12,7 @@ const REPLY_SELECT = {
   parentId: true,
   createdAt: true,
   updatedAt: true,
-  author: { select: { name: true, nickname: true, avatarUrl: true } },
+  author: { select: { name: true, nickname: true, avatarUrl: true, oauthImageUrl: true } },
 } as const;
 
 const COMMENT_SELECT = {

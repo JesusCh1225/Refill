@@ -17,7 +17,7 @@ interface NotificationItem {
   commentId: number | null;
   communityPostId: number | null;
   communityCommentId: number | null;
-  actor: { id: number; name: string; nickname: string | null; avatarUrl: string | null };
+  actor: { id: number; name: string; nickname: string | null; avatarUrl: string | null; oauthImageUrl: string | null };
   post: { title: string } | null;
   communityPost: { title: string } | null;
   comment: { content: string | null; isSecret: boolean } | null;
@@ -143,7 +143,7 @@ export default function NotificationsPage() {
                         <span className="mt-2 shrink-0 w-2 h-2 rounded-full bg-brand" />
                       )}
                       <Avatar
-                        src={n.actor.avatarUrl}
+                        src={n.actor.avatarUrl ?? n.actor.oauthImageUrl}
                         name={n.actor.nickname ?? n.actor.name}
                         className="w-9 h-9 shrink-0"
                         textClassName="text-sm"

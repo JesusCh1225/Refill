@@ -10,6 +10,7 @@ interface Partner {
   name: string;
   nickname: string | null;
   avatarUrl: string | null;
+  oauthImageUrl: string | null;
 }
 
 interface Conversation {
@@ -101,7 +102,7 @@ export default function ConversationList({ onSelect }: Props) {
             } ${i > 0 ? "border-t border-border-base" : ""}`}
           >
             <div className="relative shrink-0">
-              <Avatar src={conv.partner.avatarUrl} name={name} className="w-10 h-10" textClassName="text-[14px]" />
+              <Avatar src={conv.partner.avatarUrl ?? conv.partner.oauthImageUrl} name={name} className="w-10 h-10" textClassName="text-[14px]" />
               {conv.unreadCount > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center leading-none">
                   {conv.unreadCount > 99 ? "99+" : conv.unreadCount}

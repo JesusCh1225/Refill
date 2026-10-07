@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
         content: true,
         createdAt: true,
         updatedAt: true,
-        author: { select: { id: true, nickname: true, name: true, avatarUrl: true } },
+        author: { select: { id: true, nickname: true, name: true, avatarUrl: true, oauthImageUrl: true } },
         _count: { select: { comments: true, likes: true } },
       },
     }),
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
       where: { id: postId },
       select: {
         id: true, title: true, category: true, content: true, createdAt: true, updatedAt: true,
-        author: { select: { id: true, nickname: true, name: true, avatarUrl: true } },
+        author: { select: { id: true, nickname: true, name: true, avatarUrl: true, oauthImageUrl: true } },
         _count: { select: { comments: true, likes: true } },
       },
     });

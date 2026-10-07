@@ -6,11 +6,12 @@ import Link from "next/link";
 import Avatar from "@/components/atom/Avatar";
 import LoginModal from "@/components/organisms/LoginModal";
 
-interface Author { id: number; nickname: string | null; name: string; avatarUrl: string | null; }
+interface Author { id: number; nickname: string | null; name: string; avatarUrl: string | null; oauthImageUrl: string | null; }
 interface CommentData {
   id: number;
   content: string;
   createdAt: string;
+  updatedAt: string;
   author: Author;
   replies: CommentData[];
 }
@@ -34,6 +35,7 @@ export default function CommunityComments({ postId, initial }: Props) {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editText, setEditText] = useState("");
   const [editSaving, setEditSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const submit = async (e: { preventDefault(): void }) => {
     e.preventDefault();
@@ -74,7 +76,8 @@ export default function CommunityComments({ postId, initial }: Props) {
   };
 
   const deleteComment = async (id: number, parentId?: number) => {
-    if (!confirm("댓글을 삭제할까요?")) return;
+    if (deletingId !== id) { setDeletingId(id); return; }
+    setDeletingId(null);
     const res = await fetch(`/api/community/${postId}/comments/${id}`, { method: "DELETE" });
     if (!res.ok) return;
     if (parentId) {
@@ -111,11 +114,11 @@ export default function CommunityComments({ postId, initial }: Props) {
       if (parentId != null) {
         setComments((prev) => prev.map((c) =>
           c.id === parentId
-            ? { ...c, replies: c.replies.map((r) => r.id === id ? { ...r, content: updated.content } : r) }
+            ? { ...c, replies: c.replies.map((r) => r.id === id ? { ...r, content: updated.content, updatedAt: updated.updatedAt } : r) }
             : c
         ));
       } else {
-        setComments((prev) => prev.map((c) => c.id === id ? { ...c, content: updated.content } : c));
+        setComments((prev) => prev.map((c) => c.id === id ? { ...c, content: updated.content, updatedAt: updated.updatedAt } : c));
       }
       cancelEdit();
     } finally { setEditSaving(false); }
@@ -134,8 +137,10 @@ export default function CommunityComments({ postId, initial }: Props) {
               myId={myId}
               onReply={() => setReplyingTo(replyingTo === c.id ? null : c.id)}
               onDelete={() => deleteComment(c.id)}
+              onCancelDelete={() => setDeletingId(null)}
               onEdit={() => startEdit(c.id, c.content)}
               isEditing={editingId === c.id}
+              isPendingDelete={deletingId === c.id}
               editText={editText}
               onEditTextChange={setEditText}
               onEditSave={() => saveEdit(c.id)}
@@ -149,8 +154,10 @@ export default function CommunityComments({ postId, initial }: Props) {
                   comment={r}
                   myId={myId}
                   onDelete={() => deleteComment(r.id, c.id)}
+                  onCancelDelete={() => setDeletingId(null)}
                   onEdit={() => startEdit(r.id, r.content)}
                   isEditing={editingId === r.id}
+                  isPendingDelete={deletingId === r.id}
                   editText={editText}
                   onEditTextChange={setEditText}
                   onEditSave={() => saveEdit(r.id, c.id)}
@@ -238,11 +245,12 @@ export default function CommunityComments({ postId, initial }: Props) {
   );
 }
 
-function CommentRow({ comment, myId, onReply, onDelete, onEdit, isEditing, editText, onEditTextChange, onEditSave, onEditCancel, editSaving }: {
+function CommentRow({ comment, myId, onReply, onDelete, onCancelDelete, onEdit, isEditing, editText, onEditTextChange, onEditSave, onEditCancel, editSaving, isPendingDelete }: {
   comment: CommentData;
   myId?: number;
   onReply?: () => void;
   onDelete: () => void;
+  onCancelDelete: () => void;
   onEdit: () => void;
   isEditing: boolean;
   editText: string;
@@ -250,6 +258,7 @@ function CommentRow({ comment, myId, onReply, onDelete, onEdit, isEditing, editT
   onEditSave: () => void;
   onEditCancel: () => void;
   editSaving: boolean;
+  isPendingDelete: boolean;
 }) {
   const name = comment.author.nickname ?? comment.author.name;
   const isOwn = myId === comment.author.id;
@@ -257,12 +266,15 @@ function CommentRow({ comment, myId, onReply, onDelete, onEdit, isEditing, editT
   return (
     <div className="flex gap-3">
       <Link href={`/profile/${comment.author.id}`} className="shrink-0 mt-0.5 hover:opacity-75 transition-opacity">
-        <Avatar src={comment.author.avatarUrl} name={name} className="w-7 h-7" textClassName="text-[10px]" />
+        <Avatar src={comment.author.avatarUrl ?? comment.author.oauthImageUrl} name={name} className="w-7 h-7" textClassName="text-[10px]" />
       </Link>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-0.5">
           <Link href={`/profile/${comment.author.id}`} className="text-[13px] font-semibold text-text-heading hover:text-brand transition-colors">{name}</Link>
           <span className="text-[11px] text-text-placeholder">{new Date(comment.createdAt).toLocaleDateString("ko-KR")}</span>
+          {Math.abs(new Date(comment.updatedAt).getTime() - new Date(comment.createdAt).getTime()) > 1000 && (
+            <span className="text-[10px] text-text-placeholder">(수정됨)</span>
+          )}
         </div>
 
         {isEditing ? (
@@ -300,7 +312,14 @@ function CommentRow({ comment, myId, onReply, onDelete, onEdit, isEditing, editT
             <div className="flex gap-3 mt-1">
               {onReply && <button onClick={onReply} className="text-[11px] text-text-muted hover:text-brand border-none bg-transparent cursor-pointer p-0">답글</button>}
               {isOwn && <button onClick={onEdit} className="text-[11px] text-text-muted hover:text-brand border-none bg-transparent cursor-pointer p-0">수정</button>}
-              {isOwn && <button onClick={onDelete} className="text-[11px] text-red-400 hover:text-red-600 border-none bg-transparent cursor-pointer p-0">삭제</button>}
+              {isOwn && !isPendingDelete && <button onClick={onDelete} className="text-[11px] text-red-400 hover:text-red-600 border-none bg-transparent cursor-pointer p-0">삭제</button>}
+              {isOwn && isPendingDelete && (
+                <span className="flex items-center gap-1.5">
+                  <span className="text-[11px] text-red-500">삭제할까요?</span>
+                  <button onClick={onDelete} className="text-[11px] text-red-500 font-semibold border-none bg-transparent cursor-pointer p-0">확인</button>
+                  <button onClick={onCancelDelete} className="text-[11px] text-text-muted border-none bg-transparent cursor-pointer p-0">취소</button>
+                </span>
+              )}
             </div>
           </>
         )}

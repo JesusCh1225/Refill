@@ -18,7 +18,7 @@ export async function GET(
   const post = await prisma.communityPost.findUnique({
     where: { id },
     include: {
-      author: { select: { id: true, nickname: true, name: true, avatarUrl: true } },
+      author: { select: { id: true, nickname: true, name: true, avatarUrl: true, oauthImageUrl: true } },
       _count: { select: { comments: true, likes: true } },
       ...(userId ? { likes: { where: { userId }, select: { userId: true } } } : {}),
     },

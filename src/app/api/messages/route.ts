@@ -18,8 +18,8 @@ export async function GET() {
         createdAt: true,
         senderId: true,
         receiverId: true,
-        sender: { select: { id: true, name: true, nickname: true, avatarUrl: true } },
-        receiver: { select: { id: true, name: true, nickname: true, avatarUrl: true } },
+        sender: { select: { id: true, name: true, nickname: true, avatarUrl: true, oauthImageUrl: true } },
+        receiver: { select: { id: true, name: true, nickname: true, avatarUrl: true, oauthImageUrl: true } },
       },
     }),
     prisma.userBlock.findMany({

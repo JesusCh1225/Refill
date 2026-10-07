@@ -19,7 +19,7 @@ interface Post {
   content: string;
   createdAt: string;
   liked: boolean;
-  author: { id: number; nickname: string | null; name: string; avatarUrl: string | null };
+  author: { id: number; nickname: string | null; name: string; avatarUrl: string | null; oauthImageUrl: string | null };
   _count: { comments: number; likes: number };
 }
 
@@ -131,7 +131,7 @@ export default function CommunityDetailPage({ params }: { params: Promise<{ id: 
             {/* 왼쪽: 아바타 + 이름 + 날짜 */}
             <div className="flex items-center gap-2 min-w-0">
               <Link href={`/profile/${post.author.id}`} className="flex items-center gap-2 hover:opacity-75 transition-opacity shrink-0">
-                <Avatar src={post.author.avatarUrl} name={displayName} className="w-7 h-7" textClassName="text-[10px]" />
+                <Avatar src={post.author.avatarUrl ?? post.author.oauthImageUrl} name={displayName} className="w-7 h-7" textClassName="text-[10px]" />
                 <span className="text-[13px] font-semibold text-text-body">{displayName}</span>
               </Link>
               <span className="text-[12px] text-text-muted shrink-0">{formatExact(post.createdAt)}</span>

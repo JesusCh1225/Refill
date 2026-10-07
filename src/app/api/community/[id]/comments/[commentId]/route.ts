@@ -28,7 +28,7 @@ export async function PATCH(
   const updated = await prisma.communityComment.update({
     where: { id },
     data: { content: content.trim() },
-    select: { id: true, content: true },
+    select: { id: true, content: true, updatedAt: true },
   });
 
   return NextResponse.json(updated);

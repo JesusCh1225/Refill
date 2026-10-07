@@ -25,6 +25,7 @@ interface UserProfile {
   email: string | null;
   nickname: string | null;
   avatarUrl: string | null;
+  oauthImageUrl: string | null;
   bio: string | null;
   contact: string | null;
   representativeSong: string | null;
@@ -172,9 +173,11 @@ export default function ProfilePage() {
     if (avatarUploading) return;
     setAvatarUploading(true);
     try {
-      await fetch("/api/upload/avatar", { method: "DELETE" });
-      setProfile((p) => p ? { ...p, avatarUrl: null } : p);
-      await update({ image: null });
+      const res = await fetch("/api/upload/avatar", { method: "DELETE" });
+      const data = res.ok ? await res.json() : {};
+      const oauthImageUrl: string | null = data.oauthImageUrl ?? null;
+      setProfile((p) => p ? { ...p, avatarUrl: oauthImageUrl } : p);
+      await update({ image: oauthImageUrl });
     } finally {
       setAvatarUploading(false);
     }
@@ -229,7 +232,7 @@ export default function ProfilePage() {
     );
   }
 
-  const hasCustomAvatar = !!profile.avatarUrl?.includes(".blob.vercel-storage.com");
+  const hasCustomAvatar = !!(profile.avatarUrl?.includes(".blob.vercel-storage.com"));
 
   return (
     <div className="min-h-screen bg-surface-page">
@@ -248,7 +251,7 @@ export default function ProfilePage() {
       <input ref={fileInputRef} type="file" accept={ACCEPT_IMAGE} className="hidden" onChange={handleFileChange} />
 
       <div className="mx-auto px-3 sm:px-6 pt-5 sm:pt-8 pb-20" style={{ maxWidth: "720px" }}>
-        <ProfileHeader profile={profile} oauthImage={session?.user?.image} onAvatarClick={triggerAvatarChange} />
+        <ProfileHeader profile={profile} oauthImage={profile.oauthImageUrl ?? session?.user?.image} onAvatarClick={triggerAvatarChange} />
 
         <div className="flex justify-end mb-4 sm:hidden">
           <button
@@ -277,7 +280,7 @@ export default function ProfilePage() {
         {tab === "info" && (
           <InfoTab
             profile={profile}
-            oauthImage={session?.user?.image}
+            oauthImage={profile.oauthImageUrl ?? session?.user?.image}
             nicknameInput={nicknameInput}
             onNicknameChange={setNicknameInput}
             onNicknameSave={handleNicknameSave}

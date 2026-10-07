@@ -16,6 +16,7 @@ model User {
   nickname           String?  @db.VarChar(50)
   phone              String?  @db.VarChar(20)
   avatarUrl          String?  @db.VarChar(500)
+  oauthImageUrl      String?  @db.VarChar(500)
   bio                String?  @db.Text
   contact            String?  @db.Text
   representativeSong String?  @db.VarChar(500)
@@ -352,6 +353,7 @@ model CommunityComment {
   postId    Int
   parentId  Int?
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   author        User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
   post          CommunityPost     @relation(fields: [postId], references: [id], onDelete: Cascade)

@@ -19,6 +19,7 @@ export async function GET(
         name: true,
         nickname: true,
         avatarUrl: true,
+        oauthImageUrl: true,
         bio: true,
         contact: viewerId != null ? true : false,
         representativeSong: true,
@@ -52,7 +53,7 @@ export async function GET(
         content: true,
         createdAt: true,
         postId: true,
-        reviewer: { select: { id: true, name: true, nickname: true, avatarUrl: true } },
+        reviewer: { select: { id: true, name: true, nickname: true, avatarUrl: true, oauthImageUrl: true } },
       },
     }),
     prisma.review.aggregate({

@@ -1,7 +1,17 @@
 import { redirect } from "next/navigation";
+import type { Viewport } from "next";
 import { auth } from "@/auth";
 import Header from "@/components/organisms/Header";
 import ConversationList from "@/components/messages/ConversationList";
+
+// 채팅 레이아웃: 키보드 열릴 때 콘텐츠 영역이 즉시 리사이즈되도록
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  interactiveWidget: "resizes-content",
+};
 
 export default async function MessagesLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();

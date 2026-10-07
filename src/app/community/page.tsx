@@ -13,7 +13,7 @@ const CATEGORIES = ["전체", "자유", "문의"];
 
 interface Post {
   id: number; title: string; category: string; content: string; createdAt: string;
-  author: { id: number; nickname: string | null; name: string; avatarUrl: string | null };
+  author: { id: number; nickname: string | null; name: string; avatarUrl: string | null; oauthImageUrl: string | null };
   _count: { comments: number; likes: number };
 }
 

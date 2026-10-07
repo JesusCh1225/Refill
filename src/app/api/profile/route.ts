@@ -41,6 +41,7 @@ export async function GET() {
       email: true,
       nickname: true,
       avatarUrl: true,
+      oauthImageUrl: true,
       bio: true,
       contact: true,
       representativeSong: true,
@@ -69,13 +70,15 @@ export async function PATCH(req: NextRequest) {
     const trimmed = (body.nickname ?? "").trim();
     if (!trimmed) return NextResponse.json({ error: "nickname required" }, { status: 400 });
     if (trimmed.length > 50) return NextResponse.json({ error: "too long" }, { status: 400 });
+    const dup = await prisma.user.findFirst({ where: { nickname: trimmed, NOT: { id: userId } }, select: { id: true } });
+    if (dup) return NextResponse.json({ error: "이미 사용 중인 닉네임이에요." }, { status: 409 });
     data.nickname = trimmed;
   }
   if ("bio" in body) {
     data.bio = body.bio ? String(body.bio).slice(0, 500) : null;
   }
   if ("contact" in body) {
-    data.contact = body.contact ? String(body.contact).slice(0, 200) : null;
+    data.contact = body.contact ? String(body.contact).slice(0, 2000) : null;
   }
   if ("representativeSong" in body) {
     const val = body.representativeSong ? String(body.representativeSong).trim() : null;

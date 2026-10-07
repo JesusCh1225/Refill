@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Avatar from "@/components/atom/Avatar";
 
-interface Author { id: number; nickname: string | null; name: string; avatarUrl: string | null; }
+interface Author { id: number; nickname: string | null; name: string; avatarUrl: string | null; oauthImageUrl: string | null; }
 interface Post {
   id: number;
   title: string;
@@ -46,7 +46,7 @@ export default function CommunityPostCard({ post }: { post: Post }) {
             onClick={(e) => e.stopPropagation()}
             className="flex items-center gap-1.5 hover:opacity-75 transition-opacity"
           >
-            <Avatar src={post.author.avatarUrl} name={displayName} className="w-5 h-5" textClassName="text-[9px]" />
+            <Avatar src={post.author.avatarUrl ?? post.author.oauthImageUrl} name={displayName} className="w-5 h-5" textClassName="text-[9px]" />
             <span className="text-[12px] text-text-muted">{displayName}</span>
           </Link>
           <span className="text-[11px] text-text-placeholder">{new Date(post.createdAt).toLocaleDateString("ko-KR")}</span>

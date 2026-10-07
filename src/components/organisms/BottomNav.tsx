@@ -88,6 +88,8 @@ export default function BottomNav() {
 
   return (
     <>
+      {/* BottomNav 높이만큼 콘텐츠가 가려지지 않도록 body flow에 공간 확보 */}
+      <div className="sm:hidden shrink-0" style={{ height: "calc(3.5rem + env(safe-area-inset-bottom, 0px))" }} />
       <nav
         className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-border-base flex"
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}

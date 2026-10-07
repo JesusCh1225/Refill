@@ -72,7 +72,7 @@ export default function RootLayout({
       lang="ko"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-surface-page text-text-body pb-14 sm:pb-0">
+      <body className="min-h-full flex flex-col bg-surface-page text-text-body">
         <SessionProvider>
           <ToastProvider>{children}</ToastProvider>
           <BottomNav />

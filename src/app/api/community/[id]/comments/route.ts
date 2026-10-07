@@ -16,11 +16,11 @@ export async function GET(
       where: { postId, parentId: null },
       orderBy: { createdAt: "asc" },
       include: {
-        author: { select: { id: true, nickname: true, name: true, avatarUrl: true } },
+        author: { select: { id: true, nickname: true, name: true, avatarUrl: true, oauthImageUrl: true } },
         replies: {
           orderBy: { createdAt: "asc" },
           include: {
-            author: { select: { id: true, nickname: true, name: true, avatarUrl: true } },
+            author: { select: { id: true, nickname: true, name: true, avatarUrl: true, oauthImageUrl: true } },
           },
         },
       },
@@ -92,8 +92,8 @@ export async function POST(
   const comment = await prisma.communityComment.findUnique({
     where: { id: commentId },
     include: {
-      author: { select: { id: true, nickname: true, name: true, avatarUrl: true } },
-      replies: { include: { author: { select: { id: true, nickname: true, name: true, avatarUrl: true } } } },
+      author: { select: { id: true, nickname: true, name: true, avatarUrl: true, oauthImageUrl: true } },
+      replies: { include: { author: { select: { id: true, nickname: true, name: true, avatarUrl: true, oauthImageUrl: true } } } },
     },
   });
 

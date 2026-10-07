@@ -11,7 +11,7 @@ const NOTIFICATION_SELECT = {
   commentId: true,
   communityPostId: true,
   communityCommentId: true,
-  actor: { select: { id: true, name: true, nickname: true, avatarUrl: true } },
+  actor: { select: { id: true, name: true, nickname: true, avatarUrl: true, oauthImageUrl: true } },
   post: { select: { title: true } },
   communityPost: { select: { title: true } },
 } as const;

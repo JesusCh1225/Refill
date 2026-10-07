@@ -52,7 +52,7 @@ export async function GET(
     messagesPromise,
     prisma.user.findUnique({
       where: { id: partnerId },
-      select: { id: true, name: true, nickname: true, avatarUrl: true },
+      select: { id: true, name: true, nickname: true, avatarUrl: true, oauthImageUrl: true },
     }),
   ]);
 

@@ -71,6 +71,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         });
 
         if (existing) {
+          // 기존 유저 재로그인: oauthImageUrl 갱신 + 커스텀 아바타 없으면 avatarUrl도 갱신
+          const existingUser = await prisma.user.findUnique({
+            where: { id: existing.userId },
+            select: { avatarUrl: true },
+          });
+          const hasCustomAvatar = existingUser?.avatarUrl?.includes(".blob.vercel-storage.com") ?? false;
+          await prisma.user.update({
+            where: { id: existing.userId },
+            data: {
+              oauthImageUrl: user.image?.slice(0, 500) ?? undefined,
+              ...(!hasCustomAvatar && user.image ? { avatarUrl: user.image.slice(0, 500) } : {}),
+            },
+          });
           await prisma.oAuthAccount.update({
             where: { id: existing.id },
             data: {
@@ -97,6 +110,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             name: (realName ?? "").slice(0, 50),
             nickname: displayNickname.slice(0, 50),
             email: user.email ? user.email.slice(0, 255) : undefined,
+            avatarUrl: user.image?.slice(0, 500) ?? null,
+            oauthImageUrl: user.image?.slice(0, 500) ?? null,
           },
         });
 
@@ -129,9 +144,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.userId = parseInt(user.id);
         const dbUser = await prisma.user.findUnique({
           where: { id: parseInt(user.id) },
-          select: { avatarUrl: true, name: true, nickname: true },
+          select: { avatarUrl: true, oauthImageUrl: true, name: true, nickname: true },
         });
-        if (dbUser?.avatarUrl) token.picture = dbUser.avatarUrl;
+        // 커스텀 아바타 > OAuth 사진 > 기존 token.picture(NextAuth가 세팅한 OAuth 사진)
+        token.picture = dbUser?.avatarUrl ?? dbUser?.oauthImageUrl ?? token.picture ?? null;
         // 헤더/세션에 표시될 이름: 닉네임 우선, 없으면 실명
         token.name = dbUser?.nickname ?? dbUser?.name ?? token.name;
       }

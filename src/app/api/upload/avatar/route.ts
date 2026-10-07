@@ -51,7 +51,7 @@ export async function DELETE() {
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { avatarUrl: true },
+    select: { avatarUrl: true, oauthImageUrl: true },
   });
 
   if (user?.avatarUrl?.includes(".blob.vercel-storage.com")) {
@@ -60,8 +60,8 @@ export async function DELETE() {
 
   await prisma.user.update({
     where: { id: userId },
-    data: { avatarUrl: null },
+    data: { avatarUrl: user?.oauthImageUrl ?? null },
   });
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ oauthImageUrl: user?.oauthImageUrl ?? null });
 }

@@ -25,7 +25,7 @@ export async function GET(
       content: true,
       createdAt: true,
       postId: true,
-      reviewer: { select: { id: true, name: true, nickname: true, avatarUrl: true } },
+      reviewer: { select: { id: true, name: true, nickname: true, avatarUrl: true, oauthImageUrl: true } },
     },
   });
 
@@ -78,7 +78,7 @@ export async function POST(
         content: true,
         createdAt: true,
         postId: true,
-        reviewer: { select: { id: true, name: true, nickname: true, avatarUrl: true } },
+        reviewer: { select: { id: true, name: true, nickname: true, avatarUrl: true, oauthImageUrl: true } },
       },
     });
     return NextResponse.json(review, { status: 201 });
