@@ -1,6 +1,5 @@
 import Link from "next/link";
 import Header from "@/components/organisms/Header";
-import Footer from "@/components/organisms/Footer";
 
 export const metadata = {
   title: "이용약관 | Refill",
@@ -95,7 +94,6 @@ export default function TermsPage() {
           </Link>
         </div>
       </main>
-      <Footer />
     </div>
   );
 }

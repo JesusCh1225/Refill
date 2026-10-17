@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { SessionProvider } from "next-auth/react";
 import { ToastProvider } from "@/context/toast";
 import BottomNav from "@/components/organisms/BottomNav";
+import Footer from "@/components/organisms/Footer";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -75,6 +76,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-surface-page text-text-body">
         <SessionProvider>
           <ToastProvider>{children}</ToastProvider>
+          <Footer />
           <BottomNav />
         </SessionProvider>
       </body>

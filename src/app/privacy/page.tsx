@@ -1,6 +1,5 @@
 import Link from "next/link";
 import Header from "@/components/organisms/Header";
-import Footer from "@/components/organisms/Footer";
 
 export const metadata = {
   title: "개인정보처리방침 | Refill",
@@ -244,7 +243,6 @@ export default function PrivacyPage() {
           </Link>
         </div>
       </main>
-      <Footer />
     </div>
   );
 }
