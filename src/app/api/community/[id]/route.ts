@@ -3,8 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionUserId } from "@/lib/auth";
 import { isAdminSession } from "@/lib/admin";
 import { sanitizePostContent } from "@/lib/sanitize";
-
-const MAX_CONTENT_LENGTH = 50_000;
+import { MAX_CONTENT_LENGTH } from "@/lib/communityConfig";
 
 export async function GET(
   _req: NextRequest,

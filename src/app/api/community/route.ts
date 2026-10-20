@@ -4,10 +4,8 @@ import { getSessionUserId } from "@/lib/auth";
 import { sanitizePostContent } from "@/lib/sanitize";
 import { getBlockedIds } from "@/lib/blockFilter";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
-
-const MAX_CONTENT_LENGTH = 50_000;
-
-const PAGE_SIZE = 10;
+import { MAX_CONTENT_LENGTH, COMMUNITY_PAGE_SIZE as PAGE_SIZE } from "@/lib/communityConfig";
+import { AUTHOR_SELECT } from "@/lib/prismaSelects";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -43,7 +41,7 @@ export async function GET(req: NextRequest) {
         content: true,
         createdAt: true,
         updatedAt: true,
-        author: { select: { id: true, nickname: true, name: true, avatarUrl: true, oauthImageUrl: true } },
+        author: { select: AUTHOR_SELECT },
         _count: { select: { comments: true, likes: true } },
       },
     }),
@@ -84,7 +82,7 @@ export async function POST(req: NextRequest) {
       where: { id: postId },
       select: {
         id: true, title: true, category: true, content: true, createdAt: true, updatedAt: true,
-        author: { select: { id: true, nickname: true, name: true, avatarUrl: true, oauthImageUrl: true } },
+        author: { select: AUTHOR_SELECT },
         _count: { select: { comments: true, likes: true } },
       },
     });

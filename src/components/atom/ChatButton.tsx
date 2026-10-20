@@ -12,7 +12,7 @@ interface Props {
 export default function ChatButton({ userId, label = "채팅", className }: Props) {
   const router = useRouter();
   const { data: session } = useSession();
-  const myId = (session?.user as any)?.id as number | undefined;
+  const myId = session?.user?.id;
 
   if (!session || myId === userId) return null;
 

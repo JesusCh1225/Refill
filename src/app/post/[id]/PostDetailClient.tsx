@@ -20,6 +20,7 @@ import { useBookmarks } from "@/lib/useBookmarks";
 import LoginModal from "@/components/organisms/LoginModal";
 import { dirLabel } from "@/lib/dirLabel";
 import { tagLinkCls, directionBadgeCls } from "@/lib/tagStyles";
+import { REPORT_REASONS } from "@/data/reportReasons";
 
 export default function PostDetailClient({
   params,
@@ -30,7 +31,7 @@ export default function PostDetailClient({
   const router = useRouter();
   const { data: session } = useSession();
   const { isBookmarked, toggle: toggleBookmark, loginRequired: bookmarkLoginRequired, clearLoginRequired: clearBookmarkLogin } = useBookmarks();
-  const myUserId = (session?.user as any)?.id as number | undefined;
+  const myUserId = session?.user?.id;
   const { createPost } = useCreatePost();
 
   const [item, setItem] = useState<SearchResultItem | null>(null);
@@ -44,8 +45,6 @@ export default function PostDetailClient({
   const [reportDone, setReportDone] = useState(false);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
-
-  const REPORT_REASONS = ["스팸/광고", "불법 정보", "욕설/혐오", "사기 의심", "기타"];
 
   const handleLike = async () => {
     if (!session) return;

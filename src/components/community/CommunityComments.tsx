@@ -23,7 +23,7 @@ interface Props {
 
 export default function CommunityComments({ postId, initial }: Props) {
   const { data: session } = useSession();
-  const myId = (session?.user as any)?.id as number | undefined;
+  const myId = session?.user?.id;
 
   const [comments, setComments] = useState<CommentData[]>(initial);
   const [text, setText] = useState("");

@@ -362,6 +362,8 @@ model CommunityComment {
   notifications Notification[]
 
   @@index([postId])
+  @@index([authorId])
+  @@index([parentId])
 }
 
 model CommunityLike {
@@ -373,6 +375,7 @@ model CommunityLike {
   post CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@id([userId, postId])
+  @@index([postId])
 }
 
 // ── 사용자 차단 ───────────────────────────────────────────────────────────

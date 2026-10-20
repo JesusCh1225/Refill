@@ -11,7 +11,7 @@ export default function CommunityEditPage({ params }: { params: Promise<{ id: st
   const { id } = use(params);
   const router = useRouter();
   const { data: session, status } = useSession();
-  const myId = (session?.user as any)?.id as number | undefined;
+  const myId = session?.user?.id;
 
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("자유");

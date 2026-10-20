@@ -8,7 +8,6 @@ const REPLY_SELECT = {
   id: true,
   content: true,
   isSecret: true,
-  guestName: true,
   authorId: true,
   parentId: true,
   createdAt: true,
@@ -28,7 +27,6 @@ type RawComment = {
   id: number;
   content: string | null;
   isSecret: boolean;
-  guestName: string | null;
   authorId: number | null;
   parentId: number | null;
   createdAt: Date;
@@ -129,7 +127,7 @@ export async function POST(
 
   // create와 select를 분리 — Neon HTTP 어댑터가 implicit transaction 미지원
   const { id: commentId } = await prisma.comment.create({
-    data: { postId, content, guestName: null, authorId: userId, parentId, isSecret },
+    data: { postId, content, authorId: userId, parentId, isSecret },
     select: { id: true },
   });
   const comment = await prisma.comment.findUnique({ where: { id: commentId }, select: REPLY_SELECT });

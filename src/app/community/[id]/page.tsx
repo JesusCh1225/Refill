@@ -11,6 +11,7 @@ import Spinner from "@/components/atom/Spinner";
 import CommunityComments from "@/components/community/CommunityComments";
 import ChatButton from "@/components/atom/ChatButton";
 import LoginModal from "@/components/organisms/LoginModal";
+import { REPORT_REASONS } from "@/data/reportReasons";
 
 interface Post {
   id: number;
@@ -32,7 +33,7 @@ export default function CommunityDetailPage({ params }: { params: Promise<{ id: 
   const { id } = use(params);
   const router = useRouter();
   const { data: session } = useSession();
-  const myId = (session?.user as any)?.id as number | undefined;
+  const myId = session?.user?.id;
 
   const [post, setPost] = useState<Post | null>(null);
   const [comments, setComments] = useState<any[]>([]);
@@ -43,8 +44,6 @@ export default function CommunityDetailPage({ params }: { params: Promise<{ id: 
   const [reportOpen, setReportOpen] = useState(false);
   const [reportDone, setReportDone] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
-
-  const REPORT_REASONS = ["스팸/광고", "불법 정보", "욕설/혐오", "사기 의심", "기타"];
 
   useEffect(() => {
     Promise.all([

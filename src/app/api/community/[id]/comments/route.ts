@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionUserId } from "@/lib/auth";
 import { getBlockedIds } from "@/lib/blockFilter";
 import { sendPushToUser } from "@/lib/push";
+import { AUTHOR_SELECT } from "@/lib/prismaSelects";
 
 export async function GET(
   _req: NextRequest,
@@ -17,11 +18,11 @@ export async function GET(
       where: { postId, parentId: null },
       orderBy: { createdAt: "asc" },
       include: {
-        author: { select: { id: true, nickname: true, name: true, avatarUrl: true, oauthImageUrl: true } },
+        author: { select: AUTHOR_SELECT },
         replies: {
           orderBy: { createdAt: "asc" },
           include: {
-            author: { select: { id: true, nickname: true, name: true, avatarUrl: true, oauthImageUrl: true } },
+            author: { select: AUTHOR_SELECT },
           },
         },
       },
@@ -93,8 +94,8 @@ export async function POST(
   const comment = await prisma.communityComment.findUnique({
     where: { id: commentId },
     include: {
-      author: { select: { id: true, nickname: true, name: true, avatarUrl: true, oauthImageUrl: true } },
-      replies: { include: { author: { select: { id: true, nickname: true, name: true, avatarUrl: true, oauthImageUrl: true } } } },
+      author: { select: AUTHOR_SELECT },
+      replies: { include: { author: { select: AUTHOR_SELECT } } },
     },
   });
 

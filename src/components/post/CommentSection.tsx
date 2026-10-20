@@ -14,7 +14,7 @@ interface Props {
 
 export default function CommentSection({ postId, postAuthorId }: Props) {
   const { data: session } = useSession();
-  const myUserId = (session?.user as any)?.id as number | undefined;
+  const myUserId = session?.user?.id;
 
   const [comments, setComments] = useState<CommentData[]>([]);
   const [commentText, setCommentText] = useState("");

@@ -58,7 +58,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userId
   const { userId } = use(params);
   const router = useRouter();
   const { data: session } = useSession();
-  const myUserId = (session?.user as any)?.id as number | undefined;
+  const myUserId = session?.user?.id;
 
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [loading, setLoading] = useState(true);

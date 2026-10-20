@@ -18,7 +18,7 @@ interface ConfirmModal {
 
 export default function BlockButton({ userId, myUserId, variant = "default", onBlockChange }: Props) {
   const { data: session } = useSession();
-  const myId = myUserId ?? (session?.user as any)?.id as number | undefined;
+  const myId = myUserId ?? session?.user?.id;
 
   const [blocked, setBlocked] = useState(false);
   const [loading, setLoading] = useState(true);

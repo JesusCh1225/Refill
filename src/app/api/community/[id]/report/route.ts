@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUserId } from "@/lib/auth";
+import { REPORT_REASONS } from "@/data/reportReasons";
 
 export async function POST(
   req: NextRequest,
@@ -12,12 +13,10 @@ export async function POST(
   const postId = Number((await params).id);
   if (isNaN(postId)) return NextResponse.json({ error: "invalid" }, { status: 400 });
 
-  const VALID_REASONS = ["스팸/광고", "불법 정보", "욕설/혐오", "사기 의심", "기타"];
-
   let body: any;
   try { body = await req.json(); } catch { return NextResponse.json({ error: "invalid body" }, { status: 400 }); }
   const reason = (body.reason ?? "").trim();
-  if (!VALID_REASONS.includes(reason)) {
+  if (!REPORT_REASONS.includes(reason as any)) {
     return NextResponse.json({ error: "invalid reason" }, { status: 400 });
   }
 
