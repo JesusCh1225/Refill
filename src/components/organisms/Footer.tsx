@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const HIDDEN_PATHS = [
-  /^\/$/,               // 홈
   /^\/messages\/\d+/,   // 채팅방
   /^\/musicmap/,        // 지도 (풀스크린)
   /^\/community\/write/, // 커뮤니티 글쓰기

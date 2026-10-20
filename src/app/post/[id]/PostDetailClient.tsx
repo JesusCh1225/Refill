@@ -194,11 +194,19 @@ export default function PostDetailClient({
                     </span>
                   )}
                 </div>
-                <BookmarkButton
-                  bookmarked={isBookmarked(item.id)}
-                  onToggle={() => toggleBookmark(item.id)}
-                  size={22}
-                />
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={handleLike}
+                    className={`flex items-center gap-1 text-[13px] transition-colors cursor-pointer bg-transparent border-none ${liked ? "text-red-500" : "text-text-placeholder hover:text-red-400"}`}
+                  >
+                    ♥ <span>{likeCount.toLocaleString()}</span>
+                  </button>
+                  <BookmarkButton
+                    bookmarked={isBookmarked(item.id)}
+                    onToggle={() => toggleBookmark(item.id)}
+                    size={22}
+                  />
+                </div>
               </div>
               <h1 className="mt-2 text-[24px] font-bold text-text-heading leading-snug">{item.title}</h1>
             </div>
@@ -210,29 +218,13 @@ export default function PostDetailClient({
               <InfoRow label="지역" value={item.location} />
               <InfoRow
                 label="등록일"
-                value={item.createdAt
+                value={`${item.createdAt
                   ? new Date(item.createdAt).toLocaleString("ko-KR", {
                       year: "numeric", month: "long", day: "numeric",
                       hour: "2-digit", minute: "2-digit",
                     })
-                  : item.timeAgo}
+                  : item.timeAgo}${item.viewCount != null ? ` · 조회 ${item.viewCount.toLocaleString()}` : ""}`}
               />
-              {(item.viewCount != null || likeCount > 0) && (
-                <div className="flex items-center gap-3">
-                  <span className="w-14 shrink-0" />
-                  <div className="flex items-center gap-4">
-                    {item.viewCount != null && (
-                      <span className="text-[13px] text-text-muted">조회 {item.viewCount.toLocaleString()}</span>
-                    )}
-                    <button
-                      onClick={handleLike}
-                      className={`flex items-center gap-1.5 text-[13px] transition-colors cursor-pointer bg-transparent border-none ${liked ? "text-red-500" : "text-text-muted hover:text-red-400"}`}
-                    >
-                      ♥ {likeCount.toLocaleString()}
-                    </button>
-                  </div>
-                </div>
-              )}
               {item.author && item.authorId && (
                 <div className="flex items-center gap-3">
                   <span className="text-[13px] font-semibold text-text-muted w-14 shrink-0">작성자</span>
