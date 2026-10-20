@@ -17,9 +17,13 @@ const geistMono = Geist_Mono({
 });
 
 const BASE_URL = "https://reeefill.com";
-
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
+  verification: {
+    other: {
+      "naver-site-verification": "9cc7435da7b7f6d860eb404f8f8b5f0ff1e05f40",
+    },
+  },
   title: {
     default: "Refill | 음악 레슨·교류 플랫폼",
     template: "%s | Refill",
