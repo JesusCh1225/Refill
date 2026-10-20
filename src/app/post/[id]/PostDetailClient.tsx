@@ -218,16 +218,19 @@ export default function PostDetailClient({
                   : item.timeAgo}
               />
               {(item.viewCount != null || likeCount > 0) && (
-                <div className="flex items-center gap-4">
-                  {item.viewCount != null && (
-                    <span className="text-[13px] text-text-muted">조회 {item.viewCount.toLocaleString()}</span>
-                  )}
-                  <button
-                    onClick={handleLike}
-                    className={`flex items-center gap-1.5 text-[13px] transition-colors cursor-pointer bg-transparent border-none ${liked ? "text-red-500" : "text-text-muted hover:text-red-400"}`}
-                  >
-                    ♥ {likeCount.toLocaleString()}
-                  </button>
+                <div className="flex items-center gap-3">
+                  <span className="w-14 shrink-0" />
+                  <div className="flex items-center gap-4">
+                    {item.viewCount != null && (
+                      <span className="text-[13px] text-text-muted">조회 {item.viewCount.toLocaleString()}</span>
+                    )}
+                    <button
+                      onClick={handleLike}
+                      className={`flex items-center gap-1.5 text-[13px] transition-colors cursor-pointer bg-transparent border-none ${liked ? "text-red-500" : "text-text-muted hover:text-red-400"}`}
+                    >
+                      ♥ {likeCount.toLocaleString()}
+                    </button>
+                  </div>
                 </div>
               )}
               {item.author && item.authorId && (

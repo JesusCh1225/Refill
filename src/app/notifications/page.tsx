@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import Header from "@/components/organisms/Header";
 import Avatar from "@/components/atom/Avatar";
 import Spinner from "@/components/atom/Spinner";
+import PushToggle from "@/components/atom/PushToggle";
 
 interface NotificationItem {
   id: number;
@@ -112,6 +113,7 @@ export default function NotificationsPage() {
       <div className="mx-auto px-3 sm:px-6 pt-6 pb-20 flex flex-col gap-4" style={{ maxWidth: "600px" }}>
         <div className="flex items-center justify-between">
           <h1 className="text-[18px] font-bold text-text-heading">알림</h1>
+          <PushToggle />
           {unreadCount > 0 && (
             <button
               onClick={markAllRead}

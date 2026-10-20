@@ -14,7 +14,7 @@ export default function InfoRow({ label, value, highlight }: InfoRowProps) {
         className={
           highlight
             ? "text-[22px] font-bold text-text-heading"
-            : "text-[15px] text-text-body"
+            : "text-[13px] text-text-body"
         }
       >
         {value}

@@ -150,6 +150,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.picture = dbUser?.avatarUrl ?? dbUser?.oauthImageUrl ?? token.picture ?? null;
         // 헤더/세션에 표시될 이름: 닉네임 우선, 없으면 실명
         token.name = dbUser?.nickname ?? dbUser?.name ?? token.name;
+        // DB에 oauthImageUrl이 이미 있으면 동기화 완료로 표시
+        token._oauthSynced = !!dbUser?.oauthImageUrl || !token.picture;
+      }
+      // 기존 세션에서 oauthImageUrl이 DB에 없는 경우 한 번만 동기화
+      if (!token._oauthSynced && token.userId && token.picture) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.userId as number },
+          select: { oauthImageUrl: true },
+        });
+        if (!dbUser?.oauthImageUrl) {
+          await prisma.user.update({
+            where: { id: token.userId as number },
+            data: { oauthImageUrl: (token.picture as string).slice(0, 500) },
+          }).catch(() => {});
+        }
+        token._oauthSynced = true;
       }
       // 기존 세션에 token.name이 없으면 DB에서 복구
       if (!token.name && token.userId) {

@@ -24,9 +24,9 @@ export const metadata: Metadata = {
     default: "Refill | 음악 레슨·교류 플랫폼",
     template: "%s | Refill",
   },
-  description: "악기 레슨 선생님 찾기, 세션 구인, 합주 모집까지 — 음악인을 위한 교류 공간 Refill",
-  keywords: ["음악 레슨", "악기 레슨", "음악 선생님", "세션", "합주", "음악 교류", "Refill"],
-  authors: [{ name: "Refill" }],
+  description: "악기 레슨 선생님 찾기, 세션 구인, 합주 모집까지 — 음악인을 위한 교류 공간 리필",
+  keywords: ["음악 레슨", "악기 레슨", "음악 선생님", "세션", "합주", "음악 교류", "리필", "Refill"],
+  authors: [{ name: "리필" }],
   openGraph: {
     type: "website",
     locale: "ko_KR",

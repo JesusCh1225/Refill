@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUserId } from "@/lib/auth";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
+import { sendPushToUser } from "@/lib/push";
 
 export async function GET(
   req: NextRequest,
@@ -110,6 +111,9 @@ export async function POST(
 
   // 채팅방을 나간 뒤 새 메시지를 보내면 나간 기록 삭제 (재입장 처리)
   await prisma.conversationLeft.deleteMany({ where: { userId: myId, partnerId } }).catch(() => {});
+
+  // 수신자에게 푸시 알림 (fire-and-forget)
+  sendPushToUser(partnerId, { title: "새 메시지", body: content.trim().slice(0, 60), url: `/messages/${myId}` }).catch(() => {});
 
   return NextResponse.json({
     ...msg,

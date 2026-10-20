@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUserId } from "@/lib/auth";
 import { getBlockedIds } from "@/lib/blockFilter";
+import { sendPushToUser } from "@/lib/push";
 
 export async function GET(
   _req: NextRequest,
@@ -106,16 +107,18 @@ export async function POST(
         if (r.authorId && r.authorId !== userId) recipientIds.add(r.authorId);
       }
       await Promise.all(
-        Array.from(recipientIds).map((recipientId) =>
-          prisma.notification.create({
+        Array.from(recipientIds).map(async (recipientId) => {
+          await prisma.notification.create({
             data: { userId: recipientId, actorId: userId, type: "COMMUNITY_REPLY", communityPostId: postId, communityCommentId: commentId },
-          }),
-        ),
+          });
+          sendPushToUser(recipientId, { title: "새 답글", body: content.trim().slice(0, 60), url: `/community/${postId}` }).catch(() => {});
+        }),
       );
     } else if (post.authorId !== userId) {
       await prisma.notification.create({
         data: { userId: post.authorId, actorId: userId, type: "COMMUNITY_COMMENT", communityPostId: postId, communityCommentId: commentId },
       });
+      sendPushToUser(post.authorId, { title: "새 댓글", body: content.trim().slice(0, 60), url: `/community/${postId}` }).catch(() => {});
     }
   } catch (err) {
     console.error("[community comment notification]", err);

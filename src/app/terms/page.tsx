@@ -2,7 +2,7 @@ import Link from "next/link";
 import Header from "@/components/organisms/Header";
 
 export const metadata = {
-  title: "이용약관 | Refill",
+  title: "이용약관 | 리필",
 };
 
 export default function TermsPage() {
@@ -14,12 +14,12 @@ export default function TermsPage() {
         <p className="text-[13px] text-text-muted mb-8">시행일: 2026년 7월 1일</p>
 
         <Section title="제1조 (목적)">
-          이 약관은 Refill(이하 &ldquo;서비스&rdquo;)을 운영하는 운영자(이하 &ldquo;운영자&rdquo;)가 제공하는 음악 교류 플랫폼 서비스의 이용 조건 및 절차, 운영자와 회원 간의 권리·의무 및 책임 사항을 규정함을 목적으로 합니다.
+          이 약관은 리필(이하 &ldquo;서비스&rdquo;)을 운영하는 운영자(이하 &ldquo;운영자&rdquo;)가 제공하는 음악 교류 플랫폼 서비스의 이용 조건 및 절차, 운영자와 회원 간의 권리·의무 및 책임 사항을 규정함을 목적으로 합니다.
         </Section>
 
         <Section title="제2조 (용어의 정의)">
           <ol className="list-decimal list-inside space-y-1.5">
-            <li>&ldquo;서비스&rdquo;란 운영자가 제공하는 Refill 플랫폼 및 관련 제반 서비스를 의미합니다.</li>
+            <li>&ldquo;서비스&rdquo;란 운영자가 제공하는 리필 플랫폼 및 관련 제반 서비스를 의미합니다.</li>
             <li>&ldquo;회원&rdquo;이란 이 약관에 동의하고 소셜 로그인을 통해 서비스에 가입한 자를 의미합니다.</li>
             <li>&ldquo;게시물&rdquo;이란 회원이 서비스 내에 작성·등록한 글, 댓글, 이미지 등 일체의 정보를 의미합니다.</li>
           </ol>

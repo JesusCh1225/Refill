@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUserId } from "@/lib/auth";
 import { getBlockedIds } from "@/lib/blockFilter";
+import { sendPushToUser } from "@/lib/push";
 
 const REPLY_SELECT = {
   id: true,
@@ -151,16 +152,18 @@ export async function POST(
       }
 
       await Promise.all(
-        Array.from(recipientIds).map((recipientId) =>
-          prisma.notification.create({
+        Array.from(recipientIds).map(async (recipientId) => {
+          await prisma.notification.create({
             data: { userId: recipientId, actorId: userId, type: "REPLY", postId, commentId: comment.id },
-          }),
-        ),
+          });
+          sendPushToUser(recipientId, { title: "새 답글", body: content.slice(0, 60), url: `/post/${postId}` }).catch(() => {});
+        }),
       );
     } else if (post.authorId !== userId) {
       await prisma.notification.create({
         data: { userId: post.authorId, actorId: userId, type: "COMMENT", postId, commentId: comment.id },
       });
+      sendPushToUser(post.authorId, { title: "새 댓글", body: content.slice(0, 60), url: `/post/${postId}` }).catch(() => {});
     }
   } catch (err) {
     console.error("[comment notification]", err);

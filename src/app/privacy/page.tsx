@@ -2,7 +2,7 @@ import Link from "next/link";
 import Header from "@/components/organisms/Header";
 
 export const metadata = {
-  title: "개인정보처리방침 | Refill",
+  title: "개인정보처리방침 | 리필",
 };
 
 export default function PrivacyPage() {
@@ -21,7 +21,7 @@ export default function PrivacyPage() {
         </p>
 
         <p className="text-[13px] text-text-body leading-relaxed mb-8">
-          Refill(이하 &ldquo;서비스&rdquo;)은 회원의 개인정보를 중요하게
+          리필(이하 &ldquo;서비스&rdquo;)은 회원의 개인정보를 중요하게
           생각하며, 「개인정보 보호법」 등 관련 법령을 준수합니다. 이 방침은
           서비스가 어떤 정보를 수집하고 어떻게 이용·보관하는지 안내합니다.
         </p>
@@ -226,7 +226,7 @@ export default function PrivacyPage() {
           개인정보 관련 문의는 아래 연락처로 해주세요.
           <div className="mt-2 p-3 bg-surface-card rounded-lg text-[12px] space-y-1">
             <p>
-              <span className="font-semibold">서비스명:</span> Refill
+              <span className="font-semibold">서비스명:</span> 리필
             </p>
             <p>
               <span className="font-semibold">문의:</span> alslql1234@gmail.com

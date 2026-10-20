@@ -33,7 +33,13 @@ export async function POST(req: NextRequest) {
   const ext = EXT_BY_MIME[file.type] ?? "jpg";
   const filename = `avatars/${crypto.randomUUID()}.${ext}`;
 
-  const blob = await put(filename, file, { access: "public" });
+  let blob;
+  try {
+    blob = await put(filename, file, { access: "public" });
+  } catch (err) {
+    console.error("[avatar upload error]", err);
+    return NextResponse.json({ error: "업로드에 실패했어요." }, { status: 500 });
+  }
 
   // DB 업데이트
   await prisma.user.update({
