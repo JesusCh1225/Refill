@@ -21,7 +21,7 @@ export async function GET(
         avatarUrl: true,
         oauthImageUrl: true,
         bio: true,
-        contact: viewerId != null ? true : false,
+        contact: viewerId === userId ? true : false,
         representativeSong: true,
         licenses: true,
         career: true,
