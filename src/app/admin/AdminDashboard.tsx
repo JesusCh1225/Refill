@@ -94,7 +94,116 @@ function ReportsTab() {
                 <span className="text-xs whitespace-nowrap">{r.status === "PENDING" ? "미처리" : r.status === "RESOLVED" ? "완료" : "기각"}</span>
               </div>
               <p className="text-sm">신고 사유: <strong>{r.reason}</strong></p>
-                    {tab === "danger" && <DangerZone />}
+                               {r.status === "PENDING" && (
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    disabled={busy !== null}
+                    onClick={() => resolve(r, "RESOLVED")}
+                    className="rounded-lg bg-brand text-white px-3 py-2 text-sm disabled:opacity-50"
+                  >
+                    처리 완료
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy !== null}
+                    onClick={() => resolve(r, "DISMISSED")}
+                    className="rounded-lg border px-3 py-2 text-sm disabled:opacity-50"
+                  >
+                    기각
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy !== null || !href}
+                    onClick={() => resolve(r, "RESOLVED", true)}
+                    className="rounded-lg border border-red-400 text-red-600 px-3 py-2 text-sm disabled:opacity-50"
+                  >
+                    게시글 숨기기
+                  </button>
+                </div>
+              )}
+            </div>;
+          })}
+        </div>
+      )}
+
+      {total > pageSize && (
+        <div className="flex justify-center items-center gap-3">
+          <button
+            type="button"
+            disabled={page <= 1 || loading}
+            onClick={() => {
+              setLoading(true);
+              setPage((p) => p - 1);
+            }}
+            className="rounded-lg border px-3 py-2 text-sm disabled:opacity-50"
+          >
+            이전
+          </button>
+          <span className="text-sm">
+            {page} / {Math.ceil(total / pageSize)}
+          </span>
+          <button
+            type="button"
+            disabled={page * pageSize >= total || loading}
+            onClick={() => {
+              setLoading(true);
+              setPage((p) => p + 1);
+            }}
+            className="rounded-lg border px-3 py-2 text-sm disabled:opacity-50"
+          >
+            다음
+          </button>
+        </div>
+      )}
+    </section>
+  );
+}
+
+export default function AdminDashboard() {
+  const [tab, setTab] = useState<Tab>("posts");
+
+  const tabs = [
+    ["posts", "게시글"],
+    ["reports", "신고 관리"],
+    ["users", "회원"],
+    ["chats", "채팅 로그"],
+    ["danger", "위험 작업"],
+  ] as const;
+
+  return (
+    <main
+      className="mx-auto px-4 sm:px-6 pt-8 pb-20"
+      style={{ maxWidth: "900px" }}
+    >
+      <h1 className="text-[22px] font-bold text-text-heading mb-6">
+        관리자 대시보드
+      </h1>
+
+      <div className="flex gap-1 mb-6 border-b border-border-base flex-wrap">
+        {tabs.map(([value, label]) => (
+          <button
+            type="button"
+            key={value}
+            onClick={() => setTab(value)}
+            className={`px-4 py-2 text-[14px] font-semibold bg-transparent cursor-pointer transition-colors ${
+              tab === value
+                ? value === "danger"
+                  ? "text-red-500 border-b-2 border-red-400 -mb-px"
+                  : "text-brand border-b-2 border-brand -mb-px"
+                : "text-text-muted hover:text-text-body"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "posts" && <PostsTab />}
+      {tab === "reports" && <ReportsTab />}
+      {tab === "users" && <UsersTab />}
+      {tab === "chats" && <ChatLogsTab />}
+      {tab === "danger" && <DangerZone />}
     </main>
   );
 }
