@@ -2,6 +2,7 @@
 
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useCreatePost } from "@/hooks/useCreatePost";
@@ -252,39 +253,42 @@ export default function PostDetailClient({
                           >
                             신고
                           </button>               
-{reportOpen && (
-  <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-    <div
-      className="absolute inset-0 bg-black/40"
-      onClick={() => setReportOpen(false)}
-    />
 
-    <div className="relative z-10 w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
-      <h2 className="mb-4 text-lg font-bold text-gray-900">
-        신고 사유 선택
-      </h2>
-
-      <div className="flex flex-col gap-2">
-        {REPORT_REASONS.map((r) => (
-          <button
-            key={r}
-            onClick={() => handleReport(r)}
-            className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-left text-sm text-gray-800 hover:bg-gray-100"
-          >
-            {r}
-          </button>
-        ))}
-      </div>
-
-      <button
+{reportOpen &&
+  createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+      <div
+        className="absolute inset-0 bg-black/40"
         onClick={() => setReportOpen(false)}
-        className="mt-4 w-full rounded-lg bg-gray-100 py-3 text-sm font-semibold text-gray-700"
-      >
-        취소
-      </button>
-    </div>
-  </div>
-)}
+      />
+
+      <div className="relative z-10 w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+        <h2 className="mb-4 text-lg font-bold text-gray-900">
+          신고 사유 선택
+        </h2>
+
+        <div className="flex flex-col gap-2">
+          {REPORT_REASONS.map((reason) => (
+            <button
+              key={reason}
+              onClick={() => handleReport(reason)}
+              className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-left text-sm text-gray-800 hover:bg-gray-100"
+            >
+              {reason}
+            </button>
+          ))}
+        </div>
+
+        <button
+          onClick={() => setReportOpen(false)}
+          className="mt-4 w-full rounded-lg bg-gray-100 py-3 text-sm font-semibold text-gray-700"
+        >
+          취소
+        </button>
+      </div>
+    </div>,
+    document.body
+  )}
                         </div>
                       )}
                       <button
