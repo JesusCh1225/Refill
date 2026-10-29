@@ -176,8 +176,12 @@ export default function PostDetailClient({
         </div>
 
         {/* 게시글 카드 */}
-        <div className="bg-white rounded-2xl border border-border-card overflow-hidden">
-          <PostImageCarousel imageUrls={item.imageUrls} imageEmoji={item.imageEmoji} />
+        <div className="bg-white rounded-2xl border border-border-card overflow-visible">
+         
+<div className="rounded-t-2xl overflow-hidden">
+  <PostImageCarousel imageUrls={item.imageUrls} imageEmoji={item.imageEmoji} />
+</div>
+
 
           <div className="px-4 py-5 sm:px-8 sm:py-7 flex flex-col gap-6">
             {/* 카테고리 + 제목 + 북마크 */}
@@ -254,7 +258,7 @@ export default function PostDetailClient({
                           {reportOpen && (
                             <>
                               <div className="fixed inset-0 z-30" onClick={() => setReportOpen(false)} />
-                              <div className="absolute right-0 top-full mt-1 z-40 bg-white rounded-xl border border-border-base shadow-lg py-1 min-w-35">
+                              <div className="absolute right-0 bottom-full mb-1 z-40 bg-white rounded-xl border border-border-base shadow-lg py-1 min-w-35">
                                 {REPORT_REASONS.map((r) => (
                                   <button
                                     key={r}
