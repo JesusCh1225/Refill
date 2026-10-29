@@ -94,3 +94,7 @@ function ReportsTab() {
                 <span className="text-xs whitespace-nowrap">{r.status === "PENDING" ? "미처리" : r.status === "RESOLVED" ? "완료" : "기각"}</span>
               </div>
               <p className="text-sm">신고 사유: <strong>{r.reason}</strong></p>
+                    {tab === "danger" && <DangerZone />}
+    </main>
+  );
+}
